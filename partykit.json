@@ -1,0 +1,16 @@
+{
+  "$schema": "https://www.partykit.io/schema.json",
+  "name": "bear-fit",
+  "main": "party/server.ts",
+  "compatibilityDate": "2024-09-24",
+  "parties": {
+    "rooms": "party/rooms.ts"
+  },
+  "serve": {
+    "path": "public",
+    "build": {
+      "entry": "app/client.tsx",
+      "esbuildPlugins": ["./esbuild-postcss-plugin.cjs"]
+    }
+  }
+}

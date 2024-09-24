@@ -1,0 +1,74 @@
+diff --git a/dist/bin.mjs b/dist/bin.mjs
+index 32e641e72a7df2a7e2b00a75c01388d68d552994..cd0e65c02b122a987bbb5a7f2424955b865ba254 100755
+--- a/dist/bin.mjs
++++ b/dist/bin.mjs
+@@ -5,6 +5,8 @@ const require = topLevelCreateRequire(import.meta.url);
+ const __filename = topLevelFileURLToPath(import.meta.url);
+ const __dirname = topLevelFileURLToPath(new topLevelURL(".", import.meta.url));
+ 
++const awaitSync = require("deasync-promise");
++
+ var __create = Object.create;
+ var __defProp = Object.defineProperty;
+ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+@@ -83765,7 +83767,8 @@ var schema = z.object({
+           live: z.boolean().optional(),
+           sourcemap: z.boolean().optional(),
+           define: z.record(z.string()).optional(),
+-          loader: z.record(z.enum(loaders)).optional()
++          loader: z.record(z.enum(loaders)).optional(),
++          esbuildPlugins: z.array(z.string()).optional(),
+         })
+       ]).optional(),
+       include: z.array(z.string()).optional(),
+@@ -84193,6 +84196,12 @@ function replacePathSlashes(str) {
+ function getConfigPath() {
+   return findUpSync("partykit.json") || findUpSync("partykit.json5") || findUpSync("partykit.jsonc");
+ }
++function requireEsbuildPlugins(paths) {
++  const configPath = getConfigPath();
++  const dir = path8.dirname(configPath);
++  
++  return paths.map(path => __toESM(require(path8.resolve(dir, path))).default);
++}
+ function removeUndefinedKeys(obj) {
+   return obj === void 0 ? obj : Object.fromEntries(
+     Object.entries(obj).filter(([, value]) => value !== void 0)
+@@ -92863,7 +92872,8 @@ function useAssetServer(options, defines, moreOptions) {
+         ...assetsBuild?.define
+       },
+       loader: assetsBuild?.loader,
+-      alias: assetsBuild?.alias
++      alias: assetsBuild?.alias,
++      plugins: assetsBuild?.esbuildPlugins ? requireEsbuildPlugins(assetsBuild?.esbuildPlugins) : []
+     }),
+     [assetsBuild, assetsPath, defines, portForAssetsServer, isLiveMode]
+   );
+@@ -92885,7 +92895,7 @@ function useAssetServer(options, defines, moreOptions) {
+     };
+     if (!assetsPath) return assetsMap2;
+     if (assetsBuild?.entry) {
+-      esbuild.buildSync(esbuildAssetOptions);
++      awaitSync(esbuild.build(esbuildAssetOptions));
+     }
+     for (const file of findAllFiles(assetsPath)) {
+       assetsMap2.assets[file] = file;
+@@ -94179,7 +94189,8 @@ async function deploy(options) {
+       ...config.define,
+       ...assetsBuild?.define
+     },
+-    loader: assetsBuild?.loader
++    loader: assetsBuild?.loader,
++    plugins: assetsBuild?.esbuildPlugins ? requireEsbuildPlugins(assetsBuild?.esbuildPlugins) : []
+   };
+   const unsupportedKeys = ["include", "exclude"].filter(
+     (key) => assetsConfig[key] !== void 0
+@@ -94200,7 +94211,7 @@ async function deploy(options) {
+   const prepareAssetsApiPath = `/parties/${config.team || user.login}/${config.name}/prepare_assets${assetsApiParams}`;
+   const filesToUpload = [];
+   if (assetsPath) {
+-    esbuild2.buildSync(esbuildAssetOptions);
++    awaitSync(esbuild2.build(esbuildAssetOptions));
+     const currentAssetsMap = await fetchResult(assetsApiPath, {
+       user,
+       headers: {

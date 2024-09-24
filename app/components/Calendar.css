@@ -1,0 +1,39 @@
+#root {
+  font-family: Chicago, sans-serif;
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+}
+
+.availability-grid .month-header {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-url-container {
+  position: relative;
+}
+
+.copy-button {
+  position: absolute;
+  right: 8px;
+  bottom: 7.5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.copy-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
