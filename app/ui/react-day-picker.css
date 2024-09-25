@@ -1,7 +1,7 @@
 /* Variables declaration */
 /* prettier-ignore */
 .rdp-root {
-  --rdp-accent-color: blue; /* The accent color used for selected days and UI elements. */
+  --rdp-accent-color: var(--accent); /* The accent color used for selected days and UI elements. */
   --rdp-accent-background-color: #fafafa; /* The accent background color used for selected days and UI elements. */
   --rdp-font-family: Chicago; /* The font family used by the calendar. Note that `inherit`does not work here. */
 

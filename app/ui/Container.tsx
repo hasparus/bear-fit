@@ -7,7 +7,7 @@ export function Container(props: ContainerProps) {
     <div
       {...props}
       className={cn(
-        "container border mx-auto p-4 bg-white w-min",
+        "container border mx-auto p-4 bg-white w-[340px]",
         props.className
       )}
     />

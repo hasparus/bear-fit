@@ -2,19 +2,6 @@
   font-family: Chicago, sans-serif;
 }
 
-.availability-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 0;
-}
-
-.availability-grid .month-header {
-  grid-column: 1 / -1;
-  text-align: center;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-}
-
 .event-url-container {
   position: relative;
 }

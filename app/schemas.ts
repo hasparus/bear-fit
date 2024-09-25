@@ -27,5 +27,44 @@ export type AvailabilityDelta = v.InferOutput<typeof AvailabilityDelta>;
 
 export type UserId = string & { __brand: "UserId" };
 
-export type AvailabilityKey = `${UserId}-${IsoDate}`;
+const AVAILABILITY_KEY_SEPARATOR = "〷";
+export type AvailabilityKey =
+  `${UserId}${typeof AVAILABILITY_KEY_SEPARATOR}${IsoDate}`;
+
+export const AvailabilityKey = (
+  userId: UserId,
+  date: IsoDate
+): AvailabilityKey =>
+  `${userId}${AVAILABILITY_KEY_SEPARATOR}${date}` as AvailabilityKey;
+
+AvailabilityKey.split = (key: AvailabilityKey) => {
+  const [userId, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
+  return { userId: userId as UserId, date: date as IsoDate };
+};
+
+AvailabilityKey.parse = (key: string): AvailabilityKey => {
+  const [_, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
+
+  if (!v.is(isoDate(), date)) {
+    throw new Error(`Invalid AvailabilityKey with IsoDate: ${date}`);
+  }
+
+  return key as AvailabilityKey;
+};
+
+AvailabilityKey.parseToObject = (
+  key: string
+): {
+  userId: UserId;
+  date: IsoDate;
+} => {
+  const [userId, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
+
+  if (!v.is(isoDate(), date)) {
+    throw new Error(`Invalid AvailabilityKey with IsoDate: ${date}`);
+  }
+
+  return { userId: userId as UserId, date: date as IsoDate };
+};
+
 export type AvailabilitySet = Record<AvailabilityKey, true>;

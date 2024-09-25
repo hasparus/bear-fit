@@ -1,6 +1,6 @@
 import type {} from "react/canary";
 import useYProvider from "y-partykit/react";
-import { use, Suspense, useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { useY } from "react-yjs";
 

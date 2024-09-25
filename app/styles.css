@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --accent: blue;
+}
+
 html,
 body,
 #app {
@@ -11,4 +15,13 @@ body,
 #app {
   display: flex;
   align-items: center;
+}
+
+label {
+  font-family: Inconsolata, Menlo, Chicago, Geneva;
+  font-size: 14px;
+}
+
+*:focus-visible {
+  outline: 3px solid black;
 }
