@@ -55,7 +55,7 @@ export function CreateEventForm({
         <div className="mb-4">
           <label htmlFor="eventName" className="block mb-2">
             <span>Name your event</span>
-            <small className="block text-gray-500">
+            <small className="block text-neutral-500">
               or leave blank to generate a random name
             </small>
           </label>
@@ -64,7 +64,7 @@ export function CreateEventForm({
         <div className="mb-4">
           <label htmlFor="calendar" className="block mb-2">
             <span>Choose a date range</span>
-            <small className="block text-gray-500">
+            <small className="block text-neutral-500">
               what times should the guests consider?
             </small>
           </label>
@@ -83,7 +83,9 @@ export function CreateEventForm({
           // eslint-disable-next-line @hasparus/tailwindcss/no-custom-classname
           className="btn btn-default w-full hover:bg-neutral-100 "
           style={{ borderWidth: "0.5em" }}
-          disabled={!dateRange.from || !dateRange.to}
+          disabled={
+            !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to
+          }
         >
           Create Event
         </button>

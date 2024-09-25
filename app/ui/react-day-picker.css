@@ -17,7 +17,7 @@
   --rdp-selected-font: bold large var(--rdp-font-family); /* The font of the selected days. */
   --rdp-disabled-opacity: 0.5; /* The opacity of the disabled days. */
   --rdp-outside-opacity: 0.75; /* The opacity of the days outside the current month. */
-  --rdp-today-color: red; /* The color of the today's date. */
+  --rdp-today-color: #ef4444; /* The color of the today's date. */
   
   --rdp-dropdown-gap: 0.5rem;/* The gap between the dropdowns used in the month captons. */
   

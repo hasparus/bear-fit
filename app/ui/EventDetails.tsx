@@ -12,6 +12,7 @@ import { useYDoc } from "../useYDoc";
 import { nanoid } from "nanoid";
 import { Container } from "./Container";
 import { AvailabilityKey } from "../schemas";
+import { cn } from "./cn";
 
 let userId = window.localStorage.getItem("userId") as UserId | null;
 if (!userId) {
@@ -28,9 +29,9 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
   const availabilityMap = yDoc.getMap("availability");
   const availability = useY(availabilityMap) as AvailabilitySet;
 
-  console.log({ availability });
-
   const setAvailability = (userId: UserId, date: IsoDate, value: boolean) => {
+    console.log("setting availability", userId, date, value);
+
     const key = AvailabilityKey(userId, date);
 
     if (value) {
@@ -63,12 +64,15 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
     availabilityForDates.get(date)!.push(userId);
   }
 
-  console.log({ availabilityForDates });
+  let currentUserPickedDatesCount = 0;
 
   let allUsers = new Set<string>();
   for (const users of Object.keys(availability)) {
-    const user = users.split("-")[0];
+    const user = AvailabilityKey.parseToObject(users).userId;
     allUsers.add(user);
+    if (user === userId) {
+      currentUserPickedDatesCount++;
+    }
   }
   const totalUsers = allUsers.size;
 
@@ -97,36 +101,27 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
     setUserName(names[userId]);
   }
 
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragMode, setDragMode] = useState<"none" | "clearing" | "painting">(
+    "none"
+  );
   const [lastToggled, setLastToggled] = useState<string | null>(null);
 
-  const toggleAvailability = useCallback(
-    (dateStr: IsoDate) => {
-      if (!userId) {
-        throw new Error("user id is missing");
-      }
-      const isAvailable = availability[AvailabilityKey(userId, dateStr)];
-      setAvailability(userId, dateStr, !isAvailable);
-    },
-    [availability, setAvailability]
-  );
-
-  const handleMouseDown = (date: IsoDate) => {
-    setIsDragging(true);
-    toggleAvailability(date);
+  const handlePointerDown = (date: IsoDate, currentUserAvailable: boolean) => {
+    setDragMode(currentUserAvailable ? "clearing" : "painting");
+    setAvailability(userId!, date, !currentUserAvailable);
     setLastToggled(date);
   };
 
-  const handleMouseEnter = (date: IsoDate) => {
-    if (isDragging && lastToggled !== date) {
-      toggleAvailability(date);
+  const handlePointerEnter = (date: IsoDate) => {
+    if (userId && dragMode !== "none" && lastToggled !== date) {
+      setAvailability(userId, date, dragMode === "painting");
       setLastToggled(date);
     }
   };
 
   useEffect(() => {
     const handleMouseUp = () => {
-      setIsDragging(false);
+      setDragMode("none");
       setLastToggled(null);
     };
 
@@ -171,23 +166,43 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
           className="border p-2 w-full"
         />
       </div>
-      <div className="availability-grid mt-2 mb-6">
+      <div className="mb-4 font-mono text-sm text-neutral-500">
+        {currentUserPickedDatesCount > 0 ? (
+          currentUserPickedDatesCount === availabilityForDates.size &&
+          totalUsers > 1 ? (
+            <span>You've picked the most dates! Wow!</span>
+          ) : (
+            <span>
+              You've picked {currentUserPickedDatesCount} date
+              {currentUserPickedDatesCount > 1 ? "s" : ""}. Thanks!
+            </span>
+          )
+        ) : (
+          <span>⚠️ You haven't picked any dates yet</span>
+        )}
+      </div>
+      <div role="grid" className="mt-2 mb-6">
         {Object.entries(groupedDays).map(([monthKey, monthDays]) => (
           <React.Fragment key={monthKey}>
-            <div className="mb-2">
+            <div className="my-2">
               {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
             </div>
-            <div className="flex flex-wrap">
-              {monthDays.map((day) => {
+            <div className="flex flex-wrap gap-1">
+              {monthDays.map((day, i) => {
                 const dateStr = IsoDate(day);
                 const availableUsers = availabilityForDates.get(dateStr) || [];
+                const currentUserAvailable =
+                  userId && availableUsers.includes(userId);
 
                 return (
                   <button
                     key={dateStr}
-                    className="flex items-center justify-center rounded-md ease-in-out size-11"
+                    tabIndex={i === 0 ? 0 : -1}
+                    className={cn(
+                      "flex items-center justify-center rounded-md ease-in-out size-10 select-none",
+                      currentUserAvailable && "border-neutral-200 border-2"
+                    )}
                     style={{
-                      height: 40,
                       backgroundColor: `hsl(from var(--accent) h s l / ${
                         availableUsers.length / totalUsers
                       })`,
@@ -196,8 +211,49 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
                           ? "white"
                           : "black",
                     }}
-                    onMouseDown={() => handleMouseDown(dateStr)}
-                    onMouseEnter={() => handleMouseEnter(dateStr)}
+                    onPointerDown={() =>
+                      handlePointerDown(dateStr, !!currentUserAvailable)
+                    }
+                    onPointerEnter={() => handlePointerEnter(dateStr)}
+                    onKeyDown={(e) => {
+                      const grid =
+                        e.currentTarget.parentElement!.parentElement!;
+
+                      const allButtons = grid.querySelectorAll("button");
+                      let index = Array.from(allButtons).indexOf(
+                        e.currentTarget as HTMLButtonElement
+                      );
+
+                      // move focus to next button with arrow keys
+                      switch (e.key) {
+                        case "ArrowRight":
+                          index++;
+                          break;
+                        case "ArrowLeft":
+                          index--;
+                          break;
+                        case "ArrowDown":
+                          index += 7;
+                          break;
+                        case "ArrowUp":
+                          index -= 7;
+                          break;
+
+                        case " ":
+                        case "Enter":
+                          setAvailability(
+                            userId!,
+                            dateStr,
+                            !currentUserAvailable
+                          );
+                          break;
+                      }
+
+                      const nextFocused = allButtons[index % allButtons.length];
+                      if (nextFocused) {
+                        nextFocused.focus();
+                      }
+                    }}
                     title={availableUsers.join(", ")}
                   >
                     {day.toLocaleDateString("en-US", { day: "numeric" })}
@@ -239,7 +295,7 @@ function CopyEventUrl({ eventId }: { eventId: string }) {
         id="eventUrl"
         readOnly
         value={eventUrl}
-        className="block w-full p-2 bg-gray-100 rounded pr-10 [direction:rtl]"
+        className="block w-full p-2 bg-neutral rounded pr-10 [direction:rtl]"
       />
       <button
         className="absolute right-2 bottom-2 hover:bg-neutral-200 p-2 rounded-md active:bg-black active:text-white"

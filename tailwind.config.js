@@ -15,7 +15,14 @@ module.exports = {
       ],
       mono: ["Inconsolata", "Menlo", "Chicago", "Geneva"],
     },
-    extend: {},
+    extend: {
+      colors: {
+        // disable palettes, so we use just neutral
+        gray: "gray",
+        stone: "stone",
+        slate: "slate",
+      },
+    },
   },
   plugins: [],
 };
