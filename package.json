@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "partykit dev --live",
-    "deploy": "partykit deploy"
+    "deploy": "partykit deploy",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
@@ -15,8 +16,10 @@
     "quill-cursors": "^4.0.3",
     "react": "canary",
     "react-day-picker": "^9.1.2",
-    "react-dom": "^19.canary",
+    "react-dom": "canary",
     "react-quill": "^2.0.0",
+    "react-yjs": "^2.0.0",
+    "tailwind-merge": "^2.5.2",
     "tailwindcss": "^3.4.13",
     "unique-names-generator": "^4.7.1",
     "valibot": "^0.42.1",
@@ -24,10 +27,14 @@
     "yjs": "^13.6.18"
   },
   "devDependencies": {
+    "@eslint/js": "^9.11.1",
+    "@hasparus/eslint-plugin-tailwindcss": "^3.17.5",
+    "@types/eslint__js": "^8.42.3",
     "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
     "partykit": "^0.0.110",
-    "typescript": "^5.5.4"
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.7.0"
   },
   "pnpm": {
     "patchedDependencies": {

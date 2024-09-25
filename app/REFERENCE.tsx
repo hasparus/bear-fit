@@ -1,3 +1,4 @@
+// @ts-nocheck
 /** @jsxImportSource https://esm.sh/react */
 
 import { eachDayOfInterval, format, parseISO } from "https://esm.sh/date-fns";

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-form {
-  font: inherit;
+html,
+body,
+#app {
+  height: 100%;
+}
+
+#app {
+  display: flex;
+  align-items: center;
 }
