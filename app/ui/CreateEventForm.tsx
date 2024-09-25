@@ -50,6 +50,32 @@ export function CreateEventForm({
             endDate: IsoDate(to),
           });
         }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            const parent =
+              e.target instanceof HTMLElement && e.target.parentElement;
+            const inNavigation = parent && parent.tagName === "NAV";
+
+            if (inNavigation) {
+              let button: HTMLButtonElement | null = null;
+
+              if (e.key === "ArrowLeft")
+                button = parent.querySelector(
+                  ".rdp-button_previous"
+                ) as HTMLButtonElement;
+
+              if (e.key === "ArrowRight")
+                button = parent.querySelector(
+                  ".rdp-button_next"
+                ) as HTMLButtonElement;
+
+              if (button) {
+                button.focus();
+                button.click();
+              }
+            }
+          }
+        }}
       >
         <h1 className="text-2xl font-bold mb-4">Create a Calendar</h1>
         <div className="mb-4">
