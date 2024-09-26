@@ -33,6 +33,9 @@ export default class EditorServer implements Party.Server {
 
   async onConnect(conn: Party.Connection) {
     await this.updateCount();
+
+    console.log("onConnect", this.event, this.doc && yDocToJson(this.doc));
+
     return onConnect(conn, this.room, this.getOpts());
   }
 

@@ -142,21 +142,19 @@ export function EventDetails() {
       </h1>
       <p className="block font-mono text-sm">Event dates</p>
       <p className="mb-4" aria-busy={!event.startDate}>
-        <time dateTime={event.startDate}>
-          {event.startDate ? (
-            new Date(event.startDate).toLocaleDateString()
-          ) : (
-            <Skeleton className="w-[93.5px]" />
-          )}
-        </time>
-        {" - "}
-        <time dateTime={event.endDate}>
-          {event.endDate ? (
-            new Date(event.endDate).toLocaleDateString()
-          ) : (
-            <Skeleton className="w-[93.5px]" />
-          )}
-        </time>
+        {event.startDate && event.endDate ? (
+          <>
+            <time dateTime={event.startDate}>
+              {new Date(event.startDate).toLocaleDateString()}
+            </time>
+            {" - "}
+            <time dateTime={event.endDate}>
+              {new Date(event.endDate).toLocaleDateString()}
+            </time>
+          </>
+        ) : (
+          <Skeleton className="w-[206px]" />
+        )}
       </p>
       <div className="mb-4">
         <label htmlFor="name" className="block">
@@ -182,7 +180,9 @@ export function EventDetails() {
         />
       </div>
       <div className="mb-4 font-mono text-sm text-neutral-500">
-        {currentUserPickedDatesCount > 0 ? (
+        {!event.id ? (
+          <>&nbsp;</>
+        ) : currentUserPickedDatesCount > 0 ? (
           currentUserPickedDatesCount === availabilityForDates.size &&
           totalUsers > 1 ? (
             <span>You've picked the most dates! Wow!</span>
@@ -196,90 +196,93 @@ export function EventDetails() {
           <span>⚠️ You haven't picked any dates yet</span>
         )}
       </div>
-      <div role="grid" className="mt-2 mb-6">
-        {Object.entries(groupedDays).map(([monthKey, monthDays]) => (
-          <React.Fragment key={monthKey}>
-            <div className="my-2">
-              {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {monthDays.map((day, i) => {
-                const dateStr = IsoDate(day);
-                const availableUsers = availabilityForDates.get(dateStr) || [];
-                const currentUserAvailable =
-                  userId && availableUsers.includes(userId);
+      <div role="grid" className="mt-2 mb-6 min-h-[40px]">
+        {event.startDate &&
+          Object.entries(groupedDays).map(([monthKey, monthDays]) => (
+            <React.Fragment key={monthKey}>
+              <div className="my-2">
+                {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {monthDays.map((day, i) => {
+                  const dateStr = IsoDate(day);
+                  const availableUsers =
+                    availabilityForDates.get(dateStr) || [];
+                  const currentUserAvailable =
+                    userId && availableUsers.includes(userId);
 
-                return (
-                  <button
-                    key={dateStr}
-                    tabIndex={i === 0 ? 0 : -1}
-                    className={cn(
-                      "flex items-center justify-center rounded-md ease-in-out size-10 select-none",
-                      currentUserAvailable && "border-neutral-200 border-2"
-                    )}
-                    style={{
-                      backgroundColor: `hsl(from var(--accent) h s l / ${
-                        availableUsers.length / totalUsers
-                      })`,
-                      color:
-                        availableUsers.length / totalUsers > 0.5
-                          ? "white"
-                          : "black",
-                    }}
-                    onPointerDown={() =>
-                      handlePointerDown(dateStr, !!currentUserAvailable)
-                    }
-                    onPointerEnter={() => handlePointerEnter(dateStr)}
-                    onKeyDown={(e) => {
-                      const grid =
-                        e.currentTarget.parentElement!.parentElement!;
-
-                      const allButtons = grid.querySelectorAll("button");
-                      let index = Array.from(allButtons).indexOf(
-                        e.currentTarget as HTMLButtonElement
-                      );
-
-                      // move focus to next button with arrow keys
-                      switch (e.key) {
-                        case "ArrowRight":
-                          index++;
-                          break;
-                        case "ArrowLeft":
-                          index--;
-                          break;
-                        case "ArrowDown":
-                          index += 7;
-                          break;
-                        case "ArrowUp":
-                          index -= 7;
-                          break;
-
-                        case " ":
-                        case "Enter":
-                          setAvailability(
-                            userId!,
-                            dateStr,
-                            !currentUserAvailable
-                          );
-                          break;
+                  return (
+                    <button
+                      key={dateStr}
+                      tabIndex={i === 0 ? 0 : -1}
+                      className={cn(
+                        "flex items-center justify-center rounded-md ease-in-out size-10 select-none",
+                        currentUserAvailable && "border-neutral-200 border-2"
+                      )}
+                      style={{
+                        backgroundColor: `hsl(from var(--accent) h s l / ${
+                          availableUsers.length / totalUsers
+                        })`,
+                        color:
+                          availableUsers.length / totalUsers > 0.5
+                            ? "white"
+                            : "black",
+                      }}
+                      onPointerDown={() =>
+                        handlePointerDown(dateStr, !!currentUserAvailable)
                       }
+                      onPointerEnter={() => handlePointerEnter(dateStr)}
+                      onKeyDown={(e) => {
+                        const grid =
+                          e.currentTarget.parentElement!.parentElement!;
 
-                      const nextFocused = allButtons[index % allButtons.length];
-                      if (nextFocused) {
-                        nextFocused.focus();
-                      }
-                    }}
-                    title={availableUsers.join(", ")}
-                  >
-                    {day.toLocaleDateString("en-US", { day: "numeric" })}
-                  </button>
-                );
-              })}
-            </div>
-          </React.Fragment>
-        ))}
+                        const allButtons = grid.querySelectorAll("button");
+                        let index = Array.from(allButtons).indexOf(
+                          e.currentTarget as HTMLButtonElement
+                        );
+
+                        // move focus to next button with arrow keys
+                        switch (e.key) {
+                          case "ArrowRight":
+                            index++;
+                            break;
+                          case "ArrowLeft":
+                            index--;
+                            break;
+                          case "ArrowDown":
+                            index += 7;
+                            break;
+                          case "ArrowUp":
+                            index -= 7;
+                            break;
+
+                          case " ":
+                          case "Enter":
+                            setAvailability(
+                              userId!,
+                              dateStr,
+                              !currentUserAvailable
+                            );
+                            break;
+                        }
+
+                        const nextFocused =
+                          allButtons[index % allButtons.length];
+                        if (nextFocused) {
+                          nextFocused.focus();
+                        }
+                      }}
+                      title={availableUsers.join(", ")}
+                    >
+                      {day.toLocaleDateString("en-US", { day: "numeric" })}
+                    </button>
+                  );
+                })}
+              </div>
+            </React.Fragment>
+          ))}
       </div>
-      <CopyEventUrl eventId={event.id || ""} />
+      <CopyEventUrl eventId={event.id} />
     </Container>
   );
 }
@@ -293,7 +296,7 @@ function eachDayOfInterval(from: Date, to: Date) {
   return days;
 }
 
-function CopyEventUrl({ eventId }: { eventId: string }) {
+function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
   const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -306,25 +309,32 @@ function CopyEventUrl({ eventId }: { eventId: string }) {
   return (
     <label className="mt-4 relative">
       <span className="block">Event URL</span>
-      <input
-        id="eventUrl"
-        readOnly
-        value={eventUrl}
-        className="block w-full p-2 bg-neutral rounded pr-10 [direction:rtl]"
-      />
-      <button
-        className="absolute right-2 bottom-2 hover:bg-neutral-200 p-2 rounded-md active:bg-black active:text-white"
-        title="Copy to clipboard"
-        type="button"
-        onClick={handleCopy}
-      >
-        <CopyIcon />
-        {showTooltip && (
-          <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-            Copied to clipboard!
-          </span>
-        )}
-      </button>
+
+      {eventId ? (
+        <>
+          <input
+            id="eventUrl"
+            readOnly
+            value={eventUrl}
+            className="block w-full p-2 bg-neutral rounded pr-10 [direction:rtl]"
+          />
+          <button
+            className="absolute right-2 bottom-2 hover:bg-neutral-200 p-2 rounded-md active:bg-black active:text-white"
+            title="Copy to clipboard"
+            type="button"
+            onClick={handleCopy}
+          >
+            <CopyIcon />
+            {showTooltip && (
+              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black text-white text-xs py-1 px-2 rounded whitespace-nowrap">
+                Copied to clipboard!
+              </span>
+            )}
+          </button>
+        </>
+      ) : (
+        <Skeleton className="h-[46px]" />
+      )}
     </label>
   );
 }
