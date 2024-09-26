@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   partykit@0.0.110:
-    hash: 5ej62g6za6k2szheagleusrskq
+    hash: edbxa23b4zggwphg3cm35o77du
     path: patches/partykit@0.0.110.patch
 
 importers:
@@ -82,7 +82,7 @@ importers:
         version: 18.3.0
       partykit:
         specifier: ^0.0.110
-        version: 0.0.110(patch_hash=5ej62g6za6k2szheagleusrskq)
+        version: 0.0.110(patch_hash=edbxa23b4zggwphg3cm35o77du)
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
@@ -2589,7 +2589,7 @@ snapshots:
     dependencies:
       callsites: 3.1.0
 
-  partykit@0.0.110(patch_hash=5ej62g6za6k2szheagleusrskq):
+  partykit@0.0.110(patch_hash=edbxa23b4zggwphg3cm35o77du):
     dependencies:
       '@cloudflare/workers-types': 4.20240718.0
       clipboardy: 4.0.0
