@@ -101,6 +101,36 @@
   cursor: revert;
 }
 
+.rdp-day {
+  position: relative;
+}
+
+.rdp-day:has(:focus-visible)::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+  z-index: 10;
+  border: 4px solid white;
+  outline: 4px solid black;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.025);
+}
+
+.rdp-range_start:not(.rdp-range_end):has(:focus-visible)::after {
+  left: 4px;
+}
+
+.rdp-range_end:not(.rdp-range_start):has(:focus-visible)::after {
+  left: 0;
+}
+
+.rdp-day_button:focus-visible {
+  outline: none;
+}
+
 .rdp-caption_label {
   z-index: 1;
 
