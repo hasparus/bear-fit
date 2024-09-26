@@ -14,7 +14,6 @@ export const hasCalendarEvent = (doc: Doc) => {
 };
 
 export const initializeEventMap = (doc: Doc, event: CalendarEvent) => {
-  console.log("initialize event map");
   const eventMap = getEventMap(doc);
 
   eventMap.set("id", event.id);

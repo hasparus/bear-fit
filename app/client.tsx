@@ -35,14 +35,12 @@ function App() {
   });
 
   useEffect(() => {
-    console.log(
-      "should connect",
-      eventId && !yProvider.wsconnected && !yProvider.wsconnecting
-    );
     if (eventId && !yProvider.wsconnected && !yProvider.wsconnecting) {
       yProvider.connect();
       yProvider.on("synced", () => {
-        console.dir(yDocToJson(yDoc.current!), { depth: 9 });
+        console.group("synced");
+        console.dir(yDoc.current && yDocToJson(yDoc.current), { depth: 9 });
+        console.groupEnd();
       });
     }
   }, [eventId]);

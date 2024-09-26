@@ -11,11 +11,11 @@ import {
   yDocToJson,
 } from "../app/shared-data";
 
-const VERBOSE = true;
+const VERBOSE = process.env.NODE_ENV === "development";
 
 export default class EditorServer implements Party.Server {
   yjsOptions: YPartyKitOptions = {
-    persist: { mode: "snapshot" },
+    persist: { mode: "history" },
   };
 
   event: CalendarEvent | null = null;
@@ -34,7 +34,9 @@ export default class EditorServer implements Party.Server {
   async onConnect(conn: Party.Connection) {
     await this.updateCount();
 
-    console.log("onConnect", this.event, this.doc && yDocToJson(this.doc));
+    if (VERBOSE) {
+      console.log("↠ onConnect", this.event, this.doc && yDocToJson(this.doc));
+    }
 
     return onConnect(conn, this.room, this.getOpts());
   }
@@ -61,7 +63,9 @@ export default class EditorServer implements Party.Server {
 
     if (req.method === "POST" && url.pathname.startsWith("/parties/main/")) {
       const json = await req.json();
-      console.log("↠ onRequest", json);
+      if (VERBOSE) {
+        console.log("↠ onRequest", json);
+      }
 
       try {
         const event = v.parse(CalendarEvent, json);

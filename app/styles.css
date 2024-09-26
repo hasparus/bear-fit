@@ -9,7 +9,7 @@
 html,
 body,
 #app {
-  height: 100%;
+  min-height: 100vh;
 }
 
 #app {
@@ -17,6 +17,7 @@ body,
   align-items: center;
   min-height: fit-content;
   padding-block: 2rem;
+  min-height: 100vh;
 }
 
 label {
@@ -26,4 +27,11 @@ label {
 
 *:focus-visible {
   outline: 3px solid black;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    filter: invert(0.9);
+    background: black;
+  }
 }

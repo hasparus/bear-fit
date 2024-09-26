@@ -15,6 +15,7 @@ import { AvailabilityKey } from "../schemas";
 import { cn } from "./cn";
 import { getEventMap } from "../shared-data";
 import { Skeleton } from "./Skeleton";
+import { TooltipContent } from "./TooltipContent";
 
 let userId = window.localStorage.getItem("userId") as UserId | null;
 if (!userId) {
@@ -35,8 +36,6 @@ export function EventDetails() {
   const availability = useY(availabilityMap) as AvailabilitySet;
 
   const setAvailability = (userId: UserId, date: IsoDate, value: boolean) => {
-    console.log("setting availability", userId, date, value);
-
     const key = AvailabilityKey(userId, date);
 
     if (value) {
@@ -134,11 +133,21 @@ export function EventDetails() {
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, []);
 
+  useEffect(() => {
+    if (event.name) {
+      const oldTitle = document.title;
+      document.title = `bear-fit: ${event.name}`;
+      return () => {
+        document.title = oldTitle;
+      };
+    }
+  }, [event.name]);
+
   return (
     <Container>
       <p className="block font-mono text-sm">Calendar</p>
       <h1 className="text-2xl mb-4">
-        {event.name || <Skeleton className="w-ful h-[64px]" />}
+        {event.name || <Skeleton className="w-ful h-[32px]" />}
       </h1>
       <p className="block font-mono text-sm">Event dates</p>
       <p className="mb-4" aria-busy={!event.startDate}>
@@ -196,7 +205,7 @@ export function EventDetails() {
           <span>⚠️ You haven't picked any dates yet</span>
         )}
       </div>
-      <div role="grid" className="mt-2 mb-6 min-h-[40px]">
+      <div role="grid" className="mt-2 mb-6 min-h-[72px]">
         {event.startDate &&
           Object.entries(groupedDays).map(([monthKey, monthDays]) => (
             <React.Fragment key={monthKey}>
@@ -209,73 +218,31 @@ export function EventDetails() {
                   const availableUsers =
                     availabilityForDates.get(dateStr) || [];
                   const currentUserAvailable =
-                    userId && availableUsers.includes(userId);
+                    !!userId && availableUsers.includes(userId);
 
                   return (
-                    <button
-                      key={dateStr}
+                    <AvailabilityGridCell
+                      key={`${day}-${i}`}
+                      availableUsers={availableUsers}
+                      totalUsers={totalUsers}
+                      currentUserAvailable={currentUserAvailable}
                       tabIndex={i === 0 ? 0 : -1}
-                      className={cn(
-                        "flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 hover:border-2",
-                        currentUserAvailable && "border-neutral-200 border-4"
-                      )}
-                      style={{
-                        backgroundColor: `hsl(from var(--accent) h s l / ${
-                          availableUsers.length / totalUsers
-                        })`,
-                        color:
-                          availableUsers.length / totalUsers > 0.5
-                            ? "white"
-                            : "black",
-                      }}
+                      day={day}
+                      names={names}
                       onPointerDown={() =>
                         handlePointerDown(dateStr, !!currentUserAvailable)
                       }
                       onPointerEnter={() => handlePointerEnter(dateStr)}
-                      onKeyDown={(e) => {
-                        const grid =
-                          e.currentTarget.parentElement!.parentElement!;
-
-                        const allButtons = grid.querySelectorAll("button");
-                        let index = Array.from(allButtons).indexOf(
-                          e.currentTarget as HTMLButtonElement
-                        );
-
-                        // move focus to next button with arrow keys
-                        switch (e.key) {
-                          case "ArrowRight":
-                            index++;
-                            break;
-                          case "ArrowLeft":
-                            index--;
-                            break;
-                          case "ArrowDown":
-                            index += 7;
-                            break;
-                          case "ArrowUp":
-                            index -= 7;
-                            break;
-
-                          case " ":
-                          case "Enter":
-                            setAvailability(
-                              userId!,
-                              dateStr,
-                              !currentUserAvailable
-                            );
-                            break;
-                        }
-
-                        const nextFocused =
-                          allButtons[index % allButtons.length];
-                        if (nextFocused) {
-                          nextFocused.focus();
-                        }
-                      }}
-                      title={availableUsers.join(", ")}
-                    >
-                      {day.toLocaleDateString("en-US", { day: "numeric" })}
-                    </button>
+                      onKeyDown={(event) =>
+                        moveFocusWithArrowKeys(event, () =>
+                          setAvailability(
+                            userId!,
+                            dateStr,
+                            !currentUserAvailable
+                          )
+                        )
+                      }
+                    />
                   );
                 })}
               </div>
@@ -284,6 +251,45 @@ export function EventDetails() {
       </div>
       <CopyEventUrl eventId={event.id} />
     </Container>
+  );
+}
+
+function AvailabilityGridCell({
+  day,
+  currentUserAvailable,
+  availableUsers,
+  totalUsers,
+  names,
+  ...rest
+}: {
+  day: Date;
+  currentUserAvailable: boolean;
+  availableUsers: UserId[];
+  totalUsers: number;
+  names: Record<UserId, string>;
+} & React.HTMLAttributes<HTMLButtonElement>) {
+  let fill = availableUsers.length / totalUsers;
+  return (
+    <button
+      className={cn(
+        "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative",
+        currentUserAvailable && "border-neutral-200 border-4"
+      )}
+      style={{
+        backgroundColor: fill
+          ? `hsl(from var(--accent) h s l / ${fill})`
+          : undefined,
+        color: fill > 0.5 ? "white" : "black",
+      }}
+      {...rest}
+    >
+      {day.toLocaleDateString("en-US", { day: "numeric" })}
+      {availableUsers.length > 0 && (
+        <TooltipContent className="opacity-0 group-hover:opacity-100 whitespace-pre-line text-left">
+          {availableUsers.map((userId) => names[userId]).join("\n")}
+        </TooltipContent>
+      )}
+    </button>
   );
 }
 
@@ -301,13 +307,16 @@ function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   const handleCopy = () => {
+    if (!navigator.clipboard) {
+      alert("Clipboard not supported");
+    }
     navigator.clipboard.writeText(eventUrl);
     setShowTooltip(true);
     setTimeout(() => setShowTooltip(false), 2000);
   };
 
   return (
-    <label className="mt-4 relative">
+    <label className="mt-4 relative group cursor-copy" onClick={handleCopy}>
       <span className="block">Event URL</span>
 
       {eventId ? (
@@ -319,16 +328,14 @@ function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
             className="block w-full p-2 bg-neutral rounded pr-10 [direction:rtl]"
           />
           <button
-            className="absolute right-2 bottom-2 hover:bg-neutral-200 p-2 rounded-md active:bg-black active:text-white"
+            className="absolute right-2 bottom-2 hover:bg-neutral-200 p-2 rounded-md active:bg-black active:text-white group-hover:bg-neutral-100"
             title="Copy to clipboard"
             type="button"
             onClick={handleCopy}
           >
             <CopyIcon />
             {showTooltip && (
-              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-black text-white text-xs py-1 px-2 rounded whitespace-nowrap">
-                Copied to clipboard!
-              </span>
+              <TooltipContent>Copied to clipboard!</TooltipContent>
             )}
           </button>
         </>
@@ -337,4 +344,42 @@ function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
       )}
     </label>
   );
+}
+
+function moveFocusWithArrowKeys(
+  e: React.KeyboardEvent<HTMLButtonElement>,
+  onClick: () => void
+) {
+  const grid = e.currentTarget.parentElement!.parentElement!;
+
+  const allButtons = grid.querySelectorAll("button");
+  let index = Array.from(allButtons).indexOf(
+    e.currentTarget as HTMLButtonElement
+  );
+
+  // move focus to next button with arrow keys
+  switch (e.key) {
+    case "ArrowRight":
+      index++;
+      break;
+    case "ArrowLeft":
+      index--;
+      break;
+    case "ArrowDown":
+      index += 7;
+      break;
+    case "ArrowUp":
+      index -= 7;
+      break;
+
+    case " ":
+    case "Enter":
+      onClick();
+      break;
+  }
+
+  const nextFocused = allButtons[index % allButtons.length];
+  if (nextFocused) {
+    nextFocused.focus();
+  }
 }
