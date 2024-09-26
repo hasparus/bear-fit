@@ -1,8 +1,9 @@
 import type { Doc } from "yjs";
+
+import { useY } from "react-yjs";
 import * as v from "valibot";
 
 import { CalendarEvent } from "./schemas";
-import { useY } from "react-yjs";
 import { useYDoc } from "./useYDoc";
 
 export const getEventMap = (doc: Doc) => {
@@ -31,8 +32,8 @@ export function useCalendarEvent() {
 
 export function yDocToJson(doc: Doc) {
   return {
+    availability: doc.getMap("availability").toJSON(),
     event: doc.getMap("event").toJSON(),
     names: doc.getMap("names").toJSON(),
-    availability: doc.getMap("availability").toJSON(),
   };
 }

@@ -1,6 +1,6 @@
 export function Loading() {
   return (
-    <div className="flex mx-auto justify-center items-center h-full">
+    <div className="mx-auto flex h-full items-center justify-center">
       <span className="flex items-center">Loading...</span>
     </div>
   );

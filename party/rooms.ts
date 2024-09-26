@@ -1,8 +1,6 @@
 import type * as Party from "partykit/server";
 
-export interface Rooms {
-  [key: string]: number;
-}
+export type Rooms = Record<string, number>;
 export const SINGLETON_ROOM_ID = "index";
 
 export default class OccupancyServer implements Party.Server {
@@ -14,7 +12,7 @@ export default class OccupancyServer implements Party.Server {
   }
 
   onConnect(connection: Party.Connection) {
-    connection.send(JSON.stringify({ type: "rooms", rooms: this.rooms }));
+    connection.send(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
   }
 
   async onRequest(req: Party.Request) {
@@ -25,9 +23,9 @@ export default class OccupancyServer implements Party.Server {
     }
 
     if (req.method === "POST") {
-      const { room, count }: { room: string; count: number } = await req.json();
+      const { count, room }: { count: number; room: string } = await req.json();
       this.rooms[room] = count;
-      this.room.broadcast(JSON.stringify({ type: "rooms", rooms: this.rooms }));
+      this.room.broadcast(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
       return Response.json({ ok: true });
     }
 

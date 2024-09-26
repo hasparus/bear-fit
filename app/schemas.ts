@@ -8,24 +8,24 @@ export const IsoDate = (date: Date): IsoDate =>
   date.toISOString().split("T")[0] as IsoDate;
 
 export const CalendarEvent = v.object({
+  endDate: isoDate(),
   id: v.string(),
   name: v.string(),
   startDate: isoDate(),
-  endDate: isoDate(),
 });
 
 export type CalendarEvent = v.InferOutput<typeof CalendarEvent>;
 
 export const AvailabilityDelta = v.object({
-  userId: v.string(),
-  name: v.optional(v.string()),
   add: v.optional(v.array(v.string())),
+  name: v.optional(v.string()),
   remove: v.optional(v.array(v.string())),
+  userId: v.string(),
 });
 
 export type AvailabilityDelta = v.InferOutput<typeof AvailabilityDelta>;
 
-export type UserId = string & { __brand: "UserId" };
+export type UserId = { __brand: "UserId" } & string;
 
 const AVAILABILITY_KEY_SEPARATOR = "〷";
 export type AvailabilityKey =
@@ -39,7 +39,7 @@ export const AvailabilityKey = (
 
 AvailabilityKey.split = (key: AvailabilityKey) => {
   const [userId, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
-  return { userId: userId as UserId, date: date as IsoDate };
+  return { date: date as IsoDate, userId: userId as UserId };
 };
 
 AvailabilityKey.parse = (key: string): AvailabilityKey => {
@@ -55,8 +55,8 @@ AvailabilityKey.parse = (key: string): AvailabilityKey => {
 AvailabilityKey.parseToObject = (
   key: string
 ): {
-  userId: UserId;
   date: IsoDate;
+  userId: UserId;
 } => {
   const [userId, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
 
@@ -64,7 +64,7 @@ AvailabilityKey.parseToObject = (
     throw new Error(`Invalid AvailabilityKey with IsoDate: ${date}`);
   }
 
-  return { userId: userId as UserId, date: date as IsoDate };
+  return { date: date as IsoDate, userId: userId as UserId };
 };
 
 export type AvailabilitySet = Record<AvailabilityKey, true>;

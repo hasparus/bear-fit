@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import { nanoid } from "nanoid";
+import React, { useEffect, useState } from "react";
+import { useY } from "react-yjs";
 
 import {
-  IsoDate,
   type AvailabilitySet,
   type CalendarEvent,
+  IsoDate,
   type UserId,
 } from "../schemas";
-import { CopyIcon } from "./CopyIcon";
-import { useY } from "react-yjs";
-import { useYDoc } from "../useYDoc";
-import { nanoid } from "nanoid";
-import { Container } from "./Container";
 import { AvailabilityKey } from "../schemas";
-import { cn } from "./cn";
 import { getEventMap } from "../shared-data";
+import { useYDoc } from "../useYDoc";
+import { cn } from "./cn";
+import { Container } from "./Container";
+import { CopyIcon } from "./CopyIcon";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
@@ -70,7 +70,7 @@ export function EventDetails() {
 
   let currentUserPickedDatesCount = 0;
 
-  let allUsers = new Set<string>();
+  const allUsers = new Set<string>();
   for (const users of Object.keys(availability)) {
     const user = AvailabilityKey.parseToObject(users).userId;
     allUsers.add(user);
@@ -105,7 +105,7 @@ export function EventDetails() {
     setUserName(names[userId]);
   }
 
-  const [dragMode, setDragMode] = useState<"none" | "clearing" | "painting">(
+  const [dragMode, setDragMode] = useState<"clearing" | "none" | "painting">(
     "none"
   );
   const [lastToggled, setLastToggled] = useState<string | null>(null);
@@ -146,11 +146,11 @@ export function EventDetails() {
   return (
     <Container>
       <p className="block font-mono text-sm">Calendar</p>
-      <h1 className="text-2xl mb-4">
-        {event.name || <Skeleton className="w-ful h-[32px]" />}
+      <h1 className="mb-4 text-2xl">
+        {event.name || <Skeleton className="h-[32px]" />}
       </h1>
       <p className="block font-mono text-sm">Event dates</p>
-      <p className="mb-4" aria-busy={!event.startDate}>
+      <p aria-busy={!event.startDate} className="mb-4">
         {event.startDate && event.endDate ? (
           <>
             <time dateTime={event.startDate}>
@@ -166,13 +166,12 @@ export function EventDetails() {
         )}
       </p>
       <div className="mb-4">
-        <label htmlFor="name" className="block">
+        <label className="block" htmlFor="name">
           Your name
         </label>
         <input
-          type="text"
+          className="w-full border p-2"
           id="name"
-          value={userName || ""}
           onChange={(e) => {
             if (!userId) {
               throw new Error("user id is missing");
@@ -185,7 +184,8 @@ export function EventDetails() {
               localStorage.setItem("userName", value);
             });
           }}
-          className="border p-2 w-full"
+          type="text"
+          value={userName || ""}
         />
       </div>
       <div className="mb-4 font-mono text-sm text-neutral-500">
@@ -205,7 +205,7 @@ export function EventDetails() {
           <span>⚠️ You haven't picked any dates yet</span>
         )}
       </div>
-      <div role="grid" className="mt-2 mb-6 min-h-[72px]">
+      <div className="mb-6 mt-2 min-h-[72px]" role="grid">
         {event.startDate &&
           Object.entries(groupedDays).map(([monthKey, monthDays]) => (
             <React.Fragment key={monthKey}>
@@ -222,17 +222,11 @@ export function EventDetails() {
 
                   return (
                     <AvailabilityGridCell
-                      key={`${day}-${i}`}
                       availableUsers={availableUsers}
-                      totalUsers={totalUsers}
                       currentUserAvailable={currentUserAvailable}
-                      tabIndex={i === 0 ? 0 : -1}
                       day={day}
+                      key={`${day}-${i}`}
                       names={names}
-                      onPointerDown={() =>
-                        handlePointerDown(dateStr, !!currentUserAvailable)
-                      }
-                      onPointerEnter={() => handlePointerEnter(dateStr)}
                       onKeyDown={(event) =>
                         moveFocusWithArrowKeys(event, () =>
                           setAvailability(
@@ -242,6 +236,12 @@ export function EventDetails() {
                           )
                         )
                       }
+                      onPointerDown={() =>
+                        handlePointerDown(dateStr, !!currentUserAvailable)
+                      }
+                      onPointerEnter={() => handlePointerEnter(dateStr)}
+                      tabIndex={i === 0 ? 0 : -1}
+                      totalUsers={totalUsers}
                     />
                   );
                 })}
@@ -255,20 +255,20 @@ export function EventDetails() {
 }
 
 function AvailabilityGridCell({
-  day,
-  currentUserAvailable,
   availableUsers,
-  totalUsers,
+  currentUserAvailable,
+  day,
   names,
+  totalUsers,
   ...rest
 }: {
-  day: Date;
-  currentUserAvailable: boolean;
   availableUsers: UserId[];
-  totalUsers: number;
+  currentUserAvailable: boolean;
+  day: Date;
   names: Record<UserId, string>;
+  totalUsers: number;
 } & React.HTMLAttributes<HTMLButtonElement>) {
-  let fill = availableUsers.length / totalUsers;
+  const fill = availableUsers.length / totalUsers;
   return (
     <button
       className={cn(
@@ -285,7 +285,7 @@ function AvailabilityGridCell({
     >
       {day.toLocaleDateString("en-US", { day: "numeric" })}
       {availableUsers.length > 0 && (
-        <TooltipContent className="opacity-0 group-hover:opacity-100 whitespace-pre-line text-left">
+        <TooltipContent className="whitespace-pre-line text-left opacity-0 group-hover:opacity-100">
           {availableUsers.map((userId) => names[userId]).join("\n")}
         </TooltipContent>
       )}
@@ -316,22 +316,22 @@ function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
   };
 
   return (
-    <label className="mt-4 relative group cursor-copy" onClick={handleCopy}>
+    <label className="group relative mt-4 cursor-copy" onClick={handleCopy}>
       <span className="block">Event URL</span>
 
       {eventId ? (
         <>
           <input
+            className="block w-full rounded p-2 pr-10 [direction:rtl]"
             id="eventUrl"
             readOnly
             value={eventUrl}
-            className="block w-full p-2 bg-neutral rounded pr-10 [direction:rtl]"
           />
           <button
-            className="absolute right-2 bottom-2 hover:bg-neutral-200 p-2 rounded-md active:bg-black active:text-white group-hover:bg-neutral-100"
+            className="absolute bottom-2 right-2 rounded-md p-2 hover:bg-neutral-200 active:bg-black active:text-white group-hover:bg-neutral-100"
+            onClick={handleCopy}
             title="Copy to clipboard"
             type="button"
-            onClick={handleCopy}
           >
             <CopyIcon />
             {showTooltip && (

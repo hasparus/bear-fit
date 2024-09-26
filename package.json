@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "partykit dev --live",
-    "deploy": "sh scripts/deploy.sh",
-    "typecheck": "tsc --noEmit"
+    "release": "sh scripts/deploy.sh",
+    "lint": "eslint app party",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests yet\""
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
@@ -27,11 +29,13 @@
     "yjs": "^13.6.18"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.1.1",
     "@eslint/js": "^9.11.1",
     "@hasparus/eslint-plugin-tailwindcss": "^3.17.5",
     "@types/eslint__js": "^8.42.3",
     "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
+    "eslint-plugin-perfectionist": "^3.7.0",
     "partykit": "^0.0.110",
     "typescript": "^5.6.2",
     "typescript-eslint": "^8.7.0"

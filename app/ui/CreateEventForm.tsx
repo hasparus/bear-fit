@@ -1,5 +1,6 @@
-import { DayPicker, type DateRange } from "react-day-picker";
 import { nanoid } from "nanoid";
+import { useState } from "react";
+import { type DateRange, DayPicker } from "react-day-picker";
 import {
   adjectives,
   animals,
@@ -8,10 +9,8 @@ import {
 } from "unique-names-generator";
 
 import { CalendarEvent, IsoDate } from "../schemas";
-import { useState } from "react";
-
-import "./react-day-picker.css";
 import { Container } from "./Container";
+import "./react-day-picker.css";
 
 export function CreateEventForm({
   onSubmit,
@@ -26,31 +25,6 @@ export function CreateEventForm({
   return (
     <Container>
       <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          const eventName = event.currentTarget.elements.namedItem(
-            "eventName"
-          ) as HTMLInputElement;
-
-          const { from, to } = dateRange;
-          if (!from || !to) {
-            throw new Error("full date range is required");
-          }
-
-          onSubmit({
-            id: nanoid(),
-            name:
-              eventName.value ||
-              uniqueNamesGenerator({
-                dictionaries: [adjectives, animals, colors],
-                separator: " ",
-                style: "capital",
-                length: 3,
-              }),
-            startDate: IsoDate(from),
-            endDate: IsoDate(to),
-          });
-        }}
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
             const parent =
@@ -77,42 +51,67 @@ export function CreateEventForm({
             }
           }
         }}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const eventName = event.currentTarget.elements.namedItem(
+            "eventName"
+          ) as HTMLInputElement;
+
+          const { from, to } = dateRange;
+          if (!from || !to) {
+            throw new Error("full date range is required");
+          }
+
+          onSubmit({
+            endDate: IsoDate(to),
+            id: nanoid(),
+            name:
+              eventName.value ||
+              uniqueNamesGenerator({
+                dictionaries: [adjectives, animals, colors],
+                length: 3,
+                separator: " ",
+                style: "capital",
+              }),
+            startDate: IsoDate(from),
+          });
+        }}
       >
-        <h1 className="text-2xl font-bold mb-4">Create a Calendar</h1>
+        <h1 className="mb-4 text-2xl font-bold">Create a Calendar</h1>
         <div className="mb-4">
-          <label htmlFor="eventName" className="block mb-2">
+          <label className="mb-2 block" htmlFor="eventName">
             <span>Name your event</span>
             <small className="block text-neutral-500">
               or leave blank to generate a random name
             </small>
           </label>
-          <input type="text" id="eventName" className="border p-2 w-full" />
+          <input className="w-full border p-2" id="eventName" type="text" />
         </div>
         <div className="mb-4">
-          <label htmlFor="calendar" className="block mb-2">
+          <label className="mb-2 block" htmlFor="calendar">
             <span>Choose a date range</span>
             <small className="block text-neutral-500">
               what times should the guests consider?
             </small>
           </label>
           <DayPicker
+            disabled={{ before: new Date() }}
             id="calendar"
             mode="range"
-            selected={dateRange}
             onSelect={(range) =>
               setDateRange(range || { from: undefined, to: undefined })
             }
-            disabled={{ before: new Date() }}
+            selected={dateRange}
           />
         </div>
         <button
-          type="submit"
-          // eslint-disable-next-line @hasparus/tailwindcss/no-custom-classname
+          // eslint-disable-next-line tailwindcss/no-custom-classname
           className="btn btn-default w-full hover:bg-neutral-100 "
-          style={{ borderWidth: "0.5em" }}
           disabled={
             !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to
           }
+          style={{ borderWidth: "0.5em" }}
+          type="submit"
         >
           Create Event
         </button>

@@ -1,25 +1,26 @@
 import type * as Party from "partykit/server";
-import { onConnect, type YPartyKitOptions } from "y-partykit";
 import type { Doc } from "yjs";
-import * as v from "valibot";
 
-import { SINGLETON_ROOM_ID } from "./rooms";
+import * as v from "valibot";
+import { onConnect, type YPartyKitOptions } from "y-partykit";
+
 import { CalendarEvent } from "../app/schemas";
 import {
   hasCalendarEvent,
   initializeEventMap,
   yDocToJson,
 } from "../app/shared-data";
+import { SINGLETON_ROOM_ID } from "./rooms";
 
 const VERBOSE = process.env.NODE_ENV === "development";
 
 export default class EditorServer implements Party.Server {
+  doc: Doc | null = null;
+
+  event: CalendarEvent | null = null;
   yjsOptions: YPartyKitOptions = {
     persist: { mode: "history" },
   };
-
-  event: CalendarEvent | null = null;
-  doc: Doc | null = null;
 
   constructor(public room: Party.Room) {}
 
@@ -29,20 +30,6 @@ export default class EditorServer implements Party.Server {
       callback: { handler: (doc) => this.handleYDocChange(doc) },
     };
     return opts;
-  }
-
-  async onConnect(conn: Party.Connection) {
-    await this.updateCount();
-
-    if (VERBOSE) {
-      console.log("↠ onConnect", this.event, this.doc && yDocToJson(this.doc));
-    }
-
-    return onConnect(conn, this.room, this.getOpts());
-  }
-
-  async onClose(_: Party.Connection) {
-    await this.updateCount();
   }
 
   handleYDocChange(doc: Doc) {
@@ -56,6 +43,20 @@ export default class EditorServer implements Party.Server {
         initializeEventMap(doc, this.event);
       }
     }
+  }
+
+  async onClose(_: Party.Connection) {
+    await this.updateCount();
+  }
+
+  async onConnect(conn: Party.Connection) {
+    await this.updateCount();
+
+    if (VERBOSE) {
+      console.log("↠ onConnect", this.event, this.doc && yDocToJson(this.doc));
+    }
+
+    return onConnect(conn, this.room, this.getOpts());
   }
 
   async onRequest(req: Party.Request) {
@@ -95,9 +96,9 @@ export default class EditorServer implements Party.Server {
     const count = [...this.room.getConnections()].length;
     // Send the count to the 'rooms' party using HTTP POST
     await this.room.context.parties.rooms.get(SINGLETON_ROOM_ID).fetch({
-      method: "POST",
+      body: JSON.stringify({ count, room: this.room.id }),
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ room: this.room.id, count }),
+      method: "POST",
     });
   }
 }

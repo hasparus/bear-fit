@@ -1,22 +1,18 @@
 // @ts-check
 
-import eslint from "@eslint/js";
 import { fixupPluginRules } from "@eslint/compat";
-import tseslint from "typescript-eslint";
+import eslint from "@eslint/js";
 import tailwindPlugin from "@hasparus/eslint-plugin-tailwindcss";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
+  ...tailwindPlugin.configs["flat/recommended"],
   {
-    plugins: {
-      "@hasparus/eslint-plugin-tailwindcss": fixupPluginRules(tailwindPlugin),
-    },
-  },
-  {
-    extends: perfectionistPlugin.configs["recommended-natural"],
+    extends: [perfectionistPlugin.configs["recommended-natural"]],
     rules: {
       "perfectionist/sort-classes": [
-        "error",
+        "warn",
         {
           order: "asc",
           partitionByComment: true,
@@ -25,7 +21,7 @@ export default tseslint.config(
       ],
       "perfectionist/sort-enums": "off",
       "perfectionist/sort-objects": [
-        "error",
+        "warn",
         {
           order: "asc",
           partitionByComment: true,
@@ -33,10 +29,10 @@ export default tseslint.config(
         },
       ],
       "perfectionist/sort-union-types": [
-        "error",
+        "warn",
         {
-          order: "asc",
           groups: ["unknown", "keyword", "nullish"],
+          order: "asc",
           type: "natural",
         },
       ],
@@ -44,5 +40,20 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.strict,
-  ...tseslint.configs.stylistic
+  ...tseslint.configs.stylistic,
+  {
+    rules: {
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+    },
+  }
 );

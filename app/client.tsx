@@ -1,19 +1,19 @@
 import type {} from "react/canary";
-import useYProvider from "y-partykit/react";
+
 import { Suspense, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
+import useYProvider from "y-partykit/react";
+import { Doc } from "yjs";
 
+import type { CalendarEvent } from "./schemas";
+
+import { initializeEventMap, yDocToJson } from "./shared-data";
+import "./styles.css";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { EventDetails } from "./ui/EventDetails";
-
-import "./styles.css";
-import { YDocContext } from "./useYDoc";
-import { Doc } from "yjs";
-import { initializeEventMap, yDocToJson } from "./shared-data";
-import { useSearchParams } from "./useSearchParams";
-import type { CalendarEvent } from "./schemas";
-import { useY } from "react-yjs";
 import { Loading } from "./ui/Loading";
+import { useSearchParams } from "./useSearchParams";
+import { YDocContext } from "./useYDoc";
 
 function App() {
   const params = useSearchParams();
@@ -25,13 +25,13 @@ function App() {
   }
 
   const yProvider = useYProvider({
-    room: eventId || "empty",
     doc: yDoc.current,
     host: window.location.host,
     options: {
       connect: false,
       protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",
     },
+    room: eventId || "empty",
   });
 
   useEffect(() => {
@@ -78,8 +78,8 @@ async function postEvent(calendarEvent: CalendarEvent): Promise<unknown> {
   const res = await fetch(
     `${window.location.protocol}//${window.location.host}/parties/main/${calendarEvent.id}`,
     {
-      method: "POST",
       body: JSON.stringify(calendarEvent),
+      method: "POST",
     }
   );
 

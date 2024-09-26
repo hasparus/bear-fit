@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import { createContext, useContext } from "react";
 import { Doc } from "yjs";
 
 export const YDocContext = createContext<Doc | null>(null);
