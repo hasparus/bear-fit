@@ -1,0 +1,64 @@
+name: ci
+on:
+  push:
+jobs:
+  build-and-check:
+    permissions:
+      contents: read
+      deployments: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Run linter
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Deploy
+        run: pnpm release
+        env:
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          PARTYKIT_LOGIN: hasparus
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+      - name: Create GitHub Preview Deployment
+        if: github.ref_name != 'main'
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: "${{ github.token }}"
+          # env.DEPLOYMENT_URL is set by ./scripts/deploy.sh
+          environment-url: https://${{ env.DEPLOYMENT_URL }}
+          environment: Preview
+          production-environment: false
+          initial-status: success
+
+      - name: Create GitHub Production Deployment
+        if: github.ref_name == 'main'
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: "${{ github.token }}"
+          environment-url: https://${{ env.DEPLOYMENT_URL }}
+          environment: Production
+          production-environment: true
+          initial-status: success

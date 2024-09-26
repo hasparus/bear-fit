@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "partykit dev --live",
-    "deploy": "partykit deploy",
+    "deploy": "sh scripts/deploy.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

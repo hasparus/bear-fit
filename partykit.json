@@ -12,5 +12,8 @@
       "entry": "app/client.tsx",
       "esbuildPlugins": ["./esbuild-postcss-plugin.cjs"]
     }
+  },
+  "define": {
+    
   }
 }
