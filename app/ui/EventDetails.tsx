@@ -216,8 +216,8 @@ export function EventDetails() {
                       key={dateStr}
                       tabIndex={i === 0 ? 0 : -1}
                       className={cn(
-                        "flex items-center justify-center rounded-md ease-in-out size-10 select-none",
-                        currentUserAvailable && "border-neutral-200 border-2"
+                        "flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 hover:border-2",
+                        currentUserAvailable && "border-neutral-200 border-4"
                       )}
                       style={{
                         backgroundColor: `hsl(from var(--accent) h s l / ${
