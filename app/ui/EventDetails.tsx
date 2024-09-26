@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   IsoDate,
@@ -13,6 +13,8 @@ import { nanoid } from "nanoid";
 import { Container } from "./Container";
 import { AvailabilityKey } from "../schemas";
 import { cn } from "./cn";
+import { getEventMap } from "../shared-data";
+import { Skeleton } from "./Skeleton";
 
 let userId = window.localStorage.getItem("userId") as UserId | null;
 if (!userId) {
@@ -20,8 +22,11 @@ if (!userId) {
   window.localStorage.setItem("userId", userId);
 }
 
-export function EventDetails({ event }: { event: CalendarEvent }) {
+export function EventDetails() {
   const yDoc = useYDoc();
+
+  const eventMap = getEventMap(yDoc);
+  const event = useY(eventMap) as Partial<CalendarEvent>;
 
   const namesMap = yDoc.getMap("names");
   const names = useY(namesMap) as Record<UserId, string>;
@@ -42,8 +47,8 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
   };
 
   const groupedDays = eachDayOfInterval(
-    new Date(event.startDate),
-    new Date(event.endDate)
+    event.startDate ? new Date(event.startDate) : new Date(),
+    event.endDate ? new Date(event.endDate) : new Date()
   ).reduce((acc, day) => {
     const monthKey = day.getMonth();
     if (!acc[monthKey]) {
@@ -132,15 +137,25 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
   return (
     <Container>
       <p className="block font-mono text-sm">Calendar</p>
-      <h1 className="text-2xl mb-4">{event.name}</h1>
+      <h1 className="text-2xl mb-4">
+        {event.name || <Skeleton className="w-ful h-[64px]" />}
+      </h1>
       <p className="block font-mono text-sm">Event dates</p>
-      <p className="mb-4">
+      <p className="mb-4" aria-busy={!event.startDate}>
         <time dateTime={event.startDate}>
-          {new Date(event.startDate).toLocaleDateString()}
+          {event.startDate ? (
+            new Date(event.startDate).toLocaleDateString()
+          ) : (
+            <Skeleton className="w-[93.5px]" />
+          )}
         </time>
         {" - "}
         <time dateTime={event.endDate}>
-          {new Date(event.endDate).toLocaleDateString()}
+          {event.endDate ? (
+            new Date(event.endDate).toLocaleDateString()
+          ) : (
+            <Skeleton className="w-[93.5px]" />
+          )}
         </time>
       </p>
       <div className="mb-4">
@@ -264,7 +279,7 @@ export function EventDetails({ event }: { event: CalendarEvent }) {
           </React.Fragment>
         ))}
       </div>
-      <CopyEventUrl eventId={event.id} />
+      <CopyEventUrl eventId={event.id || ""} />
     </Container>
   );
 }

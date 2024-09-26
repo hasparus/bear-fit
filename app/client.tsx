@@ -1,84 +1,91 @@
 import type {} from "react/canary";
 import useYProvider from "y-partykit/react";
-import { Suspense, useState, useRef, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { useY } from "react-yjs";
 
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { EventDetails } from "./ui/EventDetails";
-import { CalendarEvent } from "./schemas";
 
 import "./styles.css";
 import { YDocContext } from "./useYDoc";
 import { Doc } from "yjs";
+import { initializeEventMap, yDocToJson } from "./shared-data";
+import { useSearchParams } from "./useSearchParams";
+import type { CalendarEvent } from "./schemas";
+import { useY } from "react-yjs";
+import { Loading } from "./ui/Loading";
 
 function App() {
-  const [eventId, setEventId] = useState(
-    new URLSearchParams(window.location.search).get("id")
-  );
+  const params = useSearchParams();
+  const eventId = params.get("id");
 
-  const [createdEvent, setCreatedEvent] = useState<CalendarEvent | null>(null);
-
-  return (
-    <>
-      {eventId ? (
-        <Suspense fallback={<div>Loading...</div>}>
-          <Details eventId={eventId} event={createdEvent} />
-        </Suspense>
-      ) : (
-        <CreateEventForm
-          createEvent={(calendarEvent) => {
-            setEventId(calendarEvent.id);
-            setCreatedEvent(calendarEvent);
-            window.history.pushState({}, "", `?id=${calendarEvent.id}`);
-
-            fetch(`/api/events/${calendarEvent.id}`, {
-              method: "POST",
-              body: JSON.stringify(calendarEvent),
-            });
-          }}
-        />
-      )}
-    </>
-  );
-}
-
-function Details({
-  event: initialEvent,
-  eventId,
-}: {
-  event: CalendarEvent | null;
-  eventId: string;
-}) {
   const yDoc = useRef<Doc>();
   if (!yDoc.current) {
     yDoc.current = new Doc();
   }
 
-  const _yProvider = useYProvider({
-    room: eventId,
+  const yProvider = useYProvider({
+    room: eventId || "empty",
     doc: yDoc.current,
+    host: window.location.host,
+    options: {
+      connect: false,
+      protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",
+    },
   });
 
-  const eventMap = yDoc.current.getMap("event");
-
   useEffect(() => {
-    if (initialEvent && !eventMap.get("name")) {
-      eventMap.set("id", initialEvent.id);
-      eventMap.set("name", initialEvent.name);
-      eventMap.set("startDate", initialEvent.startDate);
-      eventMap.set("endDate", initialEvent.endDate);
+    console.log(
+      "should connect",
+      eventId && !yProvider.wsconnected && !yProvider.wsconnecting
+    );
+    if (eventId && !yProvider.wsconnected && !yProvider.wsconnecting) {
+      yProvider.connect();
+      yProvider.on("synced", () => {
+        console.dir(yDocToJson(yDoc.current!), { depth: 9 });
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialEvent?.id]);
-
-  const event = useY(eventMap) as CalendarEvent;
+  }, [eventId]);
 
   return (
     <YDocContext.Provider value={yDoc.current}>
-      <EventDetails event={initialEvent || event} />
+      {eventId ? (
+        <Suspense fallback={<Loading />}>
+          <EventDetails />
+        </Suspense>
+      ) : (
+        <CreateEventForm
+          onSubmit={(calendarEvent) => {
+            initializeEventMap(yDoc.current!, calendarEvent);
+
+            postEvent(calendarEvent)
+              .catch((error) => {
+                console.error("creating event failed", error);
+              })
+              .then(() => {
+                params.set("id", calendarEvent.id);
+              });
+
+            yProvider.roomname = calendarEvent.id;
+          }}
+        />
+      )}
     </YDocContext.Provider>
   );
 }
 
 createRoot(document.getElementById("app")!).render(<App />);
+
+async function postEvent(calendarEvent: CalendarEvent): Promise<unknown> {
+  const res = await fetch(
+    `${window.location.protocol}//${window.location.host}/parties/main/${calendarEvent.id}`,
+    {
+      method: "POST",
+      body: JSON.stringify(calendarEvent),
+    }
+  );
+
+  const json = await res.json();
+
+  return json;
+}

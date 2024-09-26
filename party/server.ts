@@ -1,10 +1,26 @@
 import type * as Party from "partykit/server";
 import { onConnect, type YPartyKitOptions } from "y-partykit";
 import type { Doc } from "yjs";
+import * as v from "valibot";
+
 import { SINGLETON_ROOM_ID } from "./rooms";
+import { CalendarEvent } from "../app/schemas";
+import {
+  hasCalendarEvent,
+  initializeEventMap,
+  yDocToJson,
+} from "../app/shared-data";
+
+const VERBOSE = true;
 
 export default class EditorServer implements Party.Server {
-  yjsOptions: YPartyKitOptions = {};
+  yjsOptions: YPartyKitOptions = {
+    persist: { mode: "snapshot" },
+  };
+
+  event: CalendarEvent | null = null;
+  doc: Doc | null = null;
+
   constructor(public room: Party.Room) {}
 
   getOpts() {
@@ -24,10 +40,47 @@ export default class EditorServer implements Party.Server {
     await this.updateCount();
   }
 
-  handleYDocChange(_: Doc) {
-    //console.log("ydoc changed");
-    // called on every ydoc change
-    // no-op
+  handleYDocChange(doc: Doc) {
+    if (VERBOSE) {
+      console.log("↠ handleYDocChange", yDocToJson(doc));
+    }
+
+    if (!this.doc) {
+      this.doc = doc;
+      if (this.event && !hasCalendarEvent(doc)) {
+        initializeEventMap(doc, this.event);
+      }
+    }
+  }
+
+  async onRequest(req: Party.Request) {
+    const url = new URL(req.url);
+
+    if (req.method === "POST" && url.pathname.startsWith("/parties/main/")) {
+      const json = await req.json();
+      console.log("↠ onRequest", json);
+
+      try {
+        const event = v.parse(CalendarEvent, json);
+        if (this.event) {
+          return Response.json(
+            { error: "event already created" },
+            { status: 403 }
+          );
+        } else {
+          this.event = event;
+          if (this.doc) {
+            initializeEventMap(this.doc, event);
+          }
+          return Response.json({ message: "created" });
+        }
+      } catch (error) {
+        console.error(error);
+        return Response.json({ error: "invalid event" }, { status: 400 });
+      }
+    }
+
+    return Response.json({ message: "not found" }, { status: 404 });
   }
 
   async updateCount() {

@@ -14,9 +14,9 @@ import "./react-day-picker.css";
 import { Container } from "./Container";
 
 export function CreateEventForm({
-  createEvent,
+  onSubmit,
 }: {
-  createEvent: (event: CalendarEvent) => void;
+  onSubmit: (event: CalendarEvent) => void;
 }) {
   const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
@@ -27,6 +27,7 @@ export function CreateEventForm({
     <Container>
       <form
         onSubmit={(event) => {
+          event.preventDefault();
           const eventName = event.currentTarget.elements.namedItem(
             "eventName"
           ) as HTMLInputElement;
@@ -36,7 +37,7 @@ export function CreateEventForm({
             throw new Error("full date range is required");
           }
 
-          createEvent({
+          onSubmit({
             id: nanoid(),
             name:
               eventName.value ||
