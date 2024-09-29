@@ -36,12 +36,13 @@ function App() {
       onSubmit={(calendarEvent) => {
         initializeEventMap(yDoc.current!, calendarEvent);
 
-        params.set("id", calendarEvent.id);
-
-        postEvent(calendarEvent).catch((error) => {
-          console.error("creating event failed", error);
-          params.set("id", "");
-        });
+        postEvent(calendarEvent)
+          .catch((error) => {
+            console.error("creating event failed", error);
+          })
+          .then(() => {
+            params.set("id", calendarEvent.id);
+          });
       }}
     />
   );
