@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
 
 import {
@@ -116,10 +116,16 @@ export function EventDetails() {
     setLastToggled(date);
   };
 
-  const handlePointerEnter = (date: IsoDate) => {
+  const lastToggledByDrag = useRef<HTMLButtonElement | null>(null);
+
+  const handlePointerEnter = (
+    date: IsoDate,
+    event: React.PointerEvent<HTMLButtonElement>
+  ) => {
     if (userId && dragMode !== "none" && lastToggled !== date) {
       setAvailability(userId, date, dragMode === "painting");
       setLastToggled(date);
+      lastToggledByDrag.current = event.currentTarget;
     }
   };
 
@@ -127,6 +133,10 @@ export function EventDetails() {
     const handleMouseUp = () => {
       setDragMode("none");
       setLastToggled(null);
+      if (lastToggledByDrag.current) {
+        lastToggledByDrag.current.focus();
+        lastToggledByDrag.current = null;
+      }
     };
 
     document.addEventListener("mouseup", handleMouseUp);
@@ -239,7 +249,9 @@ export function EventDetails() {
                       onPointerDown={() =>
                         handlePointerDown(dateStr, !!currentUserAvailable)
                       }
-                      onPointerEnter={() => handlePointerEnter(dateStr)}
+                      onPointerEnter={(event) =>
+                        handlePointerEnter(dateStr, event)
+                      }
                       tabIndex={i === 0 ? 0 : -1}
                       totalUsers={totalUsers}
                     />

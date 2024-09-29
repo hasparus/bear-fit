@@ -1,5 +1,7 @@
 # bear-fit 🧸🏋️‍♂️
 
+![](./assets/screen-recording.gif)
+
 Finding a time that works for more than 2 adult humans is **unbearable**. I hope this helps.
 
 ## motivation and alternatives
@@ -14,3 +16,8 @@ See https://cal.com/scheduling/feature/collective.
 ## tech stack
 
 [@sakofchit/system.css 💾](https://github.com/sakofchit/system.css), [PartyKit 🎈](https://github.com/partykit/partykit), [Yjs 🤝](https://github.com/yjs/yjs), [React ⚛️](https://github.com/facebook/react), [TypeScript 🛂](https://github.com/microsoft/typescript)
+
+bear-fit uses [genmon's Cursor Party](https://github.com/genmon/interconnected-cursor-party), so you can argue with your friends
+about live as you fill the calendar.
+
+![](assets/chat.png)
