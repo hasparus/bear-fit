@@ -13,4 +13,4 @@ See https://cal.com/scheduling/feature/collective.
 
 ## tech stack
 
-- [@sakofchit/system.css 💾](https://github.com/sakofchit/system.css), [PartyKit 🎈](https://github.com/partykit/partykit), [Yjs 🤝](https://github.com/yjs/yjs), [React ⚛️](https://github.com/facebook/react), [TypeScript 🛂](https://github.com/microsoft/typescript)
+[@sakofchit/system.css 💾](https://github.com/sakofchit/system.css), [PartyKit 🎈](https://github.com/partykit/partykit), [Yjs 🤝](https://github.com/yjs/yjs), [React ⚛️](https://github.com/facebook/react), [TypeScript 🛂](https://github.com/microsoft/typescript)
