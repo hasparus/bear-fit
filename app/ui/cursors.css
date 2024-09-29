@@ -15,7 +15,7 @@
 
 .presence-cursor-cta,
 .presence-cursor-chat {
-  @apply text-white px-2 py-1 rounded text-base min-w-6 max-w-48 shadow-2xl;
+  @apply text-white px-2 py-1 rounded text-base min-w-6 shadow-2xl;
   background-color: var(--fill);
   white-space: nowrap;
   overflow: hidden;

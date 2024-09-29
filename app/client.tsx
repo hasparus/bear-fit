@@ -86,8 +86,8 @@ function YProvider({
   const _yProvider = useYProvider({
     doc: yDoc,
     host: ALWAYS_PROD
-      ? window.location.host
-      : "https://bear-fit.hasparus.partykit.dev",
+      ? "https://bear-fit.hasparus.partykit.dev"
+      : window.location.host,
     options: {
       connect: true,
       protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",
