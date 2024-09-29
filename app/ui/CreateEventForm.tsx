@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import { useState } from "react";
-import { type DateRange, DayPicker } from "react-day-picker";
+import { type DateRange } from "react-day-picker";
+import { DayPicker } from "react-day-picker/utc";
 import {
   adjectives,
   animals,
