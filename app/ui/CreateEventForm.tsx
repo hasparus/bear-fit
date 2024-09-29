@@ -98,7 +98,7 @@ export function CreateEventForm({
           />
         </div>
         <div className="mb-4">
-          <label className="mb-2 block" htmlFor="calendar">
+          <label className="mb-2 block">
             <span>Choose a date range</span>
             <small className="block text-neutral-500">
               what times should the guests consider?
@@ -106,7 +106,6 @@ export function CreateEventForm({
           </label>
           <DayPicker
             disabled={{ before: new Date() }}
-            id="calendar"
             mode="range"
             onSelect={(range) =>
               setDateRange(range || { from: undefined, to: undefined })

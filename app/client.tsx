@@ -16,6 +16,8 @@ import { Loading } from "./ui/Loading";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
 
+const ALWAYS_PROD = false;
+
 function App() {
   const params = useSearchParams();
   const eventId = params.get("id");
@@ -56,13 +58,14 @@ createRoot(document.getElementById("app")!).render(
 );
 
 async function postEvent(calendarEvent: CalendarEvent): Promise<unknown> {
-  const res = await fetch(
-    `${window.location.protocol}//${window.location.host}/parties/main/${calendarEvent.id}`,
-    {
-      body: JSON.stringify(calendarEvent),
-      method: "POST",
-    }
-  );
+  const host = ALWAYS_PROD
+    ? "https://bear-fit.hasparus.partykit.dev"
+    : `${window.location.protocol}//${window.location.host}`;
+
+  const res = await fetch(`${host}/parties/main/${calendarEvent.id}`, {
+    body: JSON.stringify(calendarEvent),
+    method: "POST",
+  });
 
   const json = await res.json();
 
@@ -82,7 +85,9 @@ function YProvider({
   // `useYProvider`, and we don't know the room until we create the event.
   const _yProvider = useYProvider({
     doc: yDoc,
-    host: window.location.host,
+    host: ALWAYS_PROD
+      ? window.location.host
+      : "https://bear-fit.hasparus.partykit.dev",
     options: {
       connect: true,
       protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",

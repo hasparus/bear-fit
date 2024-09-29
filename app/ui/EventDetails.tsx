@@ -155,113 +155,118 @@ export function EventDetails() {
 
   return (
     <Container>
-      <p className="block font-mono text-sm">Calendar</p>
-      <h1 className="mb-4 text-2xl">
-        {event.name || <Skeleton className="h-[32px]" />}
-      </h1>
-      <p className="block font-mono text-sm">Event dates</p>
-      <p aria-busy={!event.startDate} className="mb-4">
-        {event.startDate && event.endDate ? (
-          <>
-            <time dateTime={event.startDate}>
-              {new Date(event.startDate).toLocaleDateString()}
-            </time>
-            {" - "}
-            <time dateTime={event.endDate}>
-              {new Date(event.endDate).toLocaleDateString()}
-            </time>
-          </>
-        ) : (
-          <Skeleton className="w-[206px]" />
-        )}
-      </p>
-      <div className="mb-4">
-        <label className="block" htmlFor="name">
-          Your name
-        </label>
-        <input
-          className="w-full border p-2"
-          id="name"
-          onChange={(e) => {
-            if (!userId) {
-              throw new Error("user id is missing");
-            }
-
-            const value = e.target.value;
-            setUserName(value);
-            namesMap.set(userId, value);
-            setTimeout(() => {
-              localStorage.setItem("userName", value);
-            });
-          }}
-          type="text"
-          value={userName || ""}
-        />
-      </div>
-      <div className="mb-4 font-mono text-sm text-neutral-500">
-        {!event.id ? (
-          <>&nbsp;</>
-        ) : currentUserPickedDatesCount > 0 ? (
-          currentUserPickedDatesCount === availabilityForDates.size &&
-          totalUsers > 1 ? (
-            <span>You've picked the most dates! Wow!</span>
+      <form
+        className="font-[inherit] text-base"
+        onSubmit={(e) => e.preventDefault()}
+      >
+        <p className="block font-mono text-sm">Calendar</p>
+        <h1 className="mb-4 text-2xl">
+          {event.name || <Skeleton className="h-[32px]" />}
+        </h1>
+        <p className="block font-mono text-sm">Event dates</p>
+        <p aria-busy={!event.startDate} className="mb-4">
+          {event.startDate && event.endDate ? (
+            <>
+              <time dateTime={event.startDate}>
+                {new Date(event.startDate).toLocaleDateString()}
+              </time>
+              {" - "}
+              <time dateTime={event.endDate}>
+                {new Date(event.endDate).toLocaleDateString()}
+              </time>
+            </>
           ) : (
-            <span>
-              You've picked {currentUserPickedDatesCount} date
-              {currentUserPickedDatesCount > 1 ? "s" : ""}. Thanks!
-            </span>
-          )
-        ) : (
-          <span>⚠️ You haven't picked any dates yet</span>
-        )}
-      </div>
-      <div className="mb-6 mt-2 min-h-[72px]" role="grid">
-        {event.startDate &&
-          Object.entries(groupedDays).map(([monthKey, monthDays]) => (
-            <React.Fragment key={monthKey}>
-              <div className="my-2">
-                {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {monthDays.map((day, i) => {
-                  const dateStr = IsoDate(day);
-                  const availableUsers =
-                    availabilityForDates.get(dateStr) || [];
-                  const currentUserAvailable =
-                    !!userId && availableUsers.includes(userId);
+            <Skeleton className="w-[206px]" />
+          )}
+        </p>
+        <div className="mb-4">
+          <label className="block" htmlFor="name">
+            Your name
+          </label>
+          <input
+            className="w-full border p-2"
+            id="name"
+            onChange={(e) => {
+              if (!userId) {
+                throw new Error("user id is missing");
+              }
 
-                  return (
-                    <AvailabilityGridCell
-                      availableUsers={availableUsers}
-                      currentUserAvailable={currentUserAvailable}
-                      day={day}
-                      key={`${day}-${i}`}
-                      names={names}
-                      onKeyDown={(event) =>
-                        moveFocusWithArrowKeys(event, () =>
-                          setAvailability(
-                            userId!,
-                            dateStr,
-                            !currentUserAvailable
+              const value = e.target.value;
+              setUserName(value);
+              namesMap.set(userId, value);
+              setTimeout(() => {
+                localStorage.setItem("userName", value);
+              });
+            }}
+            type="text"
+            value={userName || ""}
+          />
+        </div>
+        <div className="mb-4 font-mono text-sm text-neutral-500">
+          {!event.id ? (
+            <>&nbsp;</>
+          ) : currentUserPickedDatesCount > 0 ? (
+            currentUserPickedDatesCount === availabilityForDates.size &&
+            totalUsers > 1 ? (
+              <span>You've picked the most dates! Wow!</span>
+            ) : (
+              <span>
+                You've picked {currentUserPickedDatesCount} date
+                {currentUserPickedDatesCount > 1 ? "s" : ""}. Thanks!
+              </span>
+            )
+          ) : (
+            <span>⚠️ You haven't picked any dates yet</span>
+          )}
+        </div>
+        <div className="mb-6 mt-2 min-h-[72px]" role="grid">
+          {event.startDate &&
+            Object.entries(groupedDays).map(([monthKey, monthDays]) => (
+              <React.Fragment key={monthKey}>
+                <div className="my-2">
+                  {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {monthDays.map((day, i) => {
+                    const dateStr = IsoDate(day);
+                    const availableUsers =
+                      availabilityForDates.get(dateStr) || [];
+                    const currentUserAvailable =
+                      !!userId && availableUsers.includes(userId);
+
+                    return (
+                      <AvailabilityGridCell
+                        availableUsers={availableUsers}
+                        currentUserAvailable={currentUserAvailable}
+                        day={day}
+                        key={`${day}-${i}`}
+                        names={names}
+                        onKeyDown={(event) =>
+                          moveFocusWithArrowKeys(event, () =>
+                            setAvailability(
+                              userId!,
+                              dateStr,
+                              !currentUserAvailable
+                            )
                           )
-                        )
-                      }
-                      onPointerDown={() =>
-                        handlePointerDown(dateStr, !!currentUserAvailable)
-                      }
-                      onPointerEnter={(event) =>
-                        handlePointerEnter(dateStr, event)
-                      }
-                      tabIndex={i === 0 ? 0 : -1}
-                      totalUsers={totalUsers}
-                    />
-                  );
-                })}
-              </div>
-            </React.Fragment>
-          ))}
-      </div>
-      <CopyEventUrl eventId={event.id} />
+                        }
+                        onPointerDown={() =>
+                          handlePointerDown(dateStr, !!currentUserAvailable)
+                        }
+                        onPointerEnter={(event) =>
+                          handlePointerEnter(dateStr, event)
+                        }
+                        tabIndex={i === 0 ? 0 : -1}
+                        totalUsers={totalUsers}
+                      />
+                    );
+                  })}
+                </div>
+              </React.Fragment>
+            ))}
+        </div>
+        <CopyEventUrl eventId={event.id} />
+      </form>
     </Container>
   );
 }
@@ -293,6 +298,7 @@ function AvailabilityGridCell({
           : undefined,
         color: fill > 0.5 ? "white" : "black",
       }}
+      type="button"
       {...rest}
     >
       {day.toLocaleDateString("en-US", { day: "numeric" })}
