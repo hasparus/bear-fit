@@ -5,5 +5,10 @@
     ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
   ],
-
+  "eslint.rules.customizations": [
+    {
+      "rule": "perfectionist/sort-imports",
+      "severity": "off" // autoformat, but don't highlight
+    }
+  ]
 }
