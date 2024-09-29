@@ -13,6 +13,8 @@ else
   partykit deploy --preview $BRANCH_NAME --var APP_VERSION="$APP_VERSION"
 fi
 
-echo "DEPLOYMENT_URL=$HOST" >> $GITHUB_ENV \
-  || echo "$HOST $APP_VERSION deployed successfully!"
+if [ ! -z "$GITHUB_ENV" ]; then
+  echo "DEPLOYMENT_URL=$HOST" >> $GITHUB_ENV
+  echo "$HOST $APP_VERSION deployed successfully!"
+fi
 
