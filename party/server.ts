@@ -46,14 +46,14 @@ export default class EditorServer implements Party.Server {
   }
 
   async onClose(_: Party.Connection) {
-    await this.updateCount();
+    void this.updateCount();
   }
 
   async onConnect(conn: Party.Connection) {
-    await this.updateCount();
+    void this.updateCount();
 
     if (VERBOSE) {
-      console.log("↠ onConnect", this.event, this.doc && yDocToJson(this.doc));
+      console.log("↠ onConnect", this.room.id);
     }
 
     return onConnect(conn, this.room, this.getOpts());
@@ -88,6 +88,13 @@ export default class EditorServer implements Party.Server {
       }
     }
 
+    if (req.method === "GET") {
+      return Response.json({
+        doc: this.doc ? yDocToJson(this.doc) : null,
+        event: this.event,
+      });
+    }
+
     return Response.json({ message: "not found" }, { status: 404 });
   }
 
@@ -95,10 +102,15 @@ export default class EditorServer implements Party.Server {
     // Count the number of live connections
     const count = [...this.room.getConnections()].length;
     // Send the count to the 'rooms' party using HTTP POST
-    await this.room.context.parties.rooms.get(SINGLETON_ROOM_ID).fetch({
-      body: JSON.stringify({ count, room: this.room.id }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
+    await this.room.context.parties.rooms
+      .get(SINGLETON_ROOM_ID)
+      .fetch({
+        body: JSON.stringify({ count, room: this.room.id }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+      .catch((error) => {
+        console.error("updateCount", error);
+      });
   }
 }

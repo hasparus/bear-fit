@@ -1,13 +1,13 @@
 import type {} from "react/canary";
 
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import useYProvider from "y-partykit/react";
 import { Doc } from "yjs";
 
 import type { CalendarEvent } from "./schemas";
 
-import { initializeEventMap, yDocToJson } from "./shared-data";
+import { initializeEventMap } from "./shared-data";
 import "./styles.css";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { EventDetails } from "./ui/EventDetails";
@@ -24,51 +24,26 @@ function App() {
     yDoc.current = new Doc();
   }
 
-  const yProvider = useYProvider({
-    doc: yDoc.current,
-    host: window.location.host,
-    options: {
-      connect: false,
-      protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",
-    },
-    room: eventId || "empty",
-  });
+  return eventId ? (
+    <Suspense fallback={<Loading />}>
+      <YProvider room={eventId} yDoc={yDoc.current}>
+        <EventDetails />
+      </YProvider>
+    </Suspense>
+  ) : (
+    <CreateEventForm
+      onSubmit={(calendarEvent) => {
+        initializeEventMap(yDoc.current!, calendarEvent);
 
-  useEffect(() => {
-    if (eventId && !yProvider.wsconnected && !yProvider.wsconnecting) {
-      yProvider.connect();
-      yProvider.on("synced", () => {
-        console.group("synced");
-        console.dir(yDoc.current && yDocToJson(yDoc.current), { depth: 9 });
-        console.groupEnd();
-      });
-    }
-  }, [eventId]);
-
-  return (
-    <YDocContext.Provider value={yDoc.current}>
-      {eventId ? (
-        <Suspense fallback={<Loading />}>
-          <EventDetails />
-        </Suspense>
-      ) : (
-        <CreateEventForm
-          onSubmit={(calendarEvent) => {
-            initializeEventMap(yDoc.current!, calendarEvent);
-
-            postEvent(calendarEvent)
-              .catch((error) => {
-                console.error("creating event failed", error);
-              })
-              .then(() => {
-                params.set("id", calendarEvent.id);
-              });
-
-            yProvider.roomname = calendarEvent.id;
-          }}
-        />
-      )}
-    </YDocContext.Provider>
+        postEvent(calendarEvent)
+          .catch((error) => {
+            console.error("creating event failed", error);
+          })
+          .then(() => {
+            params.set("id", calendarEvent.id);
+          });
+      }}
+    />
   );
 }
 
@@ -86,4 +61,28 @@ async function postEvent(calendarEvent: CalendarEvent): Promise<unknown> {
   const json = await res.json();
 
   return json;
+}
+
+function YProvider({
+  children,
+  room,
+  yDoc,
+}: {
+  children: React.ReactNode;
+  room: string;
+  yDoc: Doc;
+}) {
+  // This needs to be a separate component, because the `.room` option is immutable in
+  // `useYProvider`, and we don't know the room until we create the event.
+  const _yProvider = useYProvider({
+    doc: yDoc,
+    host: window.location.host,
+    options: {
+      connect: true,
+      protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",
+    },
+    room,
+  });
+
+  return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;
 }
