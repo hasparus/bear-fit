@@ -120,6 +120,9 @@ export function CreateEventForm({
           disabled={
             !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to
           }
+          onClick={(event) => {
+            event.currentTarget.textContent = "Creating...";
+          }}
           style={{ borderWidth: "0.5em" }}
           type="submit"
         >
