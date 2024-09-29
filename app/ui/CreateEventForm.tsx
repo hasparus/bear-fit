@@ -86,7 +86,12 @@ export function CreateEventForm({
               or leave blank to generate a random name
             </small>
           </label>
-          <input className="w-full border p-2" id="eventName" type="text" />
+          <input
+            autoComplete="off"
+            className="w-full border p-2"
+            id="eventName"
+            type="text"
+          />
         </div>
         <div className="mb-4">
           <label className="mb-2 block" htmlFor="calendar">
