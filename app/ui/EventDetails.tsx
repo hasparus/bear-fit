@@ -316,7 +316,10 @@ function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
   };
 
   return (
-    <label className="group relative mt-4 cursor-copy" onClick={handleCopy}>
+    <label
+      className="group relative mt-4 block cursor-copy"
+      onClick={handleCopy}
+    >
       <span className="block">Event URL</span>
 
       {eventId ? (

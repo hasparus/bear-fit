@@ -5,6 +5,7 @@
   pointer-events: none;
   z-index: 9999;
 
+  --fill: color-mix(in hsl, var(--color), black 25%);
   --fill: color-mix(in oklch, var(--color), black 25%);
 }
 
