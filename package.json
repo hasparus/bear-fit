@@ -10,6 +10,7 @@
     "test": "echo \"No tests yet\""
   },
   "dependencies": {
+    "@types/node": "^22.7.4",
     "autoprefixer": "^10.4.20",
     "deasync-promise": "^1.0.1",
     "esbuild-style-plugin": "^1.6.3",

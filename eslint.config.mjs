@@ -1,6 +1,5 @@
 // @ts-check
 
-import { fixupPluginRules } from "@eslint/compat";
 import eslint from "@eslint/js";
 import tailwindPlugin from "@hasparus/eslint-plugin-tailwindcss";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
