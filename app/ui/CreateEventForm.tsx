@@ -16,8 +16,9 @@ import "./react-day-picker.css";
 export function CreateEventForm({
   onSubmit,
 }: {
-  onSubmit: (event: CalendarEvent) => void;
+  onSubmit: (event: CalendarEvent) => Promise<void>;
 }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined,
@@ -63,6 +64,7 @@ export function CreateEventForm({
             throw new Error("full date range is required");
           }
 
+          setIsSubmitting(true);
           onSubmit({
             endDate: IsoDate(to),
             id: nanoid(),
@@ -75,6 +77,8 @@ export function CreateEventForm({
                 style: "capital",
               }),
             startDate: IsoDate(from),
+          }).finally(() => {
+            setIsSubmitting(false);
           });
         }}
       >
@@ -119,7 +123,7 @@ export function CreateEventForm({
           style={{ borderWidth: "0.5em" }}
           type="submit"
         >
-          Create Event
+          {isSubmitting ? "Creating..." : "Create Event"}
         </button>
       </form>
     </Container>

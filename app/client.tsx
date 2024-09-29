@@ -36,7 +36,7 @@ function App() {
       onSubmit={(calendarEvent) => {
         initializeEventMap(yDoc.current!, calendarEvent);
 
-        postEvent(calendarEvent)
+        return postEvent(calendarEvent)
           .catch((error) => {
             console.error("creating event failed", error);
           })
