@@ -5,19 +5,15 @@ export const SINGLETON_ROOM_ID = "index";
 
 export default class OccupancyServer implements Party.Server {
   // Track room occupancy
-  rooms: Rooms;
+  rooms: Rooms = {};
 
-  constructor(public room: Party.Room) {
-    this.rooms = {};
-  }
+  constructor(public room: Party.Room) {}
 
   onConnect(connection: Party.Connection) {
     connection.send(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
   }
 
   async onRequest(req: Party.Request) {
-    console.log("rooms", this.rooms);
-
     if (req.method === "GET") {
       return new Response(
         `Hi! This is party '${this.room.name}' and room '${this.room.id}'!`

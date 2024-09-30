@@ -147,8 +147,18 @@ export function EventDetails() {
     if (event.name) {
       const oldTitle = document.title;
       document.title = `bear-fit: ${event.name}`;
+
+      const metaTitle = document.querySelector("meta[name='title']");
+      const metaTitleName = metaTitle?.getAttribute("content");
+      if (metaTitle) {
+        metaTitle.setAttribute("content", `bear-fit: ${event.name}`);
+      }
+
       return () => {
         document.title = oldTitle;
+        if (metaTitleName && metaTitle) {
+          metaTitle.setAttribute("content", metaTitleName);
+        }
       };
     }
   }, [event.name]);

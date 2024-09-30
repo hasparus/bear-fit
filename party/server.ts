@@ -1,8 +1,8 @@
 import type * as Party from "partykit/server";
-import type { Doc } from "yjs";
 
 import * as v from "valibot";
 import { onConnect, type YPartyKitOptions } from "y-partykit";
+import { Doc } from "yjs";
 
 import { CalendarEvent } from "../app/schemas";
 import {
@@ -18,18 +18,64 @@ export default class EditorServer implements Party.Server {
   doc: Doc | null = null;
 
   event: CalendarEvent | null = null;
+
   yjsOptions: YPartyKitOptions = {
     persist: { mode: "history" },
   };
 
   constructor(public room: Party.Room) {}
 
-  getOpts() {
+  private getOpts() {
     // options must match when calling unstable_getYDoc and onConnect
     const opts: YPartyKitOptions = {
       callback: { handler: (doc) => this.handleYDocChange(doc) },
+      load: async () => {
+        const json = (await this.room.storage.get("doc")) as
+          | ReturnType<typeof yDocToJson>
+          | undefined;
+
+        if (typeof json === "object") {
+          const doc = new Doc();
+          initializeEventMap(doc, json.event as CalendarEvent);
+
+          const availabilityMap = doc.getMap("availability");
+          for (const [key, value] of Object.entries(json.availability)) {
+            availabilityMap.set(key, value);
+          }
+
+          const namesMap = doc.getMap("names");
+          for (const [key, value] of Object.entries(json.names)) {
+            namesMap.set(key, value);
+          }
+
+          return doc;
+        }
+
+        return null;
+      },
     };
     return opts;
+  }
+
+  private async saveDoc(doc: Doc) {
+    const json = yDocToJson(doc);
+    await this.room.storage.put("doc", json);
+  }
+
+  private async updateCount() {
+    // Count the number of live connections
+    const count = [...this.room.getConnections()].length;
+    // Send the count to the 'rooms' party using HTTP POST
+    await this.room.context.parties.rooms
+      .get(SINGLETON_ROOM_ID)
+      .fetch({
+        body: JSON.stringify({ count, room: this.room.id }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+      .catch((error) => {
+        console.error("updateCount", error);
+      });
   }
 
   handleYDocChange(doc: Doc) {
@@ -47,6 +93,9 @@ export default class EditorServer implements Party.Server {
 
   async onClose(_: Party.Connection) {
     void this.updateCount();
+    if (this.doc) {
+      void this.saveDoc(this.doc);
+    }
   }
 
   async onConnect(conn: Party.Connection) {
@@ -96,21 +145,5 @@ export default class EditorServer implements Party.Server {
     }
 
     return Response.json({ message: "not found" }, { status: 404 });
-  }
-
-  async updateCount() {
-    // Count the number of live connections
-    const count = [...this.room.getConnections()].length;
-    // Send the count to the 'rooms' party using HTTP POST
-    await this.room.context.parties.rooms
-      .get(SINGLETON_ROOM_ID)
-      .fetch({
-        body: JSON.stringify({ count, room: this.room.id }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      })
-      .catch((error) => {
-        console.error("updateCount", error);
-      });
   }
 }
