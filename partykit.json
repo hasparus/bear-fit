@@ -8,12 +8,12 @@
   },
   "serve": {
     "path": "public",
+    "singlePageApp": true,
+    "edgeTTL": 120,
+    "browserTTL": 120,
     "build": {
       "entry": "app/client.tsx",
       "esbuildPlugins": ["./esbuild-postcss-plugin.cjs"]
     }
-  },
-  "define": {
-    
   }
 }
