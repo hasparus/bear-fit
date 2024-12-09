@@ -36,6 +36,8 @@ export function EventDetails() {
   const availabilityMap = yDoc.getMap("availability");
   const availability = useY(availabilityMap) as AvailabilitySet;
 
+  const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
+
   const setAvailability = (userId: UserId, date: IsoDate, value: boolean) => {
     const key = AvailabilityKey(userId, date);
 
@@ -225,6 +227,7 @@ export function EventDetails() {
             <UserAvailabilitySummary
               availabilityForUsers={availabilityForUsers}
               names={names}
+              onHover={(userId) => setHoveredUser(userId)}
               userId={userId}
             />
           )}
@@ -249,6 +252,13 @@ export function EventDetails() {
                         availableUsers={availableUsers}
                         currentUserAvailable={currentUserAvailable}
                         day={day}
+                        hoveredUser={
+                          hoveredUser
+                            ? availableUsers.includes(hoveredUser)
+                              ? "available"
+                              : "unavailable"
+                            : "none"
+                        }
                         key={`${day}-${i}`}
                         names={names}
                         onKeyDown={(event) =>
@@ -285,6 +295,7 @@ function AvailabilityGridCell({
   availableUsers,
   currentUserAvailable,
   day,
+  hoveredUser,
   names,
   totalUsers,
   ...rest
@@ -292,6 +303,7 @@ function AvailabilityGridCell({
   availableUsers: UserId[];
   currentUserAvailable: boolean;
   day: Date;
+  hoveredUser: "available" | "none" | "unavailable";
   names: Record<UserId, string>;
   totalUsers: number;
 } & React.HTMLAttributes<HTMLButtonElement>) {
@@ -299,8 +311,13 @@ function AvailabilityGridCell({
   return (
     <button
       className={cn(
-        "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative",
-        currentUserAvailable && "border-neutral-200 border-4"
+        "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition border-transparent",
+        (currentUserAvailable || hoveredUser === "available") &&
+          "border-neutral-200 border-4",
+        currentUserAvailable &&
+          hoveredUser === "available" &&
+          "border-neutral-200 border-[6px]",
+        hoveredUser === "unavailable" && "opacity-60"
       )}
       style={{
         backgroundColor: fill
@@ -418,14 +435,16 @@ function moveFocusWithArrowKeys(
 function UserAvailabilitySummary({
   availabilityForUsers,
   names,
+  onHover,
   userId,
 }: {
   availabilityForUsers: Record<UserId, IsoDate[]>;
   names: Record<UserId, string>;
+  onHover: (userId: UserId | null) => void;
   userId: UserId | null;
 }) {
   return (
-    <dl>
+    <dl onMouseLeave={() => onHover(null)}>
       {unsafeKeys(availabilityForUsers).map((user) => {
         const dates = availabilityForUsers[user];
         return (
@@ -434,6 +453,7 @@ function UserAvailabilitySummary({
             isCurrentUser={user === userId}
             key={user}
             name={names[user as UserId] ?? user}
+            onMouseEnter={() => onHover(user as UserId)}
           />
         );
       })}
@@ -443,23 +463,30 @@ function UserAvailabilitySummary({
           isCurrentUser={true}
           key={userId}
           name={names[userId as UserId] ?? userId}
+          onMouseEnter={() => onHover(userId as UserId)}
         />
       )}
     </dl>
   );
 }
 
+interface UserAvailabilitySummaryItemProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  dates: IsoDate[];
+  isCurrentUser: boolean;
+  name: string;
+}
 function UserAvailabilitySummaryItem({
   dates,
   isCurrentUser,
   name,
-}: {
-  dates: IsoDate[];
-  isCurrentUser: boolean;
-  name: string;
-}) {
+  ...rest
+}: UserAvailabilitySummaryItemProps) {
   return (
-    <div className="flex justify-between gap-2">
+    <div
+      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
+      {...rest}
+    >
       <dt>
         {name}
         {isCurrentUser && " (you)"}
