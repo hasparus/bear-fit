@@ -52,6 +52,9 @@ importers:
       unique-names-generator:
         specifier: ^4.7.1
         version: 4.7.1
+      unsafe-keys:
+        specifier: ^1.0.0
+        version: 1.0.0
       valibot:
         specifier: ^0.42.1
         version: 0.42.1(typescript@5.6.2)
@@ -1399,6 +1402,9 @@ packages:
     resolution: {integrity: sha512-lMx9dX+KRmG8sq6gulYYpKWZc9RlGsgBR6aoO8Qsm3qvkSJ+3rAymr+TnV8EDMrIrwuFJ4kruzMWM/OpYzPoow==}
     engines: {node: '>=8'}
 
+  unsafe-keys@1.0.0:
+    resolution: {integrity: sha512-i81tCNql4+CvwOQDcegiSXZA3LBBW55xvL5T9dJ6/iCBuz0ti+0VPNlicI9FIXRF2mmNevFMr29HiUYv1RUaSA==}
+
   update-browserslist-db@1.1.0:
     resolution: {integrity: sha512-EdRAaAyk2cUE1wOf2DkEhzxqOQvFOoRJFNS6NeyJ01Gp2beMRpBAINjM2iDXE3KCuKhwnvHIQCJm6ThL2Z+HzQ==}
     hasBin: true
@@ -2724,6 +2730,8 @@ snapshots:
       '@fastify/busboy': 2.1.1
 
   unique-names-generator@4.7.1: {}
+
+  unsafe-keys@1.0.0: {}
 
   update-browserslist-db@1.1.0(browserslist@4.23.3):
     dependencies:

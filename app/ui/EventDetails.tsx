@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
+import { unsafeKeys } from "unsafe-keys";
 
 import {
   type AvailabilitySet,
@@ -45,6 +46,15 @@ export function EventDetails() {
     }
   };
 
+  const availabilityForUsers = Object.keys(availability).reduce((acc, key) => {
+    const { date, userId } = AvailabilityKey.parseToObject(key);
+    if (!acc[userId]) {
+      acc[userId] = [];
+    }
+    acc[userId].push(date);
+    return acc;
+  }, {} as Record<UserId, IsoDate[]>);
+
   const groupedDays = eachDayOfInterval(
     event.startDate ? new Date(event.startDate) : new Date(),
     event.endDate ? new Date(event.endDate) : new Date()
@@ -68,16 +78,12 @@ export function EventDetails() {
     availabilityForDates.get(date)!.push(userId);
   }
 
-  let currentUserPickedDatesCount = 0;
-
   const allUsers = new Set<string>();
   for (const users of Object.keys(availability)) {
     const user = AvailabilityKey.parseToObject(users).userId;
     allUsers.add(user);
-    if (user === userId) {
-      currentUserPickedDatesCount++;
-    }
   }
+
   const totalUsers = allUsers.size;
 
   const [userName, setUserName] = useState<string | undefined>(() => {
@@ -215,18 +221,12 @@ export function EventDetails() {
         <div className="mb-4 font-mono text-sm text-neutral-500">
           {!event.id ? (
             <>&nbsp;</>
-          ) : currentUserPickedDatesCount > 0 ? (
-            currentUserPickedDatesCount === availabilityForDates.size &&
-            totalUsers > 1 ? (
-              <span>You've picked the most dates! Wow!</span>
-            ) : (
-              <span>
-                You've picked {currentUserPickedDatesCount} date
-                {currentUserPickedDatesCount > 1 ? "s" : ""}. Thanks!
-              </span>
-            )
           ) : (
-            <span>⚠️ You haven't picked any dates yet</span>
+            <UserAvailabilitySummary
+              availabilityForUsers={availabilityForUsers}
+              names={names}
+              userId={userId}
+            />
           )}
         </div>
         <div className="mb-6 mt-2 min-h-[72px]" role="grid">
@@ -413,4 +413,60 @@ function moveFocusWithArrowKeys(
   if (nextFocused) {
     nextFocused.focus();
   }
+}
+
+function UserAvailabilitySummary({
+  availabilityForUsers,
+  names,
+  userId,
+}: {
+  availabilityForUsers: Record<UserId, IsoDate[]>;
+  names: Record<UserId, string>;
+  userId: UserId | null;
+}) {
+  return (
+    <dl>
+      {unsafeKeys(availabilityForUsers).map((user) => {
+        const dates = availabilityForUsers[user];
+        return (
+          <UserAvailabilitySummaryItem
+            dates={dates}
+            isCurrentUser={user === userId}
+            key={user}
+            name={names[user as UserId] ?? user}
+          />
+        );
+      })}
+      {userId && !availabilityForUsers[userId] && (
+        <UserAvailabilitySummaryItem
+          dates={[]}
+          isCurrentUser={true}
+          key={userId}
+          name={names[userId as UserId] ?? userId}
+        />
+      )}
+    </dl>
+  );
+}
+
+function UserAvailabilitySummaryItem({
+  dates,
+  isCurrentUser,
+  name,
+}: {
+  dates: IsoDate[];
+  isCurrentUser: boolean;
+  name: string;
+}) {
+  return (
+    <div className="flex justify-between gap-2">
+      <dt>
+        {name}
+        {isCurrentUser && " (you)"}
+      </dt>
+      <dd>
+        {dates.length} date{dates.length === 1 ? "" : "s"}
+      </dd>
+    </div>
+  );
 }
