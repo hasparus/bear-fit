@@ -172,67 +172,79 @@ export function EventDetails() {
     }
   }, [event.name]);
 
+  const monthCount = Object.keys(groupedDays).length;
+
   return (
-    <Container>
+    <Container wide={monthCount > 1}>
       <form
-        className="font-[inherit] text-base"
+        className={cn(
+          "font-[inherit] text-base",
+          monthCount > 1 &&
+            "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4"
+        )}
         onSubmit={(e) => e.preventDefault()}
       >
-        <p className="block font-mono text-sm">Calendar</p>
-        <h1 className="mb-4 text-2xl">
-          {event.name || <Skeleton className="h-[32px]" />}
-        </h1>
-        <p className="block font-mono text-sm">Event dates</p>
-        <p aria-busy={!event.startDate} className="mb-4">
-          {event.startDate && event.endDate ? (
-            <>
-              <time dateTime={event.startDate}>
-                {new Date(event.startDate).toLocaleDateString()}
-              </time>
-              {" - "}
-              <time dateTime={event.endDate}>
-                {new Date(event.endDate).toLocaleDateString()}
-              </time>
-            </>
-          ) : (
-            <Skeleton className="w-[206px]" />
-          )}
-        </p>
-        <div className="mb-4">
-          <label className="block" htmlFor="name">
-            Your name
-          </label>
-          <input
-            className="w-full border p-2"
-            id="name"
-            onChange={(e) => {
-              if (!userId) {
-                throw new Error("user id is missing");
-              }
+        <div>
+          <p className="block font-mono text-sm">Calendar</p>
+          <h1 className="mb-4 text-2xl">
+            {event.name || <Skeleton className="h-[32px]" />}
+          </h1>
+          <p className="block font-mono text-sm">Event dates</p>
+          <p aria-busy={!event.startDate} className="mb-4">
+            {event.startDate && event.endDate ? (
+              <>
+                <time dateTime={event.startDate}>
+                  {new Date(event.startDate).toLocaleDateString()}
+                </time>
+                {" - "}
+                <time dateTime={event.endDate}>
+                  {new Date(event.endDate).toLocaleDateString()}
+                </time>
+              </>
+            ) : (
+              <Skeleton className="w-[206px]" />
+            )}
+          </p>
+          <div className="mb-4">
+            <label className="block" htmlFor="name">
+              Your name
+            </label>
+            <input
+              className="w-full border p-2"
+              id="name"
+              onChange={(e) => {
+                if (!userId) {
+                  throw new Error("user id is missing");
+                }
 
-              const value = e.target.value;
-              setUserName(value);
-              namesMap.set(userId, value);
-              setTimeout(() => {
-                localStorage.setItem("userName", value);
-              });
-            }}
-            type="text"
-            value={userName || ""}
-          />
-        </div>
-        <div className="mb-4 font-mono text-sm text-neutral-500">
-          {!event.id ? (
-            <>&nbsp;</>
-          ) : (
-            <UserAvailabilitySummary
-              availabilityForUsers={availabilityForUsers}
-              names={names}
-              onHover={(userId) => setHoveredUser(userId)}
-              userId={userId}
+                const value = e.target.value;
+                setUserName(value);
+                namesMap.set(userId, value);
+                setTimeout(() => {
+                  localStorage.setItem("userName", value);
+                });
+              }}
+              type="text"
+              value={userName || ""}
             />
-          )}
+          </div>
+          <div className="mb-4 font-mono text-sm text-neutral-500">
+            {!event.id ? (
+              <>&nbsp;</>
+            ) : (
+              <UserAvailabilitySummary
+                availabilityForUsers={availabilityForUsers}
+                names={names}
+                onHover={(userId) => setHoveredUser(userId)}
+                userId={userId}
+              />
+            )}
+          </div>
+          <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
         </div>
+
+        <div className="w-px bg-neutral-200 max-lg:hidden" />
+
         <div className="mb-6 mt-2 min-h-[72px]" role="grid">
           {event.startDate &&
             Object.entries(groupedDays).map(([monthKey, monthDays]) => (
@@ -308,7 +320,7 @@ export function EventDetails() {
               </React.Fragment>
             ))}
         </div>
-        <CopyEventUrl eventId={event.id} />
+        <CopyEventUrl className="lg:hidden" eventId={event.id} />
       </form>
     </Container>
   );
@@ -369,8 +381,11 @@ function eachDayOfInterval(from: Date, to: Date) {
   }
   return days;
 }
+interface CopyEventUrlProps extends React.HTMLAttributes<HTMLLabelElement> {
+  eventId: string | undefined;
+}
 
-function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
+function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
   const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -387,6 +402,7 @@ function CopyEventUrl({ eventId }: { eventId: string | undefined }) {
     <label
       className="group relative mt-4 block cursor-copy"
       onClick={handleCopy}
+      {...rest}
     >
       <span className="block">Event URL</span>
 
