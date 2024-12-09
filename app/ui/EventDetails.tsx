@@ -381,7 +381,8 @@ function eachDayOfInterval(from: Date, to: Date) {
   }
   return days;
 }
-interface CopyEventUrlProps extends React.HTMLAttributes<HTMLLabelElement> {
+interface CopyEventUrlProps
+  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
   eventId: string | undefined;
 }
 
@@ -400,22 +401,22 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
 
   return (
     <label
-      className="group relative mt-4 block cursor-copy"
-      onClick={handleCopy}
       {...rest}
+      className={cn("group relative mt-4 block cursor-copy", rest.className)}
+      onClick={handleCopy}
     >
       <span className="block">Event URL</span>
 
       {eventId ? (
         <>
           <input
-            className="block w-full rounded p-2 pr-10 [direction:rtl]"
+            className="block h-[42px] w-full cursor-copy rounded p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
             id="eventUrl"
             readOnly
             value={eventUrl}
           />
           <button
-            className="absolute bottom-2 right-2 rounded-md p-2 hover:bg-neutral-200 active:bg-black active:text-white group-hover:bg-neutral-100"
+            className="absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center rounded-md  active:bg-black active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
             type="button"
