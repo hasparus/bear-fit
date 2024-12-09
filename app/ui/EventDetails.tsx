@@ -59,7 +59,7 @@ export function EventDetails() {
     event.startDate ? new Date(event.startDate) : new Date(),
     event.endDate ? new Date(event.endDate) : new Date()
   ).reduce((acc, day) => {
-    const monthKey = day.getMonth();
+    const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
     if (!acc[monthKey]) {
       acc[monthKey] = [];
     }
