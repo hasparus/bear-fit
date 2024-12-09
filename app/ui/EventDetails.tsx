@@ -11,6 +11,7 @@ import {
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
 import { getEventMap } from "../shared-data";
+import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
 import { Container } from "./Container";
@@ -239,7 +240,29 @@ export function EventDetails() {
                 <div className="my-2">
                   {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="grid grid-cols-7 gap-1">
+                  {getWeekDayNames(tryGetFirstDayOfTheWeek() ?? 0).map(
+                    (name) => (
+                      <div
+                        className="flex h-10 items-center justify-center text-[11.6667px] font-medium opacity-75"
+                        key={name}
+                      >
+                        {name}
+                      </div>
+                    )
+                  )}
+
+                  {[
+                    ...Array(
+                      getPaddingDays(
+                        monthDays[0],
+                        tryGetFirstDayOfTheWeek() ?? 0
+                      )
+                    ),
+                  ].map((_, i) => (
+                    <div className="h-10" key={`padding-${i}`} />
+                  ))}
+
                   {monthDays.map((day, i) => {
                     const dateStr = IsoDate(day);
                     const availableUsers =
@@ -496,4 +519,17 @@ function UserAvailabilitySummaryItem({
       </dd>
     </div>
   );
+}
+
+function getPaddingDays(firstDay: Date, weekStartsOn: number): number {
+  const day = firstDay.getDay();
+  return (day - weekStartsOn + 7) % 7;
+}
+
+function getWeekDayNames(weekStartsOn: number): string[] {
+  const days = Array.from(Array(7)).map((_, i) => {
+    const date = new Date(2024, 0, 7 + i);
+    return date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
+  });
+  return [...days.slice(weekStartsOn), ...days.slice(0, weekStartsOn)];
 }
