@@ -249,7 +249,7 @@ export function EventDetails() {
           {event.startDate &&
             Object.entries(groupedDays).map(([monthKey, monthDays]) => (
               <React.Fragment key={monthKey}>
-                <div className="my-2">
+                <div className="mb-2 mt-4 first:mt-2">
                   {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
                 </div>
                 <div className="grid grid-cols-7 gap-1">
