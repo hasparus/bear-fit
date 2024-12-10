@@ -152,11 +152,14 @@ export function EventDetails() {
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, []);
 
+  // I need SSR for this to affect social cards.
+  // Left for a migration to PartyServer.
   useEffect(() => {
     if (event.name) {
       const oldTitle = document.title;
       document.title = `bear-fit: ${event.name}`;
 
+      // This won't do anything. Need to move it to render to SSR.
       const metaTitle = document.querySelector("meta[name='title']");
       const metaTitleName = metaTitle?.getAttribute("content");
       if (metaTitle) {
