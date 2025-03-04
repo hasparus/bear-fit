@@ -19,6 +19,8 @@ export default class EditorServer implements Party.Server {
 
   event: CalendarEvent | null = null;
 
+  // This was unused, right?
+  // TODO: Migrate out of my custom storage to use this.
   yjsOptions: YPartyKitOptions = {
     persist: { mode: "history" },
   };

@@ -321,7 +321,7 @@ export function EventDetails() {
                     );
                   })}
                 </div>
-              </React.Fragment>
+            </React.Fragment>
             ))}
         </div>
         <CopyEventUrl className="lg:hidden" eventId={event.id} />
