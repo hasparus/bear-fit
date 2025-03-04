@@ -11,7 +11,7 @@ export default defineConfig({
   test: {
     browser: {
       enabled: true,
-      headless: process.env.CI === "true",
+      headless: true,
       provider: "playwright",
       // https://vitest.dev/guide/browser/playwright
       commands: {

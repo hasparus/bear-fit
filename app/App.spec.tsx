@@ -1,4 +1,9 @@
-import { commands, page, userEvent } from "@vitest/browser/context";
+import {
+  commands,
+  server as ctx,
+  page,
+  userEvent,
+} from "@vitest/browser/context";
 import * as v from "valibot";
 import { afterAll, beforeAll, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
@@ -64,9 +69,17 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
   await page.getByRole("button", { name: `${nextMonthName} 10` }).click();
   await page.getByRole("button", { name: `${nextMonthName} 11` }).click();
 
-  await page.getByRole("button", { name: "Copy to clipboard" }).click();
-
-  await expect.element(page.getByText("Copied to clipboard")).toBeVisible();
+  // TODO:
+  // Vitest Browser mode doesn't allow use to do
+  //   test.use({
+  //     permissions: ['clipboard-write']
+  // })
+  // to enable clipboard permissions in Playwright.
+  // So this is temporarily disabled in headless mode.
+  if (!ctx.config.browser.headless) {
+    await page.getByRole("button", { name: "Copy to clipboard" }).click();
+    await expect.element(page.getByText("Copied to clipboard")).toBeVisible();
+  }
 
   await page.getByRole("button", { name: "Export to JSON" }).click();
 
