@@ -9,7 +9,8 @@ import {
   uniqueNamesGenerator,
 } from "unique-names-generator";
 
-import { CalendarEvent, IsoDate } from "../schemas";
+import { getUserId } from "../getUserId";
+import { CalendarEvent, isoDate } from "../schemas";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { Container } from "./Container";
 import "./react-day-picker.css";
@@ -67,7 +68,8 @@ export function CreateEventForm({
 
           setIsSubmitting(true);
           onSubmit({
-            endDate: IsoDate(to),
+            creator: getUserId(),
+            endDate: isoDate(to),
             id: nanoid(),
             name:
               eventName.value ||
@@ -77,7 +79,7 @@ export function CreateEventForm({
                 separator: " ",
                 style: "capital",
               }),
-            startDate: IsoDate(from),
+            startDate: isoDate(from),
           }).finally(() => {
             setIsSubmitting(false);
           });

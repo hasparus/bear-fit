@@ -5,7 +5,7 @@ import { createRoot } from "react-dom/client";
 import useYProvider from "y-partykit/react";
 import { Doc } from "yjs";
 
-import type { CalendarEvent } from "./schemas";
+import type { CalendarEvent, UserId } from "./schemas";
 
 import { initializeEventMap } from "./shared-data";
 import "./styles.css";

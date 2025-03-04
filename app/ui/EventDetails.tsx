@@ -1,12 +1,13 @@
-import { nanoid } from "nanoid";
 import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
 import { unsafeKeys } from "unsafe-keys";
 
+import { getUserId } from "../getUserId";
 import {
   type AvailabilitySet,
   type CalendarEvent,
   IsoDate,
+  isoDate,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
@@ -19,11 +20,7 @@ import { CopyIcon } from "./CopyIcon";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
-let userId = window.localStorage.getItem("userId") as UserId | null;
-if (!userId) {
-  userId = nanoid() as UserId;
-  window.localStorage.setItem("userId", userId);
-}
+const userId = getUserId();
 
 export function EventDetails() {
   const yDoc = useYDoc();
@@ -237,6 +234,7 @@ export function EventDetails() {
             ) : (
               <UserAvailabilitySummary
                 availabilityForUsers={availabilityForUsers}
+                creatorId={event.creator}
                 names={names}
                 onHover={(userId) => setHoveredUser(userId)}
                 userId={userId}
@@ -279,7 +277,7 @@ export function EventDetails() {
                   ))}
 
                   {monthDays.map((day, i) => {
-                    const dateStr = IsoDate(day);
+                    const dateStr = isoDate(day);
                     const availableUsers =
                       availabilityForDates.get(dateStr) || [];
                     const currentUserAvailable =
@@ -477,11 +475,13 @@ function moveFocusWithArrowKeys(
 
 function UserAvailabilitySummary({
   availabilityForUsers,
+  creatorId,
   names,
   onHover,
   userId,
 }: {
   availabilityForUsers: Record<UserId, IsoDate[]>;
+  creatorId: UserId | undefined;
   names: Record<UserId, string>;
   onHover: (userId: UserId | null) => void;
   userId: UserId | null;
@@ -493,6 +493,7 @@ function UserAvailabilitySummary({
         return (
           <UserAvailabilitySummaryItem
             dates={dates}
+            isCreator={user === creatorId}
             isCurrentUser={user === userId}
             key={user}
             name={names[user as UserId] ?? user}
@@ -503,6 +504,7 @@ function UserAvailabilitySummary({
       {userId && !availabilityForUsers[userId] && (
         <UserAvailabilitySummaryItem
           dates={[]}
+          isCreator={creatorId === userId}
           isCurrentUser={true}
           key={userId}
           name={names[userId as UserId] ?? userId}
@@ -516,11 +518,13 @@ function UserAvailabilitySummary({
 interface UserAvailabilitySummaryItemProps
   extends React.HTMLAttributes<HTMLDivElement> {
   dates: IsoDate[];
+  isCreator: boolean;
   isCurrentUser: boolean;
   name: string;
 }
 function UserAvailabilitySummaryItem({
   dates,
+  isCreator,
   isCurrentUser,
   name,
   ...rest
@@ -533,6 +537,7 @@ function UserAvailabilitySummaryItem({
       <dt>
         {name}
         {isCurrentUser && " (you)"}
+        {isCreator && " (creator)"}
       </dt>
       <dd>
         {dates.length} date{dates.length === 1 ? "" : "s"}
