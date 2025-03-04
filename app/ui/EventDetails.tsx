@@ -326,7 +326,7 @@ export function EventDetails() {
         </div>
         <CopyEventUrl className="lg:hidden" eventId={event.id} />
       </form>
-      <footer className="flex justify-end gap-2">
+      <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
         {event.name && <ExportEventJson eventName={event.name} />}
       </footer>
     </Container>

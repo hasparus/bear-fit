@@ -16,7 +16,7 @@ export function ExportEventJson({
   ...rest
 }: ExportEventJsonProps) {
   const yDoc = useYDoc();
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
     <button
