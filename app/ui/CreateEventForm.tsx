@@ -118,7 +118,6 @@ export function CreateEventForm({
           />
         </div>
         <button
-          // eslint-disable-next-line tailwindcss/no-custom-classname
           className="btn btn-default w-full hover:bg-neutral-100 "
           disabled={
             !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to
