@@ -5,13 +5,13 @@ import { Doc } from "yjs";
 import type { CalendarEvent } from "./schemas";
 
 import { initializeEventMap } from "./shared-data";
+import "./styles.css";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
-import "./styles.css";
 
 const ALWAYS_PROD = false;
 
