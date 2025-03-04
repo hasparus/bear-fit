@@ -529,6 +529,14 @@ function UserAvailabilitySummaryItem({
   name,
   ...rest
 }: UserAvailabilitySummaryItemProps) {
+  const labels = Object.entries({
+    creator: isCreator,
+    you: isCurrentUser,
+  })
+    .filter(([_, value]) => value)
+    .map(([key]) => `${key}`)
+    .join(", ");
+
   return (
     <div
       className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
@@ -536,8 +544,7 @@ function UserAvailabilitySummaryItem({
     >
       <dt>
         {name}
-        {isCurrentUser && " (you)"}
-        {isCreator && " (creator)"}
+        {labels ? ` (${labels})` : ""}
       </dt>
       <dd>
         {dates.length} date{dates.length === 1 ? "" : "s"}
