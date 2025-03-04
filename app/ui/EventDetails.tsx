@@ -417,13 +417,13 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
       {eventId ? (
         <>
           <input
-            className="block h-[42px] w-full cursor-copy rounded p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
+            className="block h-[42px] w-full cursor-copy rounded-sm p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
             id="eventUrl"
             readOnly
             value={eventUrl}
           />
           <button
-            className="absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center rounded-md  active:!bg-black active:text-white group-hover:bg-neutral-200"
+            className="active:bg-black! absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
             type="button"
@@ -545,7 +545,7 @@ function UserAvailabilitySummaryItem({
 
   return (
     <div
-      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
+      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
       {...rest}
     >
       <dt>

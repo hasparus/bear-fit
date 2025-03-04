@@ -1,6 +1,5 @@
 .presence-cursor {
-  @apply drop-shadow-lg;
-
+  filter: drop-shadow(var(--drop-shadow-lg));
   position: absolute;
   pointer-events: none;
   z-index: 9999;
@@ -10,17 +9,22 @@
 }
 
 .presence-cursor-own {
-  @apply outline outline-1 outline-white;
+  outline: solid 1px var(--color-white);
 }
 
 .presence-cursor-cta,
 .presence-cursor-chat {
-  @apply text-white px-2 py-1 rounded text-base min-w-6 shadow-2xl;
+  color: var(--color-white);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 16px;
+  min-width: 32px;
+  box-shadow: var(--shadow-2xl);
   background-color: var(--fill);
   white-space: nowrap;
   overflow: hidden;
 }
 
 ::highlight(highlight-party) {
-  @apply bg-[hsl(from_var(--accent)_h_s_l/0.2)];
+  background-color: hsl(from var(--accent) h s l / 0.2);
 }

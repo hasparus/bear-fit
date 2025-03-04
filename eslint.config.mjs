@@ -8,6 +8,12 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   ...tailwindPlugin.configs["flat/recommended"],
   {
+    rules: {
+      // incompatible with Tailwind 4
+      "tailwindcss/no-custom-classname": "off",
+    },
+  },
+  {
     extends: [perfectionistPlugin.configs["recommended-natural"]],
     rules: {
       "perfectionist/sort-classes": [
@@ -53,6 +59,14 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
+      // TypeScript checks this
+      "no-undef": "off",
+    },
+  },
+  {
+    files: ["*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
     },
   }
 );
