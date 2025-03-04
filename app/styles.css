@@ -5,7 +5,8 @@
 @theme {
   --font-*: initial;
   --font-mono: Inconsolata, Menlo, Chicago, Geneva;
-  --font-sans: Chicago, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji,
+  --font-sans:
+    Chicago, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji,
     Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
 
   --color-gray-*: initial;

@@ -16,7 +16,7 @@ export default class OccupancyServer implements Party.Server {
   async onRequest(req: Party.Request) {
     if (req.method === "GET") {
       return new Response(
-        `Hi! This is party '${this.room.name}' and room '${this.room.id}'!`
+        `Hi! This is party '${this.room.name}' and room '${this.room.id}'!`,
       );
     }
 

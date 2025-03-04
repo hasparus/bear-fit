@@ -21,7 +21,7 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
       <App />
       <textarea className="opacity-0 size-0" id="debug-textarea" />
     </div>,
-    { wrapper: TestStyles }
+    { wrapper: TestStyles },
   );
 
   await userEvent.keyboard("{Tab}test event");
@@ -78,19 +78,19 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
       event: CalendarEvent,
       names: v.record(v.string(), v.string()),
     }),
-    JSON.parse(json)
+    JSON.parse(json),
   );
   const event = v.parse(CalendarEvent, exported.event);
 
   expect(event.startDate).toBe(
     `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
       .toString()
-      .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`
+      .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`,
   );
   expect(event.endDate).toBe(
     `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
       .toString()
-      .padStart(2, "0")}-${END_DAY}`
+      .padStart(2, "0")}-${END_DAY}`,
   );
   expect(event.name).toBe("test event");
 

@@ -49,26 +49,32 @@ export function EventDetails() {
     }
   };
 
-  const availabilityForUsers = Object.keys(availability).reduce((acc, key) => {
-    const { date, userId } = AvailabilityKey.parseToObject(key);
-    if (!acc[userId]) {
-      acc[userId] = [];
-    }
-    acc[userId].push(date);
-    return acc;
-  }, {} as Record<UserId, IsoDate[]>);
+  const availabilityForUsers = Object.keys(availability).reduce(
+    (acc, key) => {
+      const { date, userId } = AvailabilityKey.parseToObject(key);
+      if (!acc[userId]) {
+        acc[userId] = [];
+      }
+      acc[userId].push(date);
+      return acc;
+    },
+    {} as Record<UserId, IsoDate[]>,
+  );
 
   const groupedDays = eachDayOfInterval(
     event.startDate ? new Date(event.startDate) : new Date(),
-    event.endDate ? new Date(event.endDate) : new Date()
-  ).reduce((acc, day) => {
-    const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
-    if (!acc[monthKey]) {
-      acc[monthKey] = [];
-    }
-    acc[monthKey].push(day);
-    return acc;
-  }, {} as Record<string, Date[]>);
+    event.endDate ? new Date(event.endDate) : new Date(),
+  ).reduce(
+    (acc, day) => {
+      const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
+      }
+      acc[monthKey].push(day);
+      return acc;
+    },
+    {} as Record<string, Date[]>,
+  );
 
   const availabilityForDates = new Map<IsoDate, UserId[]>();
   for (const [key, available] of Object.entries(availability)) {
@@ -115,7 +121,7 @@ export function EventDetails() {
   }
 
   const [dragMode, setDragMode] = useState<"clearing" | "none" | "painting">(
-    "none"
+    "none",
   );
   const [lastToggled, setLastToggled] = useState<string | null>(null);
 
@@ -129,7 +135,7 @@ export function EventDetails() {
 
   const handlePointerEnter = (
     date: IsoDate,
-    event: React.PointerEvent<HTMLButtonElement>
+    event: React.PointerEvent<HTMLButtonElement>,
   ) => {
     if (userId && dragMode !== "none" && lastToggled !== date) {
       setAvailability(userId, date, dragMode === "painting");
@@ -183,7 +189,7 @@ export function EventDetails() {
         className={cn(
           "font-[inherit] text-base",
           monthCount > 1 &&
-            "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4"
+            "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4",
         )}
         onSubmit={(e) => e.preventDefault()}
       >
@@ -265,15 +271,15 @@ export function EventDetails() {
                       >
                         {name}
                       </div>
-                    )
+                    ),
                   )}
 
                   {[
                     ...Array(
                       getPaddingDays(
                         monthDays[0],
-                        tryGetFirstDayOfTheWeek() ?? 0
-                      )
+                        tryGetFirstDayOfTheWeek() ?? 0,
+                      ),
                     ),
                   ].map((_, i) => (
                     <div className="h-10" key={`padding-${i}`} />
@@ -305,8 +311,8 @@ export function EventDetails() {
                             setAvailability(
                               userId!,
                               dateStr,
-                              !currentUserAvailable
-                            )
+                              !currentUserAvailable,
+                            ),
                           )
                         }
                         onPointerDown={() =>
@@ -360,7 +366,7 @@ function AvailabilityGridCell({
         currentUserAvailable &&
           hoveredUser === "available" &&
           "border-neutral-200 border-[6px]",
-        hoveredUser === "unavailable" && "opacity-60"
+        hoveredUser === "unavailable" && "opacity-60",
       )}
       style={{
         backgroundColor: fill
@@ -444,13 +450,13 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
 
 function moveFocusWithArrowKeys(
   e: React.KeyboardEvent<HTMLButtonElement>,
-  onClick: () => void
+  onClick: () => void,
 ) {
   const grid = e.currentTarget.parentElement!.parentElement!;
 
   const allButtons = grid.querySelectorAll("button");
   let index = Array.from(allButtons).indexOf(
-    e.currentTarget as HTMLButtonElement
+    e.currentTarget as HTMLButtonElement,
   );
 
   // move focus to next button with arrow keys

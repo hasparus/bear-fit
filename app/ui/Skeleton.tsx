@@ -5,7 +5,7 @@ export function Skeleton({ className }: { className?: string }) {
     <span
       className={cn(
         "inline-block h-full w-full bg-neutral-200 animate-pulse opacity-0 transition-opacity",
-        className
+        className,
       )}
     >
       &nbsp;

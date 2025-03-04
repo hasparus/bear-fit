@@ -36,7 +36,7 @@ export type AvailabilityKey =
 
 export const AvailabilityKey = (
   userId: UserId,
-  date: IsoDate
+  date: IsoDate,
 ): AvailabilityKey =>
   `${userId}${AVAILABILITY_KEY_SEPARATOR}${date}` as AvailabilityKey;
 
@@ -56,7 +56,7 @@ AvailabilityKey.parse = (key: string): AvailabilityKey => {
 };
 
 AvailabilityKey.parseToObject = (
-  key: string
+  key: string,
 ): {
   date: IsoDate;
   userId: UserId;

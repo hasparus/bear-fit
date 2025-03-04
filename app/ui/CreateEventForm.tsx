@@ -40,12 +40,12 @@ export function CreateEventForm({
 
               if (e.key === "ArrowLeft")
                 button = parent.querySelector(
-                  ".rdp-button_previous"
+                  ".rdp-button_previous",
                 ) as HTMLButtonElement;
 
               if (e.key === "ArrowRight")
                 button = parent.querySelector(
-                  ".rdp-button_next"
+                  ".rdp-button_next",
                 ) as HTMLButtonElement;
 
               if (button) {
@@ -58,7 +58,7 @@ export function CreateEventForm({
         onSubmit={(event) => {
           event.preventDefault();
           const eventName = event.currentTarget.elements.namedItem(
-            "eventName"
+            "eventName",
           ) as HTMLInputElement;
 
           const { from, to } = dateRange;

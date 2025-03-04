@@ -10,7 +10,7 @@ export const readDownloadedJsonExport = (async (_ctx) => {
   console.log({ downloadsPath });
 
   const files = (await readdir(downloadsPath)).filter(
-    (file) => file !== ".gitignore"
+    (file) => file !== ".gitignore",
   );
   // we assume there's just one file here
   const file = files.at(-1)!;
