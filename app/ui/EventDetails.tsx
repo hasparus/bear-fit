@@ -321,7 +321,7 @@ export function EventDetails() {
                     );
                   })}
                 </div>
-            </React.Fragment>
+              </React.Fragment>
             ))}
         </div>
         <CopyEventUrl className="lg:hidden" eventId={event.id} />
@@ -352,6 +352,7 @@ function AvailabilityGridCell({
   const fill = availableUsers.length / totalUsers;
   return (
     <button
+      aria-label={day.toLocaleDateString(undefined, { dateStyle: "full" })}
       className={cn(
         "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition border-transparent",
         (currentUserAvailable || hoveredUser === "available") &&
