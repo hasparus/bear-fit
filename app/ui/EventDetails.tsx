@@ -1,3 +1,4 @@
+import { ClipboardCopyIcon } from "@radix-ui/react-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
 import { unsafeKeys } from "unsafe-keys";
@@ -16,7 +17,9 @@ import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
 import { Container } from "./Container";
-import { CopyIcon } from "./CopyIcon";
+import { ExportEventJson } from "./ExportEventJson";
+import { getPaddingDays } from "./getPaddingDays";
+import { getWeekDayNames } from "./getWeekDayNames";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
@@ -323,6 +326,9 @@ export function EventDetails() {
         </div>
         <CopyEventUrl className="lg:hidden" eventId={event.id} />
       </form>
+      <footer className="flex justify-end gap-2">
+        {event.name && <ExportEventJson eventName={event.name} />}
+      </footer>
     </Container>
   );
 }
@@ -417,12 +423,12 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
             value={eventUrl}
           />
           <button
-            className="absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center rounded-md  active:bg-black active:text-white group-hover:bg-neutral-200"
+            className="absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center rounded-md  active:!bg-black active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
             type="button"
           >
-            <CopyIcon />
+            <ClipboardCopyIcon />
             {showTooltip && (
               <TooltipContent>Copied to clipboard!</TooltipContent>
             )}
@@ -551,17 +557,4 @@ function UserAvailabilitySummaryItem({
       </dd>
     </div>
   );
-}
-
-function getPaddingDays(firstDay: Date, weekStartsOn: number): number {
-  const day = firstDay.getDay();
-  return (day - weekStartsOn + 7) % 7;
-}
-
-function getWeekDayNames(weekStartsOn: number): string[] {
-  const days = Array.from(Array(7)).map((_, i) => {
-    const date = new Date(2024, 0, 7 + i);
-    return date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
-  });
-  return [...days.slice(weekStartsOn), ...days.slice(0, weekStartsOn)];
 }
