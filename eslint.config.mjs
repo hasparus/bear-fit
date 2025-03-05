@@ -1,12 +1,13 @@
 // @ts-check
 
 import eslint from "@eslint/js";
-import tailwindPlugin from "@hasparus/eslint-plugin-tailwindcss";
+// TODO: ESLint plugin for Tailwind CSS is not compatible with Tailwind 4 yet
+// import tailwindPlugin from "@hasparus/eslint-plugin-tailwindcss";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  ...tailwindPlugin.configs["flat/recommended"],
+  // ...tailwindPlugin.configs["flat/recommended"],
   {
     extends: [perfectionistPlugin.configs["recommended-natural"]],
     rules: {
@@ -53,6 +54,16 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
+      // TypeScript checks this
+      "no-undef": "off",
+      // false positive on Promise.withResolvers
+      "@typescript-eslint/no-invalid-void-type": "off",
     },
-  }
+  },
+  {
+    files: ["*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 );

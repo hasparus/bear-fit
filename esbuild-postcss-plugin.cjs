@@ -2,6 +2,6 @@ const stylePlugin = require("esbuild-style-plugin");
 
 module.exports = stylePlugin({
   postcss: {
-    plugins: [require("tailwindcss"), require("autoprefixer")],
+    plugins: [require("@tailwindcss/postcss"), require("autoprefixer")],
   },
 });

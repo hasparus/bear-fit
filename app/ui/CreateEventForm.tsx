@@ -9,7 +9,8 @@ import {
   uniqueNamesGenerator,
 } from "unique-names-generator";
 
-import { CalendarEvent, IsoDate } from "../schemas";
+import { getUserId } from "../getUserId";
+import { CalendarEvent, isoDate } from "../schemas";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { Container } from "./Container";
 import "./react-day-picker.css";
@@ -39,12 +40,12 @@ export function CreateEventForm({
 
               if (e.key === "ArrowLeft")
                 button = parent.querySelector(
-                  ".rdp-button_previous"
+                  ".rdp-button_previous",
                 ) as HTMLButtonElement;
 
               if (e.key === "ArrowRight")
                 button = parent.querySelector(
-                  ".rdp-button_next"
+                  ".rdp-button_next",
                 ) as HTMLButtonElement;
 
               if (button) {
@@ -57,7 +58,7 @@ export function CreateEventForm({
         onSubmit={(event) => {
           event.preventDefault();
           const eventName = event.currentTarget.elements.namedItem(
-            "eventName"
+            "eventName",
           ) as HTMLInputElement;
 
           const { from, to } = dateRange;
@@ -67,7 +68,8 @@ export function CreateEventForm({
 
           setIsSubmitting(true);
           onSubmit({
-            endDate: IsoDate(to),
+            creator: getUserId(),
+            endDate: isoDate(to),
             id: nanoid(),
             name:
               eventName.value ||
@@ -77,7 +79,7 @@ export function CreateEventForm({
                 separator: " ",
                 style: "capital",
               }),
-            startDate: IsoDate(from),
+            startDate: isoDate(from),
           }).finally(() => {
             setIsSubmitting(false);
           });
@@ -116,7 +118,6 @@ export function CreateEventForm({
           />
         </div>
         <button
-          // eslint-disable-next-line tailwindcss/no-custom-classname
           className="btn btn-default w-full hover:bg-neutral-100 "
           disabled={
             !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to

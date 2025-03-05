@@ -1,12 +1,14 @@
-import { nanoid } from "nanoid";
+import { ClipboardCopyIcon } from "@radix-ui/react-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
 import { unsafeKeys } from "unsafe-keys";
 
+import { getUserId } from "../getUserId";
 import {
   type AvailabilitySet,
   type CalendarEvent,
   IsoDate,
+  isoDate,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
@@ -15,15 +17,13 @@ import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
 import { Container } from "./Container";
-import { CopyIcon } from "./CopyIcon";
+import { ExportEventJson } from "./ExportEventJson";
+import { getPaddingDays } from "./getPaddingDays";
+import { getWeekDayNames } from "./getWeekDayNames";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
-let userId = window.localStorage.getItem("userId") as UserId | null;
-if (!userId) {
-  userId = nanoid() as UserId;
-  window.localStorage.setItem("userId", userId);
-}
+const userId = getUserId();
 
 export function EventDetails() {
   const yDoc = useYDoc();
@@ -49,26 +49,32 @@ export function EventDetails() {
     }
   };
 
-  const availabilityForUsers = Object.keys(availability).reduce((acc, key) => {
-    const { date, userId } = AvailabilityKey.parseToObject(key);
-    if (!acc[userId]) {
-      acc[userId] = [];
-    }
-    acc[userId].push(date);
-    return acc;
-  }, {} as Record<UserId, IsoDate[]>);
+  const availabilityForUsers = Object.keys(availability).reduce(
+    (acc, key) => {
+      const { date, userId } = AvailabilityKey.parseToObject(key);
+      if (!acc[userId]) {
+        acc[userId] = [];
+      }
+      acc[userId].push(date);
+      return acc;
+    },
+    {} as Record<UserId, IsoDate[]>,
+  );
 
   const groupedDays = eachDayOfInterval(
     event.startDate ? new Date(event.startDate) : new Date(),
-    event.endDate ? new Date(event.endDate) : new Date()
-  ).reduce((acc, day) => {
-    const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
-    if (!acc[monthKey]) {
-      acc[monthKey] = [];
-    }
-    acc[monthKey].push(day);
-    return acc;
-  }, {} as Record<string, Date[]>);
+    event.endDate ? new Date(event.endDate) : new Date(),
+  ).reduce(
+    (acc, day) => {
+      const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
+      }
+      acc[monthKey].push(day);
+      return acc;
+    },
+    {} as Record<string, Date[]>,
+  );
 
   const availabilityForDates = new Map<IsoDate, UserId[]>();
   for (const [key, available] of Object.entries(availability)) {
@@ -115,7 +121,7 @@ export function EventDetails() {
   }
 
   const [dragMode, setDragMode] = useState<"clearing" | "none" | "painting">(
-    "none"
+    "none",
   );
   const [lastToggled, setLastToggled] = useState<string | null>(null);
 
@@ -129,7 +135,7 @@ export function EventDetails() {
 
   const handlePointerEnter = (
     date: IsoDate,
-    event: React.PointerEvent<HTMLButtonElement>
+    event: React.PointerEvent<HTMLButtonElement>,
   ) => {
     if (userId && dragMode !== "none" && lastToggled !== date) {
       setAvailability(userId, date, dragMode === "painting");
@@ -183,7 +189,7 @@ export function EventDetails() {
         className={cn(
           "font-[inherit] text-base",
           monthCount > 1 &&
-            "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4"
+            "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4",
         )}
         onSubmit={(e) => e.preventDefault()}
       >
@@ -237,6 +243,7 @@ export function EventDetails() {
             ) : (
               <UserAvailabilitySummary
                 availabilityForUsers={availabilityForUsers}
+                creatorId={event.creator}
                 names={names}
                 onHover={(userId) => setHoveredUser(userId)}
                 userId={userId}
@@ -264,22 +271,22 @@ export function EventDetails() {
                       >
                         {name}
                       </div>
-                    )
+                    ),
                   )}
 
                   {[
                     ...Array(
                       getPaddingDays(
                         monthDays[0],
-                        tryGetFirstDayOfTheWeek() ?? 0
-                      )
+                        tryGetFirstDayOfTheWeek() ?? 0,
+                      ),
                     ),
                   ].map((_, i) => (
                     <div className="h-10" key={`padding-${i}`} />
                   ))}
 
                   {monthDays.map((day, i) => {
-                    const dateStr = IsoDate(day);
+                    const dateStr = isoDate(day);
                     const availableUsers =
                       availabilityForDates.get(dateStr) || [];
                     const currentUserAvailable =
@@ -304,8 +311,8 @@ export function EventDetails() {
                             setAvailability(
                               userId!,
                               dateStr,
-                              !currentUserAvailable
-                            )
+                              !currentUserAvailable,
+                            ),
                           )
                         }
                         onPointerDown={() =>
@@ -325,6 +332,9 @@ export function EventDetails() {
         </div>
         <CopyEventUrl className="lg:hidden" eventId={event.id} />
       </form>
+      <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
+        {event.name && <ExportEventJson eventName={event.name} />}
+      </footer>
     </Container>
   );
 }
@@ -348,6 +358,7 @@ function AvailabilityGridCell({
   const fill = availableUsers.length / totalUsers;
   return (
     <button
+      aria-label={day.toLocaleDateString(undefined, { dateStyle: "full" })}
       className={cn(
         "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition border-transparent",
         (currentUserAvailable || hoveredUser === "available") &&
@@ -355,7 +366,7 @@ function AvailabilityGridCell({
         currentUserAvailable &&
           hoveredUser === "available" &&
           "border-neutral-200 border-[6px]",
-        hoveredUser === "unavailable" && "opacity-60"
+        hoveredUser === "unavailable" && "opacity-60",
       )}
       style={{
         backgroundColor: fill
@@ -413,18 +424,18 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
       {eventId ? (
         <>
           <input
-            className="block h-[42px] w-full cursor-copy rounded p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
+            className="block h-[42px] w-full cursor-copy rounded-sm p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
             id="eventUrl"
             readOnly
             value={eventUrl}
           />
           <button
-            className="absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center rounded-md  active:bg-black active:text-white group-hover:bg-neutral-200"
+            className="active:bg-black! absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
             type="button"
           >
-            <CopyIcon />
+            <ClipboardCopyIcon />
             {showTooltip && (
               <TooltipContent>Copied to clipboard!</TooltipContent>
             )}
@@ -439,13 +450,13 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
 
 function moveFocusWithArrowKeys(
   e: React.KeyboardEvent<HTMLButtonElement>,
-  onClick: () => void
+  onClick: () => void,
 ) {
   const grid = e.currentTarget.parentElement!.parentElement!;
 
   const allButtons = grid.querySelectorAll("button");
   let index = Array.from(allButtons).indexOf(
-    e.currentTarget as HTMLButtonElement
+    e.currentTarget as HTMLButtonElement,
   );
 
   // move focus to next button with arrow keys
@@ -477,11 +488,13 @@ function moveFocusWithArrowKeys(
 
 function UserAvailabilitySummary({
   availabilityForUsers,
+  creatorId,
   names,
   onHover,
   userId,
 }: {
   availabilityForUsers: Record<UserId, IsoDate[]>;
+  creatorId: UserId | undefined;
   names: Record<UserId, string>;
   onHover: (userId: UserId | null) => void;
   userId: UserId | null;
@@ -493,6 +506,7 @@ function UserAvailabilitySummary({
         return (
           <UserAvailabilitySummaryItem
             dates={dates}
+            isCreator={user === creatorId}
             isCurrentUser={user === userId}
             key={user}
             name={names[user as UserId] ?? user}
@@ -503,6 +517,7 @@ function UserAvailabilitySummary({
       {userId && !availabilityForUsers[userId] && (
         <UserAvailabilitySummaryItem
           dates={[]}
+          isCreator={creatorId === userId}
           isCurrentUser={true}
           key={userId}
           name={names[userId as UserId] ?? userId}
@@ -516,40 +531,37 @@ function UserAvailabilitySummary({
 interface UserAvailabilitySummaryItemProps
   extends React.HTMLAttributes<HTMLDivElement> {
   dates: IsoDate[];
+  isCreator: boolean;
   isCurrentUser: boolean;
   name: string;
 }
 function UserAvailabilitySummaryItem({
   dates,
+  isCreator,
   isCurrentUser,
   name,
   ...rest
 }: UserAvailabilitySummaryItemProps) {
+  const labels = Object.entries({
+    creator: isCreator,
+    you: isCurrentUser,
+  })
+    .filter(([_, value]) => value)
+    .map(([key]) => `${key}`)
+    .join(", ");
+
   return (
     <div
-      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
+      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
       {...rest}
     >
       <dt>
         {name}
-        {isCurrentUser && " (you)"}
+        {labels ? ` (${labels})` : ""}
       </dt>
       <dd>
         {dates.length} date{dates.length === 1 ? "" : "s"}
       </dd>
     </div>
   );
-}
-
-function getPaddingDays(firstDay: Date, weekStartsOn: number): number {
-  const day = firstDay.getDay();
-  return (day - weekStartsOn + 7) % 7;
-}
-
-function getWeekDayNames(weekStartsOn: number): string[] {
-  const days = Array.from(Array(7)).map((_, i) => {
-    const date = new Date(2024, 0, 7 + i);
-    return date.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
-  });
-  return [...days.slice(weekStartsOn), ...days.slice(0, weekStartsOn)];
 }

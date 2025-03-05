@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 // }
 export function useSearchParams() {
   const [searchParams, setSearchParams] = useState(
-    new URLSearchParams(window.location.search)
+    new URLSearchParams(window.location.search),
   );
 
   useEffect(() => {

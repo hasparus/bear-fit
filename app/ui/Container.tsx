@@ -11,7 +11,7 @@ export function Container({ wide, ...props }: ContainerProps) {
       className={cn(
         "container border mx-auto p-4 bg-white w-[340px]",
         wide && "lg:w-[680px]",
-        props.className
+        props.className,
       )}
     />
   );
