@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
-import { DayPicker } from "react-day-picker/utc";
+import { DayPicker } from "react-day-picker";
 import {
   adjectives,
   animals,
@@ -114,6 +114,7 @@ export function CreateEventForm({
               setDateRange(range || { from: undefined, to: undefined })
             }
             selected={dateRange}
+            timeZone="UTC"
             weekStartsOn={tryGetFirstDayOfTheWeek()}
           />
         </div>
