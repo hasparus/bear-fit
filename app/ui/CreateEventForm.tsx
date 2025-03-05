@@ -68,9 +68,10 @@ export function CreateEventForm({
 
           setIsSubmitting(true);
           onSubmit({
+            id: nanoid(),
             creator: getUserId(),
             endDate: isoDate(to),
-            id: nanoid(),
+            startDate: isoDate(from),
             name:
               eventName.value ||
               uniqueNamesGenerator({
@@ -79,7 +80,6 @@ export function CreateEventForm({
                 separator: " ",
                 style: "capital",
               }),
-            startDate: isoDate(from),
           }).finally(() => {
             setIsSubmitting(false);
           });

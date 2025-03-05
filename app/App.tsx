@@ -99,11 +99,11 @@ function YProvider({
   const _yProvider = useYProvider({
     doc: yDoc,
     host,
+    room,
     options: {
       connect: true,
       protocol: process.env.NODE_ENV !== "production" ? "ws" : "wss",
     },
-    room,
   });
 
   return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;

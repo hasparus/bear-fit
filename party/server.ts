@@ -64,6 +64,19 @@ export default class EditorServer implements Party.Server {
     return opts;
   }
 
+  private handleYDocChange(doc: Doc) {
+    if (VERBOSE) {
+      console.log("↠ handleYDocChange", yDocToJson(doc));
+    }
+
+    if (!this.doc) {
+      this.doc = doc;
+      if (this.event && !hasCalendarEvent(doc)) {
+        initializeEventMap(doc, this.event);
+      }
+    }
+  }
+
   private async saveDoc(doc: Doc) {
     const json = yDocToJson(doc);
     await this.room.storage.put("doc", json);
@@ -83,19 +96,6 @@ export default class EditorServer implements Party.Server {
       .catch((error) => {
         console.error("updateCount", error);
       });
-  }
-
-  handleYDocChange(doc: Doc) {
-    if (VERBOSE) {
-      console.log("↠ handleYDocChange", yDocToJson(doc));
-    }
-
-    if (!this.doc) {
-      this.doc = doc;
-      if (this.event && !hasCalendarEvent(doc)) {
-        initializeEventMap(doc, this.event);
-      }
-    }
   }
 
   async onClose(_: Party.Connection) {

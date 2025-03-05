@@ -9,7 +9,7 @@ export default class OccupancyServer implements Party.Server {
   constructor(public room: Party.Room) {}
 
   onConnect(connection: Party.Connection) {
-    connection.send(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
+    connection.send(JSON.stringify({ type: "rooms", rooms: this.rooms }));
   }
 
   async onRequest(req: Party.Request) {
@@ -23,7 +23,7 @@ export default class OccupancyServer implements Party.Server {
       const { count, room }: { count: number; room: string } = await req.json();
       this.rooms[room] = count;
       // TODO: We should not expose other room ids to all clients.
-      this.room.broadcast(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
+      this.room.broadcast(JSON.stringify({ type: "rooms", rooms: this.rooms }));
       return Response.json({ ok: true });
     }
 
