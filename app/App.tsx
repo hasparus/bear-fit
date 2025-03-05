@@ -19,7 +19,7 @@ export function App() {
   const params = useSearchParams();
   const eventId = params.get("id");
 
-  const yDoc = useRef<Doc>();
+  const yDoc = useRef<Doc>(undefined as unknown as Doc);
   if (!yDoc.current) {
     yDoc.current = new Doc();
   }

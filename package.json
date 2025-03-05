@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "partykit dev --live",
+    "scan": "react-scan localhost:1999",
     "release": "sh scripts/deploy.sh",
     "lint": "eslint app party",
     "format": "prettier --write .",
@@ -24,6 +25,7 @@
     "react": "19.1.0-canary-e03ac20f-20250305",
     "react-day-picker": "^9.5.1",
     "react-dom": "19.1.0-canary-e03ac20f-20250305",
+    "react-scan": "^0.2.9",
     "react-yjs": "^2.0.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.10",
@@ -53,6 +55,9 @@
   "pnpm": {
     "patchedDependencies": {
       "partykit@0.0.111": "patches/partykit@0.0.110.patch"
+    },
+    "overrides": {
+      "@types/react": "19.0.10"
     }
   }
 }
