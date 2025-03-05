@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
-import { DayPicker } from "react-day-picker/utc";
+import { DayPicker } from "react-day-picker";
 import {
   adjectives,
   animals,
@@ -68,9 +68,10 @@ export function CreateEventForm({
 
           setIsSubmitting(true);
           onSubmit({
+            id: nanoid(),
             creator: getUserId(),
             endDate: isoDate(to),
-            id: nanoid(),
+            startDate: isoDate(from),
             name:
               eventName.value ||
               uniqueNamesGenerator({
@@ -79,7 +80,6 @@ export function CreateEventForm({
                 separator: " ",
                 style: "capital",
               }),
-            startDate: isoDate(from),
           }).finally(() => {
             setIsSubmitting(false);
           });
@@ -114,6 +114,7 @@ export function CreateEventForm({
               setDateRange(range || { from: undefined, to: undefined })
             }
             selected={dateRange}
+            timeZone="UTC"
             weekStartsOn={tryGetFirstDayOfTheWeek()}
           />
         </div>

@@ -6,34 +6,41 @@ import eslint from "@eslint/js";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
 import tseslint from "typescript-eslint";
 
+const objectsOrderOptions = {
+  type: "natural",
+  groups: ["frontmatter", "unknown", "multiline"],
+  order: "asc",
+  partitionByComment: true,
+  customGroups: [
+    {
+      elementNamePattern: "type|id",
+      groupName: "frontmatter",
+    },
+  ],
+};
+
 export default tseslint.config(
   // ...tailwindPlugin.configs["flat/recommended"],
   {
     extends: [perfectionistPlugin.configs["recommended-natural"]],
     rules: {
-      "perfectionist/sort-classes": [
-        "warn",
-        {
-          order: "asc",
-          partitionByComment: true,
-          type: "natural",
-        },
-      ],
-      "perfectionist/sort-enums": "off",
-      "perfectionist/sort-objects": [
-        "warn",
-        {
-          order: "asc",
-          partitionByComment: true,
-          type: "natural",
-        },
-      ],
+      "perfectionist/sort-object-types": ["warn", objectsOrderOptions],
       "perfectionist/sort-union-types": [
         "warn",
         {
+          type: "natural",
           groups: ["unknown", "keyword", "nullish"],
           order: "asc",
-          type: "natural",
+        },
+      ],
+      "perfectionist/sort-classes": "off",
+      "perfectionist/sort-enums": "off",
+      "perfectionist/sort-modules": "off",
+      "perfectionist/sort-objects": ["warn", objectsOrderOptions],
+      "perfectionist/sort-imports": [
+        "warn",
+        {
+          internalPattern: ["^#.*"],
         },
       ],
     },

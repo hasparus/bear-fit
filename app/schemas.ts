@@ -12,9 +12,9 @@ export const UserId = v.pipe(v.string(), v.brand("UserId"));
 export type UserId = v.InferOutput<typeof UserId>;
 
 export const CalendarEvent = v.object({
+  id: v.string(),
   creator: UserId,
   endDate: IsoDate(),
-  id: v.string(),
   name: v.string(),
   startDate: IsoDate(),
 });

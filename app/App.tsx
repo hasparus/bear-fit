@@ -15,11 +15,22 @@ import { YDocContext } from "./useYDoc";
 
 const ALWAYS_PROD = false;
 
-export function App() {
+export function App({
+  serverUrl,
+}: {
+  /**
+   * Passed in end-to-end tests to start the app against a server on random port.
+   */
+  serverUrl?: string;
+}) {
+  serverUrl ||= ALWAYS_PROD
+    ? "https://bear-fit.hasparus.partykit.dev"
+    : `${window.location.protocol}//${window.location.host}`;
+
   const params = useSearchParams();
   const eventId = params.get("id");
 
-  const yDoc = useRef<Doc>();
+  const yDoc = useRef<Doc>(undefined as unknown as Doc);
   if (!yDoc.current) {
     yDoc.current = new Doc();
   }
@@ -28,7 +39,7 @@ export function App() {
     <>
       {eventId ? (
         <Suspense fallback={<Loading />}>
-          <YProvider room={eventId} yDoc={yDoc.current}>
+          <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
             <EventDetails />
           </YProvider>
         </Suspense>
@@ -37,7 +48,7 @@ export function App() {
           onSubmit={(calendarEvent) => {
             initializeEventMap(yDoc.current!, calendarEvent);
 
-            return postEvent(calendarEvent)
+            return postEvent(calendarEvent, serverUrl)
               .catch((error) => {
                 console.error("creating event failed", error);
               })
@@ -52,27 +63,34 @@ export function App() {
   );
 }
 
-async function postEvent(calendarEvent: CalendarEvent): Promise<unknown> {
-  const host = ALWAYS_PROD
-    ? "https://bear-fit.hasparus.partykit.dev"
-    : `${window.location.protocol}//${window.location.host}`;
-
-  const res = await fetch(`${host}/parties/main/${calendarEvent.id}`, {
+async function postEvent(
+  calendarEvent: CalendarEvent,
+  serverUrl: string,
+): Promise<unknown> {
+  const res = await fetch(`${serverUrl}/parties/main/${calendarEvent.id}`, {
     body: JSON.stringify(calendarEvent),
     method: "POST",
   });
 
+  if (res.status === 404) {
+    throw new Error("server not found");
+  }
+
   const json = await res.json();
+  // TODO: If the status was not 200, we should show an error message and retry.
+  //       We can test this with a test that passes a wrong server URL.
 
   return json;
 }
 
 function YProvider({
   children,
+  host,
   room,
   yDoc,
 }: {
   children: React.ReactNode;
+  host: string;
   room: string;
   yDoc: Doc;
 }) {
@@ -80,14 +98,12 @@ function YProvider({
   // `useYProvider`, and we don't know the room until we create the event.
   const _yProvider = useYProvider({
     doc: yDoc,
-    host: ALWAYS_PROD
-      ? "https://bear-fit.hasparus.partykit.dev"
-      : window.location.host,
+    host,
+    room,
     options: {
       connect: true,
-      protocol: process.env.NODE_ENV === "development" ? "ws" : "wss",
+      protocol: process.env.NODE_ENV !== "production" ? "ws" : "wss",
     },
-    room,
   });
 
   return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;

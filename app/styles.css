@@ -61,8 +61,13 @@ label,
 }
 
 @media (prefers-color-scheme: dark) {
-  html {
+  body {
     filter: invert(0.9);
+  }
+  html {
     background: black;
+  }
+  :root {
+    --accent: #049;
   }
 }

@@ -1,7 +1,6 @@
 import type * as Party from "partykit/server";
 
 export type Rooms = Record<string, number>;
-export const SINGLETON_ROOM_ID = "index";
 
 export default class OccupancyServer implements Party.Server {
   // Track room occupancy
@@ -10,7 +9,7 @@ export default class OccupancyServer implements Party.Server {
   constructor(public room: Party.Room) {}
 
   onConnect(connection: Party.Connection) {
-    connection.send(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
+    connection.send(JSON.stringify({ type: "rooms", rooms: this.rooms }));
   }
 
   async onRequest(req: Party.Request) {
@@ -23,7 +22,8 @@ export default class OccupancyServer implements Party.Server {
     if (req.method === "POST") {
       const { count, room }: { count: number; room: string } = await req.json();
       this.rooms[room] = count;
-      this.room.broadcast(JSON.stringify({ rooms: this.rooms, type: "rooms" }));
+      // TODO: We should not expose other room ids to all clients.
+      this.room.broadcast(JSON.stringify({ type: "rooms", rooms: this.rooms }));
       return Response.json({ ok: true });
     }
 

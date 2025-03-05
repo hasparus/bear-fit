@@ -25,6 +25,19 @@ import { TooltipContent } from "./TooltipContent";
 
 const userId = getUserId();
 
+interface CopyEventUrlProps
+  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
+  eventId: string | undefined;
+}
+
+interface UserAvailabilitySummaryItemProps
+  extends React.HTMLAttributes<HTMLDivElement> {
+  dates: IsoDate[];
+  isCreator: boolean;
+  isCurrentUser: boolean;
+  name: string;
+}
+
 export function EventDetails() {
   const yDoc = useYDoc();
 
@@ -339,6 +352,15 @@ export function EventDetails() {
   );
 }
 
+interface AvailabilityGridCellProps
+  extends React.HTMLAttributes<HTMLButtonElement> {
+  availableUsers: UserId[];
+  currentUserAvailable: boolean;
+  day: Date;
+  hoveredUser: "available" | "none" | "unavailable";
+  names: Record<UserId, string>;
+  totalUsers: number;
+}
 function AvailabilityGridCell({
   availableUsers,
   currentUserAvailable,
@@ -347,14 +369,7 @@ function AvailabilityGridCell({
   names,
   totalUsers,
   ...rest
-}: {
-  availableUsers: UserId[];
-  currentUserAvailable: boolean;
-  day: Date;
-  hoveredUser: "available" | "none" | "unavailable";
-  names: Record<UserId, string>;
-  totalUsers: number;
-} & React.HTMLAttributes<HTMLButtonElement>) {
+}: AvailabilityGridCellProps) {
   const fill = availableUsers.length / totalUsers;
   return (
     <button
@@ -369,10 +384,10 @@ function AvailabilityGridCell({
         hoveredUser === "unavailable" && "opacity-60",
       )}
       style={{
+        color: fill > 0.5 ? "white" : "black",
         backgroundColor: fill
           ? `hsl(from var(--accent) h s l / ${fill})`
           : undefined,
-        color: fill > 0.5 ? "white" : "black",
       }}
       type="button"
       {...rest}
@@ -385,19 +400,6 @@ function AvailabilityGridCell({
       )}
     </button>
   );
-}
-
-function eachDayOfInterval(from: Date, to: Date) {
-  const days = [];
-  const end = new Date(to);
-  for (let d = new Date(from); d <= end; d = new Date(d.getTime() + 86400000)) {
-    days.push(new Date(d));
-  }
-  return days;
-}
-interface CopyEventUrlProps
-  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
-  eventId: string | undefined;
 }
 
 function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
@@ -448,6 +450,15 @@ function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
   );
 }
 
+function eachDayOfInterval(from: Date, to: Date) {
+  const days = [];
+  const end = new Date(to);
+  for (let d = new Date(from); d <= end; d = new Date(d.getTime() + 86400000)) {
+    days.push(new Date(d));
+  }
+  return days;
+}
+
 function moveFocusWithArrowKeys(
   e: React.KeyboardEvent<HTMLButtonElement>,
   onClick: () => void,
@@ -461,22 +472,22 @@ function moveFocusWithArrowKeys(
 
   // move focus to next button with arrow keys
   switch (e.key) {
-    case "ArrowRight":
-      index++;
-      break;
-    case "ArrowLeft":
-      index--;
+    case " ":
+    case "Enter":
+      onClick();
       break;
     case "ArrowDown":
       index += 7;
       break;
-    case "ArrowUp":
-      index -= 7;
+    case "ArrowLeft":
+      index--;
       break;
 
-    case " ":
-    case "Enter":
-      onClick();
+    case "ArrowRight":
+      index++;
+      break;
+    case "ArrowUp":
+      index -= 7;
       break;
   }
 
@@ -526,14 +537,6 @@ function UserAvailabilitySummary({
       )}
     </dl>
   );
-}
-
-interface UserAvailabilitySummaryItemProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  dates: IsoDate[];
-  isCreator: boolean;
-  isCurrentUser: boolean;
-  name: string;
 }
 function UserAvailabilitySummaryItem({
   dates,

@@ -23,7 +23,7 @@ afterAll(async () => {
 it("creates a new event, fills dates, opens a new browser and fills more dates", async () => {
   render(
     <div className="pt-8">
-      <App />
+      <App serverUrl={server.href} />
       <textarea className="opacity-0 size-0" id="debug-textarea" />
     </div>,
     { wrapper: TestStyles },
