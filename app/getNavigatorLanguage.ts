@@ -1,14 +1,18 @@
 export function getNavigatorLanguage() {
-  console.error("getNavigatorLanguage");
+  let res: string | undefined;
+
   if (navigator.languages && navigator.languages.length) {
-    console.error("navigator.languages", navigator.languages);
-    return navigator.languages[0];
+    res = navigator.languages[0];
   } else {
-    console.error("navigator.languages is empty");
-    console.error("navigator", navigator);
-    return ((navigator as { userLanguage?: string }).userLanguage ||
+    res = ((navigator as { userLanguage?: string }).userLanguage ||
       navigator.language ||
       (navigator as { browserLanguage?: string }).browserLanguage ||
       "en") as string;
   }
+
+  if (res.endsWith("@posix")) {
+    res = res.slice(0, -6);
+  }
+
+  return res;
 }
