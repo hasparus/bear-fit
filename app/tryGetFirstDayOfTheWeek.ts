@@ -1,7 +1,9 @@
 import { getNavigatorLanguage } from "./getNavigatorLanguage";
 
 export function tryGetFirstDayOfTheWeek() {
-  const language = getNavigatorLanguage().replace(/_/g, "-");
+  console.error("tryGetFirstDayOfTheWeek");
+  const language = getNavigatorLanguage();
+  console.error("language", language);
   const locale = new Intl.Locale(language);
 
   type WeekInfo = { firstDay: number } | undefined;
