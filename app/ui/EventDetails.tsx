@@ -20,6 +20,7 @@ import { Container } from "./Container";
 import { ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
+import { ImportEventJson } from "./ImportEventJson";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
@@ -346,7 +347,12 @@ export function EventDetails() {
         <CopyEventUrl className="lg:hidden" eventId={event.id} />
       </form>
       <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
-        {event.name && <ExportEventJson eventName={event.name} />}
+        {event.name && (
+          <>
+            {userId === event.creator && <ImportEventJson />}
+            <ExportEventJson eventName={event.name} />
+          </>
+        )}
       </footer>
     </Container>
   );
