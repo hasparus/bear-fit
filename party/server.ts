@@ -10,7 +10,7 @@ import {
   initializeEventMap,
   yDocToJson,
 } from "../app/shared-data";
-import { SINGLETON_ROOM_ID } from "./rooms";
+import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
 const VERBOSE = process.env.NODE_ENV === "development";
 
@@ -18,6 +18,11 @@ export default class EditorServer implements Party.Server {
   doc: Doc | null = null;
 
   event: CalendarEvent | null = null;
+
+  // TODO: Test how it affects the server. May cause problems with Yjs.
+  // options = {
+  //   hibernate: true,
+  // };
 
   // This was unused, right?
   // TODO: Migrate out of my custom storage to use this.
@@ -69,7 +74,7 @@ export default class EditorServer implements Party.Server {
     const count = [...this.room.getConnections()].length;
     // Send the count to the 'rooms' party using HTTP POST
     await this.room.context.parties.rooms
-      .get(SINGLETON_ROOM_ID)
+      .get(OCCUPANCY_SERVER_SINGLETON_ROOM_ID)
       .fetch({
         body: JSON.stringify({ count, room: this.room.id }),
         headers: { "Content-Type": "application/json" },
@@ -113,6 +118,14 @@ export default class EditorServer implements Party.Server {
   async onRequest(req: Party.Request) {
     const url = new URL(req.url);
 
+    // We only allow CORS requests in development and tests.
+    // In prod, the server is deployed together with the client.
+    const headers = process.env.NODE_ENV !== "production" ? CORS : undefined;
+
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers });
+    }
+
     if (req.method === "POST" && url.pathname.startsWith("/parties/main/")) {
       const json = await req.json();
       if (VERBOSE) {
@@ -124,28 +137,35 @@ export default class EditorServer implements Party.Server {
         if (this.event) {
           return Response.json(
             { error: "event already created" },
-            { status: 403 },
+            { headers, status: 403 },
           );
         } else {
           this.event = event;
           if (this.doc) {
             initializeEventMap(this.doc, event);
           }
-          return Response.json({ message: "created" });
+          return Response.json({ message: "created" }, { headers });
         }
       } catch (error) {
         console.error(error);
-        return Response.json({ error: "invalid event" }, { status: 400 });
+        return Response.json(
+          { error: "invalid event" },
+          { headers, status: 400 },
+        );
       }
     }
 
     if (req.method === "GET") {
+      if (url.pathname === "/parties/main/status") {
+        return new Response("ok", { headers });
+      }
+
       return Response.json({
         doc: this.doc ? yDocToJson(this.doc) : null,
         event: this.event,
       });
     }
 
-    return Response.json({ message: "not found" }, { status: 404 });
+    return Response.json({ message: "not found" }, { headers, status: 404 });
   }
 }

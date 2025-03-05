@@ -6,12 +6,14 @@ import { readDownloadedJsonExport } from "./test/commands/readDownloadedJsonExpo
 import { startServer } from "./test/commands/startServer";
 import { stopServer } from "./test/commands/stopServer";
 
+const headless = process.env.HEADED !== "true";
+
 export default defineConfig({
   plugins: [react(), tailwind()],
   test: {
     browser: {
       enabled: true,
-      headless: true,
+      headless,
       provider: "playwright",
       // https://vitest.dev/guide/browser/playwright
       commands: {

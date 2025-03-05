@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "partykit dev --live",
-    "scan": "react-scan localhost:1999",
     "release": "sh scripts/deploy.sh",
     "lint": "eslint app party",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest",
+    "test:ui": "VERBOSE=true HEADED=true vitest"
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",

@@ -5,17 +5,24 @@ import { resolve } from "node:path";
 
 const VERBOSE = process.env.VERBOSE === "true";
 
-export const startServer = (() => {
+export const startServer = (async () => {
   const port = Math.floor(Math.random() * 10_000) + 3000;
 
   const spawned = spawn("pnpm", ["dev", "--port", `${port}`], {
     cwd: resolve(import.meta.dirname, "../.."),
   });
+
   const pid = spawned.pid!;
+
+  const serverStarted = Promise.withResolvers<void>();
 
   spawned.stdout.on("data", (data) => {
     if (VERBOSE) {
       console.log(data.toString());
+    }
+
+    if (data.toString().includes("Ready on")) {
+      serverStarted.resolve();
     }
   });
 
@@ -29,14 +36,11 @@ export const startServer = (() => {
     console.log(`Vite dev server started on port ${port}`);
   }
 
+  await serverStarted.promise;
+
   return {
-    // fetchJson(path: string) {
-    //   return fetch(`http://localhost:${port}${path}`).then((res) => res.json());
-    // },
     href: `http://localhost:${port}`,
-    get pid() {
-      return pid;
-    },
+    pid,
     port,
   };
 }) satisfies BrowserCommand<[]>;
