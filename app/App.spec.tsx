@@ -93,6 +93,7 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
     }),
     JSON.parse(json),
   );
+
   const event = v.parse(CalendarEvent, exported.event);
 
   expect(event.startDate).toBe(
