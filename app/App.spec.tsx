@@ -11,6 +11,7 @@ import { render } from "vitest-browser-react";
 import { TestStyles } from "../test/TestStyles";
 import { App } from "./App";
 import { CalendarEvent } from "./schemas";
+import { YDocJsonSchema } from "./shared-data";
 
 let server: Awaited<ReturnType<typeof commands.startServer>>;
 beforeAll(async () => {
@@ -85,14 +86,7 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
 
   const json = await commands.readDownloadedJsonExport();
 
-  const exported = v.parse(
-    v.object({
-      availability: v.record(v.string() /* availability key */, v.boolean()),
-      event: CalendarEvent,
-      names: v.record(v.string(), v.string()),
-    }),
-    JSON.parse(json),
-  );
+  const exported = v.parse(YDocJsonSchema, JSON.parse(json));
 
   const event = v.parse(CalendarEvent, exported.event);
 

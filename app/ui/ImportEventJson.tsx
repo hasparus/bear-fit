@@ -1,6 +1,10 @@
 import { UploadIcon } from "@radix-ui/react-icons";
 import React, { useRef, useState } from "react";
+import * as v from "valibot";
 
+import { getUserId } from "../getUserId";
+import { AvailabilityKey, type UserId } from "../schemas";
+import { YDocJsonSchema } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
 import { TooltipContent } from "./TooltipContent";
@@ -18,32 +22,89 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = () => {
       try {
-        const jsonData = JSON.parse(e.target?.result as string);
-
-        // Validate the JSON structure
-        if (!jsonData.event || !jsonData.availability || !jsonData.names) {
-          throw new Error("Invalid JSON format");
+        if (typeof reader.result !== "string") {
+          throw new Error("Failed to read file");
         }
 
-        // Import event data
+        const parsedJson = JSON.parse(reader.result);
+        const jsonData = v.parse(YDocJsonSchema, parsedJson);
+
+        const currentUserId = getUserId();
+        if (!currentUserId) {
+          throw new Error("User ID is missing");
+        }
+
+        const namesMap = yDoc.getMap("names");
+        const currentUserName =
+          namesMap.get(currentUserId) || localStorage.getItem("userName");
+        if (!currentUserName) {
+          throw new Error("User name is missing");
+        }
+
+        const sameNameUserIds: UserId[] = [];
+        Object.entries(jsonData.names).forEach(([id, name]) => {
+          if (name === currentUserName && id !== currentUserId) {
+            sameNameUserIds.push(id as UserId);
+          }
+        });
+
+        const availabilityMap = yDoc.getMap("availability");
+
+        const keysToDelete: string[] = [];
+        availabilityMap.forEach((_value, key) => {
+          if (key.startsWith(currentUserId)) {
+            keysToDelete.push(key);
+          }
+
+          for (const sameNameId of sameNameUserIds) {
+            if (key.startsWith(sameNameId)) {
+              keysToDelete.push(key);
+              break;
+            }
+          }
+        });
+
+        keysToDelete.forEach((key) => {
+          availabilityMap.delete(key);
+        });
+
+        Object.entries(jsonData.availability).forEach(([key, value]) => {
+          try {
+            const belongsToSameNameUser = sameNameUserIds.some((userId) =>
+              key.startsWith(userId),
+            );
+
+            if (belongsToSameNameUser) {
+              const { date } = AvailabilityKey.parseToObject(key);
+              const newKey = AvailabilityKey(currentUserId, date);
+              availabilityMap.set(newKey, value);
+            } else if (key.startsWith(currentUserId)) {
+              availabilityMap.set(key, value);
+            } else {
+              availabilityMap.set(key, value);
+            }
+          } catch (e) {
+            availabilityMap.set(key, value);
+          }
+        });
+
         const eventMap = yDoc.getMap("event");
         Object.entries(jsonData.event).forEach(([key, value]) => {
+          if (key === "creator") {
+            return;
+          }
           eventMap.set(key, value);
         });
 
-        // Import availability data
-        const availabilityMap = yDoc.getMap("availability");
-        Object.entries(jsonData.availability).forEach(([key, value]) => {
-          availabilityMap.set(key, value);
+        Object.entries(jsonData.names).forEach(([key, value]) => {
+          if (!sameNameUserIds.includes(key as UserId)) {
+            namesMap.set(key, value);
+          }
         });
 
-        // Import names data
-        const namesMap = yDoc.getMap("names");
-        Object.entries(jsonData.names).forEach(([key, value]) => {
-          namesMap.set(key, value as string);
-        });
+        namesMap.set(currentUserId, currentUserName);
 
         setTooltipMessage("JSON imported successfully!");
         setShowTooltip(true);
@@ -57,7 +118,6 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
     };
 
     reader.readAsText(file);
-    // Reset the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
