@@ -1,3 +1,5 @@
+import * as v from "valibot";
+
 import type { Doc } from "yjs";
 
 import { CalendarEvent } from "./schemas";
@@ -27,3 +29,9 @@ export function yDocToJson(doc: Doc) {
     names: doc.getMap("names").toJSON(),
   };
 }
+
+export const YDocJsonSchema = v.object({
+  availability: v.record(v.string() /* availability key */, v.boolean()),
+  event: CalendarEvent,
+  names: v.record(v.string(), v.string()),
+});
