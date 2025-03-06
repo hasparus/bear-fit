@@ -349,7 +349,9 @@ export function EventDetails() {
       <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
         {event.name && (
           <>
-            {userId === event.creator && <ImportEventJson />}
+            {(userId === event.creator || !event.creator) && (
+              <ImportEventJson />
+            )}
             <ExportEventJson eventName={event.name} />
           </>
         )}
