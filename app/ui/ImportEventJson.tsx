@@ -32,16 +32,11 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
         const jsonData = v.parse(YDocJsonSchema, parsedJson);
 
         const currentUserId = getUserId();
-        if (!currentUserId) {
-          throw new Error("User ID is missing");
-        }
 
         const namesMap = yDoc.getMap("names");
+
         const currentUserName =
           namesMap.get(currentUserId) || localStorage.getItem("userName");
-        if (!currentUserName) {
-          throw new Error("User name is missing");
-        }
 
         const sameNameUserIds: UserId[] = [];
         Object.entries(jsonData.names).forEach(([id, name]) => {
@@ -80,8 +75,6 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
               const { date } = AvailabilityKey.parseToObject(key);
               const newKey = AvailabilityKey(currentUserId, date);
               availabilityMap.set(newKey, value);
-            } else if (key.startsWith(currentUserId)) {
-              availabilityMap.set(key, value);
             } else {
               availabilityMap.set(key, value);
             }
