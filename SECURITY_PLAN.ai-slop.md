@@ -8,10 +8,9 @@ the Bear-Fit application.
 Bear-Fit currently operates with minimal security controls:
 
 1. Events are accessed via a UUID in the URL parameter (`?id=<event-id>`)
-2. Users are identified by a browser-generated ID stored in localStorage
+2. Users are identified by a browser-generated ID stored in localStorage, so
+   they can impersonate other users
 3. No authentication is required to access or modify events
-4. UI-level restrictions (e.g., showing the Import button only to creators) can
-   be bypassed
 
 ## Security Concerns
 
@@ -58,6 +57,7 @@ Bear-Fit currently operates with minimal security controls:
 
      // Check creator-only operations
      if (this.wasEventMetadataChanged(eventMap) && !this.isCreator()) {
+       // This should be trivial if we preserve doc history
        this.revertEventChanges(eventMap);
      }
 
@@ -72,7 +72,8 @@ Bear-Fit currently operates with minimal security controls:
 
    - Observe YDoc changes using Y.js observing APIs
    - Maintain a log of changes for audit purposes
-   - Implement change rollback functionality for unauthorized changes
+   - Show history of changes
+   - Implement change rollback functionality
 
 3. **Client-side Validation**:
    - Add validation rules that prevent UI from making unauthorized changes
@@ -81,31 +82,12 @@ Bear-Fit currently operates with minimal security controls:
 
 ### Medium-term Approach (Server-side Validation)
 
-1. **PartyKit onBeforeConnect Validation**:
-
-   - Implement basic validation in PartyKit's `onBeforeConnect` hook
-   - Use the user ID in connection context for basic authorization
-
-   ```typescript
-   static async onBeforeConnect(request: Party.Request, lobby: Party.Lobby) {
-     // Extract user ID from request
-     const userId = new URL(request.url).searchParams.get("userId");
-
-     // Add user ID to headers for use in onConnect
-     request.headers.set("X-User-ID", userId || "anonymous");
-
-     // Allow connection, but with user context for later validation
-     return request;
-   }
-   ```
-
-2. **YDoc Update Middleware**:
+1. **YDoc Update Middleware**:
 
    - Implement middleware that validates YDoc updates before they're applied
    - Reject operations that violate permission rules
 
-3. **Server-side Storage Validation**:
-   - Add validation when loading/saving YDoc state to storage
+2. **Server-side Storage Validation**:
    - Prevent corrupted or tampered states from being persisted
 
 ### Long-term Approach (Full Authentication)
@@ -164,8 +146,9 @@ access to events they have IDs for":
 
 ## Recommended Next Steps
 
-1. Implement the `handleYDocChange` validation function to protect against the most critical data integrity issues
+1. Implement the `handleYDocChange` validation function to protect against the
+   most critical data integrity issues
 1. Add proper validation to the import functionality to prevent data corruption
-2. Improve the UI to make it clear when changes are being made and by whom
-3. Design a clean upgrade path from anonymous to authenticated usage for future
+1. Improve the UI to make it clear when changes are being made and by whom
+1. Design a clean upgrade path from anonymous to authenticated usage for future
    monetization
