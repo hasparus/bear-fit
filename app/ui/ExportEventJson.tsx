@@ -1,9 +1,9 @@
-import { DownloadIcon } from "@radix-ui/react-icons";
 import React, { useState } from "react";
 
 import { yDocToJson } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
+import { DownloadIcon } from "./DownloadIcon";
 import { TooltipContent } from "./TooltipContent";
 
 interface ExportEventJsonProps extends React.HTMLAttributes<HTMLButtonElement> {

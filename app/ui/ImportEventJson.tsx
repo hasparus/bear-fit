@@ -1,4 +1,3 @@
-import { UploadIcon } from "@radix-ui/react-icons";
 import React, { useRef, useState } from "react";
 import * as v from "valibot";
 
@@ -8,6 +7,7 @@ import { YDocJsonSchema } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
 import { TooltipContent } from "./TooltipContent";
+import { UploadIcon } from "./UploadIcon";
 
 interface ImportEventJsonProps extends React.HTMLAttributes<HTMLLabelElement> {}
 

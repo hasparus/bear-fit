@@ -1,7 +1,5 @@
-import { ClipboardCopyIcon } from "@radix-ui/react-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
-import { unsafeKeys } from "unsafe-keys";
 
 import { getUserId } from "../getUserId";
 import {
@@ -15,6 +13,7 @@ import { AvailabilityKey } from "../schemas";
 import { getEventMap } from "../shared-data";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
+import { AvailabilityGridCell } from "./AvailabilityGridCell";
 import { cn } from "./cn";
 import { Container } from "./Container";
 import {
@@ -23,27 +22,17 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "./ContextMenu";
+import { CopyEventUrl } from "./CopyEventUrl";
+import { eachDayOfInterval } from "./eachDayOfInterval";
 import { ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
 import { ImportEventJson } from "./ImportEventJson";
+import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { Skeleton } from "./Skeleton";
-import { TooltipContent } from "./TooltipContent";
+import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
 const userId = getUserId();
-
-interface CopyEventUrlProps
-  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
-  eventId: string | undefined;
-}
-
-interface UserAvailabilitySummaryItemProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  dates: IsoDate[];
-  isCreator: boolean;
-  isCurrentUser: boolean;
-  name: string;
-}
 
 export function EventDetails() {
   const yDoc = useYDoc();
@@ -426,223 +415,5 @@ export function EventDetails() {
         <ContextMenuItem>Import from clipboard</ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
-  );
-}
-
-interface AvailabilityGridCellProps
-  extends React.HTMLAttributes<HTMLButtonElement> {
-  availableUsers: UserId[];
-  currentUserAvailable: boolean;
-  day: Date;
-  hoveredUser: "available" | "none" | "unavailable";
-  names: Record<UserId, string>;
-  totalUsers: number;
-}
-function AvailabilityGridCell({
-  availableUsers,
-  currentUserAvailable,
-  day,
-  hoveredUser,
-  names,
-  totalUsers,
-  ...rest
-}: AvailabilityGridCellProps) {
-  const fill = availableUsers.length / totalUsers;
-  return (
-    <button
-      aria-label={day.toLocaleDateString(undefined, { dateStyle: "full" })}
-      className={cn(
-        "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition-all border-transparent",
-        (currentUserAvailable || hoveredUser === "available") &&
-          "border-neutral-200 border-4",
-        currentUserAvailable &&
-          hoveredUser === "available" &&
-          "border-neutral-200 border-[6px]",
-        hoveredUser === "unavailable" && "opacity-60 saturate-25",
-      )}
-      style={{
-        color: fill > 0.5 ? "white" : "black",
-        backgroundColor: fill
-          ? `hsl(from var(--accent) h s l / ${fill})`
-          : undefined,
-      }}
-      type="button"
-      {...rest}
-    >
-      {day.toLocaleDateString("en-US", { day: "numeric" })}
-      {availableUsers.length > 0 && (
-        // todo: lift up and animate names using experimental_ViewTransition
-        <TooltipContent className="whitespace-pre text-left opacity-0 group-hover:opacity-100">
-          {availableUsers.map((userId) => names[userId]).join("\n")}
-        </TooltipContent>
-      )}
-    </button>
-  );
-}
-
-function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
-  const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  const handleCopy = () => {
-    if (!navigator.clipboard) {
-      alert("Clipboard not supported");
-    }
-    navigator.clipboard.writeText(eventUrl);
-    setShowTooltip(true);
-    setTimeout(() => setShowTooltip(false), 2000);
-  };
-
-  return (
-    <label
-      {...rest}
-      className={cn("group relative mt-4 block cursor-copy", rest.className)}
-      onClick={handleCopy}
-    >
-      <span className="block">Event URL</span>
-
-      {eventId ? (
-        <>
-          <input
-            className="block h-[46px] w-full cursor-copy rounded-sm p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
-            id="eventUrl"
-            readOnly
-            value={eventUrl}
-          />
-          <button
-            className="active:bg-black! absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
-            onClick={handleCopy}
-            title="Copy to clipboard"
-            type="button"
-          >
-            <ClipboardCopyIcon />
-            {showTooltip && (
-              <TooltipContent>Copied to clipboard!</TooltipContent>
-            )}
-          </button>
-        </>
-      ) : (
-        <Skeleton className="h-[46px]" />
-      )}
-    </label>
-  );
-}
-
-function eachDayOfInterval(from: Date, to: Date) {
-  const days = [];
-  const end = new Date(to);
-  for (let d = new Date(from); d <= end; d = new Date(d.getTime() + 86400000)) {
-    days.push(new Date(d));
-  }
-  return days;
-}
-
-function moveFocusWithArrowKeys(
-  e: React.KeyboardEvent<HTMLButtonElement>,
-  onClick: () => void,
-) {
-  const grid = e.currentTarget.parentElement!.parentElement!;
-
-  const allButtons = grid.querySelectorAll("button");
-  let index = Array.from(allButtons).indexOf(
-    e.currentTarget as HTMLButtonElement,
-  );
-
-  // move focus to next button with arrow keys
-  switch (e.key) {
-    case " ":
-    case "Enter":
-      onClick();
-      break;
-    case "ArrowDown":
-      index += 7;
-      break;
-    case "ArrowLeft":
-      index--;
-      break;
-
-    case "ArrowRight":
-      index++;
-      break;
-    case "ArrowUp":
-      index -= 7;
-      break;
-  }
-
-  const nextFocused = allButtons[index % allButtons.length];
-  if (nextFocused) {
-    nextFocused.focus();
-  }
-}
-
-function UserAvailabilitySummary({
-  availabilityForUsers,
-  creatorId,
-  names,
-  onHover,
-  userId,
-}: {
-  availabilityForUsers: Record<UserId, IsoDate[]>;
-  creatorId: UserId | undefined;
-  names: Record<UserId, string>;
-  onHover: (userId: UserId | null) => void;
-  userId: UserId | null;
-}) {
-  return (
-    <dl onMouseLeave={() => onHover(null)}>
-      {unsafeKeys(availabilityForUsers).map((user) => {
-        const dates = availabilityForUsers[user];
-        return (
-          <UserAvailabilitySummaryItem
-            dates={dates}
-            isCreator={user === creatorId}
-            isCurrentUser={user === userId}
-            key={user}
-            name={names[user as UserId] ?? user}
-            onMouseEnter={() => onHover(user as UserId)}
-          />
-        );
-      })}
-      {userId && !availabilityForUsers[userId] && (
-        <UserAvailabilitySummaryItem
-          dates={[]}
-          isCreator={creatorId === userId}
-          isCurrentUser={true}
-          key={userId}
-          name={names[userId as UserId] ?? userId}
-          onMouseEnter={() => onHover(userId as UserId)}
-        />
-      )}
-    </dl>
-  );
-}
-function UserAvailabilitySummaryItem({
-  dates,
-  isCreator,
-  isCurrentUser,
-  name,
-  ...rest
-}: UserAvailabilitySummaryItemProps) {
-  const labels = Object.entries({
-    creator: isCreator,
-    you: isCurrentUser,
-  })
-    .filter(([_, value]) => value)
-    .map(([key]) => `${key}`)
-    .join(", ");
-
-  return (
-    <div
-      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
-      {...rest}
-    >
-      <dt>
-        {name}
-        {labels ? ` (${labels})` : ""}
-      </dt>
-      <dd>
-        {dates.length} date{dates.length === 1 ? "" : "s"}
-      </dd>
-    </div>
   );
 }

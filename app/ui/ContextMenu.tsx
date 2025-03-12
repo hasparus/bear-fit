@@ -1,10 +1,10 @@
 "use client";
 
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
 import * as React from "react";
 
 import { CheckIcon } from "./CheckIcon";
+import { ChevronRightIcon } from "./ChevronRightIcon";
 import { cn } from "./cn";
 import { RadioIcon } from "./RadioIcon";
 
@@ -36,7 +36,7 @@ const ContextMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronRightIcon className="ml-auto size-[15px]" />
+    <ChevronRightIcon className="ml-auto size-4" />
   </ContextMenuPrimitive.SubTrigger>
 ));
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName;
