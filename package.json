@@ -13,6 +13,7 @@
     "test:ui": "VERBOSE=true HEADED=true vitest"
   },
   "dependencies": {
+    "@radix-ui/react-context-menu": "^2.2.6",
     "@radix-ui/react-icons": "^1.3.2",
     "@tailwindcss/postcss": "^4.0.10",
     "@tailwindcss/vite": "^4.0.10",

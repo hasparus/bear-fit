@@ -13,7 +13,7 @@ import { Loading } from "./ui/Loading";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
 
-const ALWAYS_PROD = false;
+const ALWAYS_PROD = true;
 
 export function App({
   serverUrl,

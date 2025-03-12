@@ -36,6 +36,12 @@
   --accent: blue;
 }
 
+@theme {
+  :root {
+    --color-accent: var(--accent);
+  }
+}
+
 html,
 body,
 #app {

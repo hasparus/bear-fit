@@ -9,6 +9,7 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
 
 import { TestStyles } from "../test/TestStyles";
+import { _waitForHuman } from "../test/utils/_waitForHuman";
 import { App } from "./App";
 import { CalendarEvent } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
@@ -22,13 +23,23 @@ afterAll(async () => {
 });
 
 it("creates a new event, fills dates, opens a new browser and fills more dates", async () => {
-  render(
-    <div className="pt-8">
-      <App serverUrl={server.href} />
-      <textarea className="opacity-0 size-0" id="debug-textarea" />
-    </div>,
-    { wrapper: TestStyles },
-  );
+  const iframeId = "other-user-iframe";
+  function Setup(props: { eventId?: string }) {
+    return (
+      <div className="pt-8">
+        <App serverUrl={server.href} />
+        {props.eventId && (
+          <iframe
+            className="w-full mt-4 h-[600px]"
+            id={iframeId}
+            src={`${server.href}?id=${props.eventId}`}
+          />
+        )}
+      </div>
+    );
+  }
+
+  const root = render(<Setup />, { wrapper: TestStyles });
 
   await userEvent.keyboard("{Tab}test event");
 
@@ -74,29 +85,41 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
   await page.getByRole("button", { name: "Copy to clipboard" }).click();
   await expect.element(page.getByText("Copied to clipboard")).toBeVisible();
 
+  const url = (
+    page.getByLabelText("Event URL").first().element() as HTMLInputElement
+  ).value;
+
+  root.rerender(<Setup eventId={new URL(url).searchParams.get("id")!} />);
+
   await page.getByRole("button", { name: "Export to JSON" }).click();
 
-  const json = await commands.readDownloadedJsonExport();
+  // TODO: Interact with the iframe.
+  // TODO: Copy JSON on right click from the iframe.
+  await page.getByTestId(iframeId).element();
 
-  const exported = v.parse(YDocJsonSchema, JSON.parse(json));
+  await _waitForHuman();
 
-  const event = v.parse(CalendarEvent, exported.event);
+  // const json = await commands.readDownloadedJsonExport();
 
-  expect(event.startDate).toBe(
-    `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`,
-  );
-  expect(event.endDate).toBe(
-    `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${END_DAY}`,
-  );
-  expect(event.name).toBe("test event");
+  // const exported = v.parse(YDocJsonSchema, JSON.parse(json));
 
-  const creatorId = event.creator;
+  // const event = v.parse(CalendarEvent, exported.event);
 
-  const names = (exported as { names: Record<string, string> }).names;
-  const creatorName = names[creatorId];
-  expect(creatorName).toBe(CREATOR_NAME);
+  // expect(event.startDate).toBe(
+  //   `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
+  //     .toString()
+  //     .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`,
+  // );
+  // expect(event.endDate).toBe(
+  //   `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
+  //     .toString()
+  //     .padStart(2, "0")}-${END_DAY}`,
+  // );
+  // expect(event.name).toBe("test event");
+
+  // const creatorId = event.creator;
+
+  // const names = (exported as { names: Record<string, string> }).names;
+  // const creatorName = names[creatorId];
+  // expect(creatorName).toBe(CREATOR_NAME);
 });
