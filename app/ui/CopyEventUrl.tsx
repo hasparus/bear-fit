@@ -15,10 +15,19 @@ export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   const handleCopy = () => {
+    if (!eventId) {
+      throw new Error("No event ID provided");
+    }
+
+    const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
+    navigator.clipboard.writeText(eventUrl);
+
     if (!navigator.clipboard) {
       alert("Clipboard not supported");
     }
+
     navigator.clipboard.writeText(eventUrl);
+
     setShowTooltip(true);
     setTimeout(() => setShowTooltip(false), 2000);
   };
@@ -40,7 +49,7 @@ export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
             value={eventUrl}
           />
           <button
-            className="active:bg-black! absolute bottom-[9px] right-[7px] flex p-1 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
+            className="active:bg-black! absolute bottom-[9px] right-2 flex p-1 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
             type="button"

@@ -3,22 +3,41 @@ import { unsafeKeys } from "unsafe-keys";
 
 import type { IsoDate, UserId } from "../schemas";
 
+import { cn } from "./cn";
+
+// TODO: Click users to visualize a subset of the availability grid
+
 export function UserAvailabilitySummary({
   availabilityForUsers,
   creatorId,
   names,
   onHover,
+  // TODO
+  onSelect: _,
   userId,
 }: {
   availabilityForUsers: Record<UserId, IsoDate[]>;
   creatorId: UserId | undefined;
   names: Record<UserId, string>;
   onHover: (userId: UserId | null) => void;
+  // TODO
+  onSelect?: (userId: UserId | null) => void;
   userId: UserId | null;
 }) {
+  const userIds = unsafeKeys(availabilityForUsers);
+
+  const currentUserDidNotSelectYet = !userId || !availabilityForUsers[userId];
+  const allUsersCount = userIds.length + (currentUserDidNotSelectYet ? 1 : 0);
+
   return (
-    <dl onMouseLeave={() => onHover(null)}>
-      {unsafeKeys(availabilityForUsers).map((user) => {
+    <dl
+      className={cn(
+        allUsersCount > 6 &&
+          "max-h-[144px] overflow-y-auto overflow-x-clip border border-black p-2 rounded-sm bg-neutral-50 inset-shadow-2xs",
+      )}
+      onMouseLeave={() => onHover(null)}
+    >
+      {userIds.map((user) => {
         const dates = availabilityForUsers[user];
         return (
           <UserAvailabilitySummaryItem
@@ -31,7 +50,7 @@ export function UserAvailabilitySummary({
           />
         );
       })}
-      {userId && !availabilityForUsers[userId] && (
+      {currentUserDidNotSelectYet && (
         <UserAvailabilitySummaryItem
           dates={[]}
           isCreator={creatorId === userId}
@@ -70,7 +89,7 @@ function UserAvailabilitySummaryItem({
 
   return (
     <div
-      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
+      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800 "
       {...rest}
     >
       <dt>

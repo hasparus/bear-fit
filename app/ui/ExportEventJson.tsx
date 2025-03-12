@@ -1,21 +1,43 @@
+import type { Doc } from "yjs";
+
 import React, { useState } from "react";
 
-import { yDocToJson } from "../shared-data";
-import { useYDoc } from "../useYDoc";
+import { getEventMap, yDocToJson } from "../shared-data";
 import { cn } from "./cn";
 import { DownloadIcon } from "./DownloadIcon";
 import { TooltipContent } from "./TooltipContent";
 
+export function exportEventJson(yDoc: Doc) {
+  const data = yDocToJson(yDoc);
+  const eventMap = getEventMap(yDoc);
+  const eventName = eventMap.get("name");
+
+  if (!eventName) {
+    throw new Error("No event name provided");
+  }
+
+  const jsonString = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonString], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${eventName}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 interface ExportEventJsonProps extends React.HTMLAttributes<HTMLButtonElement> {
-  eventName: string;
+  yDoc: Doc;
 }
 
 export function ExportEventJson({
   className,
-  eventName,
+  yDoc,
   ...rest
 }: ExportEventJsonProps) {
-  const yDoc = useYDoc();
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
@@ -26,20 +48,7 @@ export function ExportEventJson({
       )}
       onClick={() => {
         setShowTooltip(true);
-
-        const data = yDocToJson(yDoc);
-        const jsonString = JSON.stringify(data, null, 2);
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${eventName}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
+        exportEventJson(yDoc);
         setTimeout(() => setShowTooltip(false), 2000);
       }}
       title="Export to JSON"

@@ -10,7 +10,7 @@ import {
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
-import { getEventMap } from "../shared-data";
+import { getEventMap, yDocToJson } from "../shared-data";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { AvailabilityGridCell } from "./AvailabilityGridCell";
@@ -24,11 +24,12 @@ import {
 } from "./ContextMenu";
 import { CopyEventUrl } from "./CopyEventUrl";
 import { eachDayOfInterval } from "./eachDayOfInterval";
-import { ExportEventJson } from "./ExportEventJson";
+import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
-import { ImportEventJson } from "./ImportEventJson";
+import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
+import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
@@ -47,6 +48,8 @@ export function EventDetails() {
   const availability = useY(availabilityMap) as AvailabilitySet;
 
   const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
+
+  const isCreator = userId === event.creator || !event.creator;
 
   const setAvailability = (userId: UserId, date: IsoDate, value: boolean) => {
     const key = AvailabilityKey(userId, date);
@@ -191,6 +194,8 @@ export function EventDetails() {
   }, [event.name]);
 
   const monthCount = Object.keys(groupedDays).length;
+
+  const importEventJson = useImportEventJson();
 
   return (
     <ContextMenu>
@@ -344,75 +349,56 @@ export function EventDetails() {
                 ))}
             </div>
             <CopyEventUrl className="lg:hidden" eventId={event.id} />
+            {importEventJson.hiddenInputElement}
           </form>
 
           <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
             {event.name && (
               <>
-                {(userId === event.creator || !event.creator) && (
-                  <ImportEventJson />
-                )}
-                <ExportEventJson eventName={event.name} />
+                {isCreator && <ImportEventJson />}
+                <ExportEventJson yDoc={yDoc} />
               </>
             )}
           </footer>
-
-          {/* <ContextMenu>
-        <ContextMenuTrigger className="flex h-[150px] w-[300px] items-center justify-center rounded-md border border-dashed text-sm">
-          Right click here
-        </ContextMenuTrigger>
-        <ContextMenuContent className="w-64">
-          <ContextMenuItem inset>
-            Back
-            <ContextMenuShortcut>⌘[</ContextMenuShortcut>
-          </ContextMenuItem>
-          <ContextMenuItem disabled inset>
-            Forward
-            <ContextMenuShortcut>⌘]</ContextMenuShortcut>
-          </ContextMenuItem>
-          <ContextMenuItem inset>
-            Reload
-            <ContextMenuShortcut>⌘R</ContextMenuShortcut>
-          </ContextMenuItem>
-          <ContextMenuSub>
-            <ContextMenuSubTrigger inset>More Tools</ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-48">
-              <ContextMenuItem>
-                Save Page As...
-                <ContextMenuShortcut>⇧⌘S</ContextMenuShortcut>
-              </ContextMenuItem>
-              <ContextMenuItem>Create Shortcut...</ContextMenuItem>
-              <ContextMenuItem>Name Window...</ContextMenuItem>
-              <ContextMenuSeparator />
-              <ContextMenuItem>Developer Tools</ContextMenuItem>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuCheckboxItem checked>
-            Show Bookmarks Bar
-            <ContextMenuShortcut>⌘⇧B</ContextMenuShortcut>
-          </ContextMenuCheckboxItem>
-          <ContextMenuCheckboxItem>Show Full URLs</ContextMenuCheckboxItem>
-          <ContextMenuSeparator />
-          <ContextMenuRadioGroup value="pedro">
-            <ContextMenuLabel inset>People</ContextMenuLabel>
-            <ContextMenuSeparator />
-            <ContextMenuRadioItem value="pedro">
-              Pedro Duarte
-            </ContextMenuRadioItem>
-            <ContextMenuRadioItem value="colm">Colm Tuite</ContextMenuRadioItem>
-          </ContextMenuRadioGroup>
-        </ContextMenuContent>
-      </ContextMenu> */}
         </ContextMenuTrigger>
       </Container>
-
       <ContextMenuContent>
-        {/* TODO: Context menu for: Export to file, Export to clipboard, Import from file, Import from clipboard */}
-        <ContextMenuItem>Export to file</ContextMenuItem>
-        <ContextMenuItem>Export to clipboard</ContextMenuItem>
-        <ContextMenuItem>Import from file</ContextMenuItem>
-        <ContextMenuItem>Import from clipboard</ContextMenuItem>
+        <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
+          Export to JSON file
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            const json = yDocToJson(yDoc);
+            navigator.clipboard.writeText(JSON.stringify(json, null, 2));
+          }}
+        >
+          Copy event JSON
+        </ContextMenuItem>
+        {isCreator && (
+          <>
+            <ContextMenuItem
+              onClick={() => {
+                importEventJson.openFileDialog();
+              }}
+            >
+              Import from JSON file
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => {
+                navigator.clipboard
+                  .readText()
+                  .then((text) => {
+                    overwriteYDocWithJson(yDoc, JSON.parse(text));
+                  })
+                  .catch((error) => {
+                    console.error("Error importing JSON:", error);
+                  });
+              }}
+            >
+              Import from clipboard
+            </ContextMenuItem>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );

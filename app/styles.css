@@ -43,6 +43,10 @@ body,
   min-height: 100vh;
 }
 
+body {
+  overflow: hidden;
+}
+
 #app {
   display: flex;
   align-items: center;
