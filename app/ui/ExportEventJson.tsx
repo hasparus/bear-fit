@@ -21,7 +21,7 @@ export function ExportEventJson({
   return (
     <button
       className={cn(
-        "relative flex p-2 bg-neu-tral-100 hover:bg-neutral-200 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white group-hover:bg-neutral-200",
+        "relative flex p-1 bg-neu-tral-100 hover:bg-neutral-200 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white group-hover:bg-neutral-200",
         className,
       )}
       onClick={() => {
@@ -46,7 +46,7 @@ export function ExportEventJson({
       type="button"
       {...rest}
     >
-      <DownloadIcon />
+      <DownloadIcon className="size-5" />
       {showTooltip && <TooltipContent>JSON exported!</TooltipContent>}
     </button>
   );

@@ -1,10 +1,7 @@
-export function CopyIcon() {
+export function CopyIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
-    <svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z"
-        fill="currentColor"
-      />
+    <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
+      <path d="M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z" />
     </svg>
   );
 }

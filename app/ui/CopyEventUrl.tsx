@@ -40,12 +40,12 @@ export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
             value={eventUrl}
           />
           <button
-            className="active:bg-black! absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
+            className="active:bg-black! absolute bottom-[9px] right-[7px] flex p-1 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
             type="button"
           >
-            <CopyIcon />
+            <CopyIcon className="size-5" />
             {showTooltip && (
               <TooltipContent>Copied to clipboard!</TooltipContent>
             )}
