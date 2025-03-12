@@ -12,9 +12,9 @@ export default defineConfig({
   plugins: [react(), tailwind()],
   test: {
     browser: {
+      provider: "playwright",
       enabled: true,
       headless,
-      provider: "playwright",
       // https://vitest.dev/guide/browser/playwright
       commands: {
         readDownloadedJsonExport,
@@ -25,10 +25,14 @@ export default defineConfig({
       instances: [
         {
           browser: "chromium",
+          testTimeout: 60_000,
+          context: {
+            permissions: ["clipboard-read", "clipboard-write"],
+            
+          },
           launch: {
             downloadsPath: "./test/downloads",
           },
-          testTimeout: 60_000,
         },
       ],
     },
