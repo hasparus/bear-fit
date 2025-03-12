@@ -12,6 +12,7 @@
   --color-gray-*: initial;
   --color-slate-*: initial;
   --color-stone-*: initial;
+  --color-accent: blue;
 }
 
 /*
@@ -33,13 +34,7 @@
 }
 
 :root {
-  --accent: blue;
-}
-
-@theme {
-  :root {
-    --color-accent: var(--accent);
-  }
+  --accent: var(--color-accent);
 }
 
 html,

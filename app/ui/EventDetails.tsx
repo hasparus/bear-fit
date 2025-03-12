@@ -19,17 +19,8 @@ import { cn } from "./cn";
 import { Container } from "./Container";
 import {
   ContextMenu,
-  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuRadioGroup,
-  ContextMenuRadioItem,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./ContextMenu";
 import { ExportEventJson } from "./ExportEventJson";
@@ -480,7 +471,8 @@ function AvailabilityGridCell({
     >
       {day.toLocaleDateString("en-US", { day: "numeric" })}
       {availableUsers.length > 0 && (
-        <TooltipContent className="whitespace-pre-line text-left opacity-0 group-hover:opacity-100">
+        // todo: lift up and animate names using experimental_ViewTransition
+        <TooltipContent className="whitespace-pre text-left opacity-0 group-hover:opacity-100">
           {availableUsers.map((userId) => names[userId]).join("\n")}
         </TooltipContent>
       )}
