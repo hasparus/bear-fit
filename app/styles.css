@@ -12,6 +12,7 @@
   --color-gray-*: initial;
   --color-slate-*: initial;
   --color-stone-*: initial;
+  --color-accent: blue;
 }
 
 /*
@@ -33,13 +34,17 @@
 }
 
 :root {
-  --accent: blue;
+  --accent: var(--color-accent);
 }
 
 html,
 body,
 #app {
   min-height: 100vh;
+}
+
+body {
+  overflow: hidden;
 }
 
 #app {

@@ -169,3 +169,8 @@ dist
 .partykit
 .DS_Store
 app/__screenshots__/
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/

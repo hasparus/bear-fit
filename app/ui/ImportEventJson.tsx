@@ -1,20 +1,60 @@
-import { UploadIcon } from "@radix-ui/react-icons";
-import React, { useRef, useState } from "react";
-import * as v from "valibot";
+import React, { type RefObject, useRef, useState } from "react";
 
-import { getUserId } from "../getUserId";
-import { AvailabilityKey, type UserId } from "../schemas";
-import { YDocJsonSchema } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
+import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { TooltipContent } from "./TooltipContent";
+import { UploadIcon } from "./UploadIcon";
 
-interface ImportEventJsonProps extends React.HTMLAttributes<HTMLLabelElement> {}
+export interface ImportEventJsonProps
+  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "children"> {
+  children?:
+    | ((input: RefObject<HTMLInputElement | null>) => React.ReactNode)
+    | React.ReactNode;
+}
 
-export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
+export function ImportEventJson({
+  children,
+  className,
+  ...rest
+}: ImportEventJsonProps) {
+  const {
+    hiddenInputElement: inputElement,
+    fileInputRef,
+    showTooltip,
+    tooltipMessage,
+  } = useImportEventJson();
+
+  return (
+    <>
+      {inputElement}
+      {typeof children === "function" ? (
+        children(fileInputRef)
+      ) : (
+        <>
+          <label
+            className={cn(
+              "relative flex p-1 bg-neu-tral-100 hover:bg-neutral-200 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white group-hover:bg-neutral-200",
+              className,
+            )}
+            htmlFor="import-json"
+            title="Import from JSON"
+            {...rest}
+          >
+            <UploadIcon className="size-5" />
+            {showTooltip && <TooltipContent>{tooltipMessage}</TooltipContent>}
+          </label>
+        </>
+      )}
+    </>
+  );
+}
+
+export function useImportEventJson() {
   const yDoc = useYDoc();
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,75 +69,8 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
         }
 
         const parsedJson = JSON.parse(reader.result);
-        const jsonData = v.parse(YDocJsonSchema, parsedJson);
 
-        const currentUserId = getUserId();
-
-        const namesMap = yDoc.getMap("names");
-
-        const currentUserName =
-          namesMap.get(currentUserId) || localStorage.getItem("userName");
-
-        const sameNameUserIds: UserId[] = [];
-        Object.entries(jsonData.names).forEach(([id, name]) => {
-          if (name === currentUserName && id !== currentUserId) {
-            sameNameUserIds.push(id as UserId);
-          }
-        });
-
-        const availabilityMap = yDoc.getMap("availability");
-
-        const keysToDelete: string[] = [];
-        availabilityMap.forEach((_value, key) => {
-          if (key.startsWith(currentUserId)) {
-            keysToDelete.push(key);
-          }
-
-          for (const sameNameId of sameNameUserIds) {
-            if (key.startsWith(sameNameId)) {
-              keysToDelete.push(key);
-              break;
-            }
-          }
-        });
-
-        keysToDelete.forEach((key) => {
-          availabilityMap.delete(key);
-        });
-
-        Object.entries(jsonData.availability).forEach(([key, value]) => {
-          try {
-            const belongsToSameNameUser = sameNameUserIds.some((userId) =>
-              key.startsWith(userId),
-            );
-
-            if (belongsToSameNameUser) {
-              const { date } = AvailabilityKey.parseToObject(key);
-              const newKey = AvailabilityKey(currentUserId, date);
-              availabilityMap.set(newKey, value);
-            } else {
-              availabilityMap.set(key, value);
-            }
-          } catch (e) {
-            availabilityMap.set(key, value);
-          }
-        });
-
-        const eventMap = yDoc.getMap("event");
-        Object.entries(jsonData.event).forEach(([key, value]) => {
-          if (key === "creator") {
-            return;
-          }
-          eventMap.set(key, value);
-        });
-
-        Object.entries(jsonData.names).forEach(([key, value]) => {
-          if (!sameNameUserIds.includes(key as UserId)) {
-            namesMap.set(key, value);
-          }
-        });
-
-        namesMap.set(currentUserId, currentUserName);
+        overwriteYDocWithJson(yDoc, parsedJson);
 
         setTooltipMessage("JSON imported successfully!");
         setShowTooltip(true);
@@ -116,8 +89,8 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
     }
   };
 
-  return (
-    <>
+  return {
+    hiddenInputElement: (
       <input
         accept=".json"
         className="hidden"
@@ -126,18 +99,14 @@ export function ImportEventJson({ className, ...rest }: ImportEventJsonProps) {
         ref={fileInputRef}
         type="file"
       />
-      <label
-        className={cn(
-          "relative flex p-2 bg-neu-tral-100 hover:bg-neutral-200 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white group-hover:bg-neutral-200",
-          className,
-        )}
-        htmlFor="import-json"
-        title="Import from JSON"
-        {...rest}
-      >
-        <UploadIcon />
-        {showTooltip && <TooltipContent>{tooltipMessage}</TooltipContent>}
-      </label>
-    </>
-  );
+    ),
+    fileInputRef,
+    showTooltip,
+    tooltipMessage,
+    openFileDialog: () => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    },
+  };
 }

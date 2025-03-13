@@ -1,7 +1,5 @@
-import { ClipboardCopyIcon } from "@radix-ui/react-icons";
 import React, { useEffect, useRef, useState } from "react";
 import { useY } from "react-yjs";
-import { unsafeKeys } from "unsafe-keys";
 
 import { getUserId } from "../getUserId";
 import {
@@ -12,32 +10,30 @@ import {
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
-import { getEventMap } from "../shared-data";
+import { getEventMap, yDocToJson } from "../shared-data";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
+import { AvailabilityGridCell } from "./AvailabilityGridCell";
 import { cn } from "./cn";
 import { Container } from "./Container";
-import { ExportEventJson } from "./ExportEventJson";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "./ContextMenu";
+import { CopyEventUrl } from "./CopyEventUrl";
+import { eachDayOfInterval } from "./eachDayOfInterval";
+import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
-import { ImportEventJson } from "./ImportEventJson";
+import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
+import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
+import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
-import { TooltipContent } from "./TooltipContent";
+import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
 const userId = getUserId();
-
-interface CopyEventUrlProps
-  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
-  eventId: string | undefined;
-}
-
-interface UserAvailabilitySummaryItemProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  dates: IsoDate[];
-  isCreator: boolean;
-  isCurrentUser: boolean;
-  name: string;
-}
 
 export function EventDetails() {
   const yDoc = useYDoc();
@@ -52,6 +48,8 @@ export function EventDetails() {
   const availability = useY(availabilityMap) as AvailabilitySet;
 
   const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
+
+  const isCreator = userId === event.creator || !event.creator;
 
   const setAvailability = (userId: UserId, date: IsoDate, value: boolean) => {
     const key = AvailabilityKey(userId, date);
@@ -197,382 +195,222 @@ export function EventDetails() {
 
   const monthCount = Object.keys(groupedDays).length;
 
+  const importEventJson = useImportEventJson();
+
   return (
-    <Container wide={monthCount > 1}>
-      <form
-        className={cn(
-          "font-[inherit] text-base",
-          monthCount > 1 &&
-            "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4",
-        )}
-        onSubmit={(e) => e.preventDefault()}
-      >
-        <div>
-          <p className="block font-mono text-sm">Calendar</p>
-          <h1 className="mb-4 text-2xl">
-            {event.name || <Skeleton className="h-[32px]" />}
-          </h1>
-          <p className="block font-mono text-sm">Event dates</p>
-          <p aria-busy={!event.startDate} className="mb-4">
-            {event.startDate && event.endDate ? (
+    <ContextMenu>
+      <Container wide={monthCount > 1}>
+        <ContextMenuTrigger>
+          <form
+            className={cn(
+              "font-[inherit] text-base",
+              monthCount > 1 &&
+                "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4",
+            )}
+            onSubmit={(e) => e.preventDefault()}
+          >
+            <div>
+              <p className="block font-mono text-sm">Calendar</p>
+              <h1 className="mb-4 text-2xl">
+                {event.name || <Skeleton className="h-[32px]" />}
+              </h1>
+              <p className="block font-mono text-sm">Event dates</p>
+              <p aria-busy={!event.startDate} className="mb-4">
+                {event.startDate && event.endDate ? (
+                  <>
+                    <time dateTime={event.startDate}>
+                      {new Date(event.startDate).toLocaleDateString()}
+                    </time>
+                    {" - "}
+                    <time dateTime={event.endDate}>
+                      {new Date(event.endDate).toLocaleDateString()}
+                    </time>
+                  </>
+                ) : (
+                  <Skeleton className="w-[206px]" />
+                )}
+              </p>
+              <div className="mb-4">
+                <label className="block" htmlFor="name">
+                  Your name
+                </label>
+                <input
+                  className="w-full border p-2 rounded-sm"
+                  id="name"
+                  onChange={(e) => {
+                    if (!userId) {
+                      throw new Error("user id is missing");
+                    }
+
+                    const value = e.target.value;
+                    setUserName(value);
+                    namesMap.set(userId, value);
+                    setTimeout(() => {
+                      localStorage.setItem("userName", value);
+                    });
+                  }}
+                  type="text"
+                  value={userName || ""}
+                />
+              </div>
+              <div className="mb-4 font-mono text-sm text-neutral-500">
+                {!event.id ? (
+                  <>&nbsp;</>
+                ) : (
+                  <UserAvailabilitySummary
+                    availabilityForUsers={availabilityForUsers}
+                    creatorId={event.creator}
+                    names={names}
+                    onHover={(userId) => setHoveredUser(userId)}
+                    userId={userId}
+                  />
+                )}
+              </div>
+              <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
+            </div>
+
+            <div className="w-px bg-neutral-200 max-lg:hidden" />
+
+            <div className="mb-6 mt-2 min-h-[72px]" role="grid">
+              {event.startDate &&
+                Object.entries(groupedDays).map(([monthKey, monthDays]) => (
+                  <React.Fragment key={monthKey}>
+                    <div className="mb-2 mt-4 first:mt-2">
+                      {monthDays[0].toLocaleDateString("en-US", {
+                        month: "long",
+                      })}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {getWeekDayNames(tryGetFirstDayOfTheWeek() ?? 0).map(
+                        (name) => (
+                          <div
+                            className="flex h-10 items-center justify-center text-[11.6667px] font-medium opacity-75"
+                            key={name}
+                          >
+                            {name}
+                          </div>
+                        ),
+                      )}
+
+                      {[
+                        ...Array(
+                          getPaddingDays(
+                            monthDays[0],
+                            tryGetFirstDayOfTheWeek() ?? 0,
+                          ),
+                        ),
+                      ].map((_, i) => (
+                        <div className="h-10" key={`padding-${i}`} />
+                      ))}
+
+                      {monthDays.map((day, i) => {
+                        const dateStr = isoDate(day);
+                        const availableUsers =
+                          availabilityForDates.get(dateStr) || [];
+                        const currentUserAvailable =
+                          !!userId && availableUsers.includes(userId);
+
+                        return (
+                          <AvailabilityGridCell
+                            availableUsers={availableUsers}
+                            currentUserAvailable={currentUserAvailable}
+                            day={day}
+                            hoveredUser={
+                              hoveredUser
+                                ? availableUsers.includes(hoveredUser)
+                                  ? "available"
+                                  : "unavailable"
+                                : "none"
+                            }
+                            key={`${day}-${i}`}
+                            names={names}
+                            onKeyDown={(event) =>
+                              moveFocusWithArrowKeys(event, () =>
+                                setAvailability(
+                                  userId!,
+                                  dateStr,
+                                  !currentUserAvailable,
+                                ),
+                              )
+                            }
+                            onPointerDown={(event) => {
+                              if (
+                                event.pointerType === "mouse" &&
+                                event.button === 2
+                              ) {
+                                // right clicks open context menu
+                                return;
+                              }
+
+                              handlePointerDown(
+                                dateStr,
+                                !!currentUserAvailable,
+                              );
+                            }}
+                            onPointerEnter={(event) =>
+                              handlePointerEnter(dateStr, event)
+                            }
+                            tabIndex={i === 0 ? 0 : -1}
+                            totalUsers={totalUsers}
+                          />
+                        );
+                      })}
+                    </div>
+                  </React.Fragment>
+                ))}
+            </div>
+            <CopyEventUrl className="lg:hidden" eventId={event.id} />
+            {importEventJson.hiddenInputElement}
+          </form>
+
+          <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
+            {event.name && (
               <>
-                <time dateTime={event.startDate}>
-                  {new Date(event.startDate).toLocaleDateString()}
-                </time>
-                {" - "}
-                <time dateTime={event.endDate}>
-                  {new Date(event.endDate).toLocaleDateString()}
-                </time>
+                {isCreator && <ImportEventJson />}
+                <ExportEventJson yDoc={yDoc} />
               </>
-            ) : (
-              <Skeleton className="w-[206px]" />
             )}
-          </p>
-          <div className="mb-4">
-            <label className="block" htmlFor="name">
-              Your name
-            </label>
-            <input
-              className="w-full border p-2"
-              id="name"
-              onChange={(e) => {
-                if (!userId) {
-                  throw new Error("user id is missing");
-                }
-
-                const value = e.target.value;
-                setUserName(value);
-                namesMap.set(userId, value);
-                setTimeout(() => {
-                  localStorage.setItem("userName", value);
-                });
-              }}
-              type="text"
-              value={userName || ""}
-            />
-          </div>
-          <div className="mb-4 font-mono text-sm text-neutral-500">
-            {!event.id ? (
-              <>&nbsp;</>
-            ) : (
-              <UserAvailabilitySummary
-                availabilityForUsers={availabilityForUsers}
-                creatorId={event.creator}
-                names={names}
-                onHover={(userId) => setHoveredUser(userId)}
-                userId={userId}
-              />
-            )}
-          </div>
-          <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
-        </div>
-
-        <div className="w-px bg-neutral-200 max-lg:hidden" />
-
-        <div className="mb-6 mt-2 min-h-[72px]" role="grid">
-          {event.startDate &&
-            Object.entries(groupedDays).map(([monthKey, monthDays]) => (
-              <React.Fragment key={monthKey}>
-                <div className="mb-2 mt-4 first:mt-2">
-                  {monthDays[0].toLocaleDateString("en-US", { month: "long" })}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {getWeekDayNames(tryGetFirstDayOfTheWeek() ?? 0).map(
-                    (name) => (
-                      <div
-                        className="flex h-10 items-center justify-center text-[11.6667px] font-medium opacity-75"
-                        key={name}
-                      >
-                        {name}
-                      </div>
-                    ),
-                  )}
-
-                  {[
-                    ...Array(
-                      getPaddingDays(
-                        monthDays[0],
-                        tryGetFirstDayOfTheWeek() ?? 0,
-                      ),
-                    ),
-                  ].map((_, i) => (
-                    <div className="h-10" key={`padding-${i}`} />
-                  ))}
-
-                  {monthDays.map((day, i) => {
-                    const dateStr = isoDate(day);
-                    const availableUsers =
-                      availabilityForDates.get(dateStr) || [];
-                    const currentUserAvailable =
-                      !!userId && availableUsers.includes(userId);
-
-                    return (
-                      <AvailabilityGridCell
-                        availableUsers={availableUsers}
-                        currentUserAvailable={currentUserAvailable}
-                        day={day}
-                        hoveredUser={
-                          hoveredUser
-                            ? availableUsers.includes(hoveredUser)
-                              ? "available"
-                              : "unavailable"
-                            : "none"
-                        }
-                        key={`${day}-${i}`}
-                        names={names}
-                        onKeyDown={(event) =>
-                          moveFocusWithArrowKeys(event, () =>
-                            setAvailability(
-                              userId!,
-                              dateStr,
-                              !currentUserAvailable,
-                            ),
-                          )
-                        }
-                        onPointerDown={() =>
-                          handlePointerDown(dateStr, !!currentUserAvailable)
-                        }
-                        onPointerEnter={(event) =>
-                          handlePointerEnter(dateStr, event)
-                        }
-                        tabIndex={i === 0 ? 0 : -1}
-                        totalUsers={totalUsers}
-                      />
-                    );
-                  })}
-                </div>
-              </React.Fragment>
-            ))}
-        </div>
-        <CopyEventUrl className="lg:hidden" eventId={event.id} />
-      </form>
-      <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
-        {event.name && (
+          </footer>
+        </ContextMenuTrigger>
+      </Container>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
+          Export to JSON file
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            const json = yDocToJson(yDoc);
+            navigator.clipboard.writeText(JSON.stringify(json, null, 2));
+          }}
+        >
+          Copy event JSON
+        </ContextMenuItem>
+        {isCreator && (
           <>
-            {(userId === event.creator || !event.creator) && (
-              <ImportEventJson />
-            )}
-            <ExportEventJson eventName={event.name} />
+            <ContextMenuItem
+              onClick={() => {
+                importEventJson.openFileDialog();
+              }}
+            >
+              Import from JSON file
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => {
+                navigator.clipboard
+                  .readText()
+                  .then((text) => {
+                    overwriteYDocWithJson(yDoc, JSON.parse(text));
+                  })
+                  .catch((error) => {
+                    console.error("Error importing JSON:", error);
+                  });
+              }}
+            >
+              Import from clipboard
+            </ContextMenuItem>
           </>
         )}
-      </footer>
-    </Container>
-  );
-}
-
-interface AvailabilityGridCellProps
-  extends React.HTMLAttributes<HTMLButtonElement> {
-  availableUsers: UserId[];
-  currentUserAvailable: boolean;
-  day: Date;
-  hoveredUser: "available" | "none" | "unavailable";
-  names: Record<UserId, string>;
-  totalUsers: number;
-}
-function AvailabilityGridCell({
-  availableUsers,
-  currentUserAvailable,
-  day,
-  hoveredUser,
-  names,
-  totalUsers,
-  ...rest
-}: AvailabilityGridCellProps) {
-  const fill = availableUsers.length / totalUsers;
-  return (
-    <button
-      aria-label={day.toLocaleDateString(undefined, { dateStyle: "full" })}
-      className={cn(
-        "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition-all border-transparent",
-        (currentUserAvailable || hoveredUser === "available") &&
-          "border-neutral-200 border-4",
-        currentUserAvailable &&
-          hoveredUser === "available" &&
-          "border-neutral-200 border-[6px]",
-        hoveredUser === "unavailable" && "opacity-60 saturate-25",
-      )}
-      style={{
-        color: fill > 0.5 ? "white" : "black",
-        backgroundColor: fill
-          ? `hsl(from var(--accent) h s l / ${fill})`
-          : undefined,
-      }}
-      type="button"
-      {...rest}
-    >
-      {day.toLocaleDateString("en-US", { day: "numeric" })}
-      {availableUsers.length > 0 && (
-        <TooltipContent className="whitespace-pre-line text-left opacity-0 group-hover:opacity-100">
-          {availableUsers.map((userId) => names[userId]).join("\n")}
-        </TooltipContent>
-      )}
-    </button>
-  );
-}
-
-function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
-  const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  const handleCopy = () => {
-    if (!navigator.clipboard) {
-      alert("Clipboard not supported");
-    }
-    navigator.clipboard.writeText(eventUrl);
-    setShowTooltip(true);
-    setTimeout(() => setShowTooltip(false), 2000);
-  };
-
-  return (
-    <label
-      {...rest}
-      className={cn("group relative mt-4 block cursor-copy", rest.className)}
-      onClick={handleCopy}
-    >
-      <span className="block">Event URL</span>
-
-      {eventId ? (
-        <>
-          <input
-            className="block h-[42px] w-full cursor-copy rounded-sm p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
-            id="eventUrl"
-            readOnly
-            value={eventUrl}
-          />
-          <button
-            className="active:bg-black! absolute bottom-[7.4px] right-[7px] flex size-7 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
-            onClick={handleCopy}
-            title="Copy to clipboard"
-            type="button"
-          >
-            <ClipboardCopyIcon />
-            {showTooltip && (
-              <TooltipContent>Copied to clipboard!</TooltipContent>
-            )}
-          </button>
-        </>
-      ) : (
-        <Skeleton className="h-[46px]" />
-      )}
-    </label>
-  );
-}
-
-function eachDayOfInterval(from: Date, to: Date) {
-  const days = [];
-  const end = new Date(to);
-  for (let d = new Date(from); d <= end; d = new Date(d.getTime() + 86400000)) {
-    days.push(new Date(d));
-  }
-  return days;
-}
-
-function moveFocusWithArrowKeys(
-  e: React.KeyboardEvent<HTMLButtonElement>,
-  onClick: () => void,
-) {
-  const grid = e.currentTarget.parentElement!.parentElement!;
-
-  const allButtons = grid.querySelectorAll("button");
-  let index = Array.from(allButtons).indexOf(
-    e.currentTarget as HTMLButtonElement,
-  );
-
-  // move focus to next button with arrow keys
-  switch (e.key) {
-    case " ":
-    case "Enter":
-      onClick();
-      break;
-    case "ArrowDown":
-      index += 7;
-      break;
-    case "ArrowLeft":
-      index--;
-      break;
-
-    case "ArrowRight":
-      index++;
-      break;
-    case "ArrowUp":
-      index -= 7;
-      break;
-  }
-
-  const nextFocused = allButtons[index % allButtons.length];
-  if (nextFocused) {
-    nextFocused.focus();
-  }
-}
-
-function UserAvailabilitySummary({
-  availabilityForUsers,
-  creatorId,
-  names,
-  onHover,
-  userId,
-}: {
-  availabilityForUsers: Record<UserId, IsoDate[]>;
-  creatorId: UserId | undefined;
-  names: Record<UserId, string>;
-  onHover: (userId: UserId | null) => void;
-  userId: UserId | null;
-}) {
-  return (
-    <dl onMouseLeave={() => onHover(null)}>
-      {unsafeKeys(availabilityForUsers).map((user) => {
-        const dates = availabilityForUsers[user];
-        return (
-          <UserAvailabilitySummaryItem
-            dates={dates}
-            isCreator={user === creatorId}
-            isCurrentUser={user === userId}
-            key={user}
-            name={names[user as UserId] ?? user}
-            onMouseEnter={() => onHover(user as UserId)}
-          />
-        );
-      })}
-      {userId && !availabilityForUsers[userId] && (
-        <UserAvailabilitySummaryItem
-          dates={[]}
-          isCreator={creatorId === userId}
-          isCurrentUser={true}
-          key={userId}
-          name={names[userId as UserId] ?? userId}
-          onMouseEnter={() => onHover(userId as UserId)}
-        />
-      )}
-    </dl>
-  );
-}
-function UserAvailabilitySummaryItem({
-  dates,
-  isCreator,
-  isCurrentUser,
-  name,
-  ...rest
-}: UserAvailabilitySummaryItemProps) {
-  const labels = Object.entries({
-    creator: isCreator,
-    you: isCurrentUser,
-  })
-    .filter(([_, value]) => value)
-    .map(([key]) => `${key}`)
-    .join(", ");
-
-  return (
-    <div
-      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
-      {...rest}
-    >
-      <dt>
-        {name}
-        {labels ? ` (${labels})` : ""}
-      </dt>
-      <dd>
-        {dates.length} date{dates.length === 1 ? "" : "s"}
-      </dd>
-    </div>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
