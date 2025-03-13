@@ -1,13 +1,15 @@
 import { cn } from "./cn";
 
+export interface TooltipContentProps
+  extends React.HTMLAttributes<HTMLSpanElement> {
+  children: React.ReactNode;
+}
+
 export function TooltipContent({
   children,
   className,
   ...props
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+}: TooltipContentProps) {
   return (
     <span
       className={cn(

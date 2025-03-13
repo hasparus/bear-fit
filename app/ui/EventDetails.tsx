@@ -1,4 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import type {} from "react/experimental";
+
+import React, {
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useY } from "react-yjs";
 
 import { getUserId } from "../getUserId";
@@ -31,6 +39,7 @@ import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
+import { TooltipContent } from "./TooltipContent";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
 const userId = getUserId();
@@ -51,6 +60,13 @@ export function EventDetails() {
   const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
     {},
   );
+
+  const [_tooltipTransition, startTooltipTransition] = useTransition();
+  const [hoveredCell, setHoveredCell] = useState<HoveredCellData | undefined>();
+  const previousHoveredCell = useRef<HoveredCellData | undefined>();
+
+  const hoveredCellRef = useRef<typeof hoveredCell>(undefined);
+  hoveredCellRef.current = hoveredCell;
 
   const isCreator = userId === event.creator || !event.creator;
 
@@ -150,12 +166,27 @@ export function EventDetails() {
 
   const handlePointerEnter = (
     date: IsoDate,
+    availableUsers: UserId[],
     event: React.PointerEvent<HTMLButtonElement>,
   ) => {
     if (userId && dragMode !== "none" && lastToggled !== date) {
       setAvailability(userId, date, dragMode === "painting");
       setLastToggled(date);
       lastToggledByDrag.current = event.currentTarget;
+    } else if (!hoveredCell || hoveredCell.date !== date) {
+      startTooltipTransition(() => {
+        previousHoveredCell.current = hoveredCell;
+        setHoveredCell({
+          availableUsers,
+          date,
+          position: {
+            y: event.currentTarget.offsetTop,
+            x:
+              event.currentTarget.offsetLeft +
+              event.currentTarget.offsetWidth / 2,
+          },
+        });
+      });
     }
   };
 
@@ -279,9 +310,7 @@ export function EventDetails() {
               </div>
               <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
             </div>
-
             <div className="w-px bg-neutral-200 max-lg:hidden" />
-
             <div className="mb-6 mt-2 min-h-[72px]" role="grid">
               {event.startDate &&
                 Object.entries(groupedDays).map(([monthKey, monthDays]) => (
@@ -291,7 +320,12 @@ export function EventDetails() {
                         month: "long",
                       })}
                     </div>
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-1 relative">
+                      <GridCellTooltip
+                        hoveredCell={hoveredCell}
+                        names={names}
+                        previousHoveredCell={previousHoveredCell}
+                      />
                       {getWeekDayNames(tryGetFirstDayOfTheWeek() ?? 0).map(
                         (name) => (
                           <div
@@ -355,10 +389,10 @@ export function EventDetails() {
                                 "opacity-80 saturate-25",
                               hoveredUserIsUnavailable &&
                                 "opacity-60 saturate-25",
+                              "hover:[anchor-name:--tooltip-anchor]",
                             )}
                             day={day}
                             key={`${day}-${i}`}
-                            names={names}
                             onKeyDown={(event) =>
                               moveFocusWithArrowKeys(event, () =>
                                 setAvailability(
@@ -382,9 +416,23 @@ export function EventDetails() {
                                 !!currentUserAvailable,
                               );
                             }}
-                            onPointerEnter={(event) =>
-                              handlePointerEnter(dateStr, event)
-                            }
+                            onPointerEnter={(event) => {
+                              handlePointerEnter(
+                                dateStr,
+                                availableUsers,
+                                event,
+                              );
+                            }}
+                            onPointerLeave={(event) => {
+                              if (event.target === event.currentTarget) {
+                                setTimeout(() => {
+                                  if (hoveredCellRef.current === hoveredCell) {
+                                    previousHoveredCell.current = hoveredCell;
+                                    setHoveredCell(undefined);
+                                  }
+                                }, 150);
+                              }
+                            }}
                             tabIndex={i === 0 ? 0 : -1}
                             totalUsers={totalUsers}
                           />
@@ -448,4 +496,53 @@ export function EventDetails() {
       </ContextMenuContent>
     </ContextMenu>
   );
+}
+
+function GridCellTooltip({
+  hoveredCell,
+  names,
+  previousHoveredCell,
+}: {
+  hoveredCell: HoveredCellData | undefined;
+  names: Record<UserId, string>;
+  previousHoveredCell: RefObject<HoveredCellData | undefined>;
+}) {
+  const position =
+    hoveredCell?.position || previousHoveredCell.current?.position;
+  const users =
+    hoveredCell?.availableUsers || previousHoveredCell.current?.availableUsers;
+
+  return (
+    <TooltipContent
+      className="whitespace-pre text-left left-0 z-10 translate-none motion-reduce:!transition-none"
+      style={{
+        opacity: hoveredCell && hoveredCell.availableUsers.length > 0 ? 1 : 0,
+        transform: position
+          ? `translate3d(calc(${position.x}px - 50%), ${position.y}px, 0)`
+          : "translate3d(-9999px, -9999px, 0)",
+        // we animate enter and exit only on opacity, but moving the hover animates the transform too
+        transition:
+          hoveredCell && previousHoveredCell.current
+            ? "opacity 150ms, transform 250ms"
+            : "opacity 150ms",
+      }}
+    >
+      {users && (
+        <ul className="flex flex-col">
+          {users.map((userId) => (
+            <li key={userId}>{names[userId]}</li>
+          ))}
+        </ul>
+      )}
+    </TooltipContent>
+  );
+}
+
+interface HoveredCellData {
+  availableUsers: UserId[];
+  date: IsoDate;
+  position: {
+    x: number;
+    y: number;
+  };
 }

@@ -1,4 +1,4 @@
-import React, { type RefObject, useRef, useState } from "react";
+import React, { type RefObject, useMemo, useRef, useState } from "react";
 
 import { useYDoc } from "../useYDoc";
 import { cn } from "./cn";
@@ -89,24 +89,26 @@ export function useImportEventJson() {
     }
   };
 
-  return {
-    hiddenInputElement: (
-      <input
-        accept=".json"
-        className="hidden"
-        id="import-json"
-        onChange={handleImport}
-        ref={fileInputRef}
-        type="file"
-      />
-    ),
-    fileInputRef,
-    showTooltip,
-    tooltipMessage,
-    openFileDialog: () => {
-      if (fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-    },
-  };
+  return useMemo(() => {
+    return {
+      hiddenInputElement: (
+        <input
+          accept=".json"
+          className="hidden"
+          id="import-json"
+          onChange={handleImport}
+          ref={fileInputRef}
+          type="file"
+        />
+      ),
+      fileInputRef,
+      showTooltip,
+      tooltipMessage,
+      openFileDialog: () => {
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      },
+    };
+  }, [tooltipMessage]);
 }
