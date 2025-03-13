@@ -2,20 +2,23 @@ import { expect, test } from "@playwright/test";
 import fs from "fs/promises";
 import * as v from "valibot";
 
-import { CalendarEvent } from "./schemas";
+import { AvailabilityKey, CalendarEvent, IsoDate, UserId } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
 
 test("creates a new event, fills dates, opens a new browser and fills more dates", async ({
-  page,
+  browser,
+  page: alice,
 }) => {
-  await page.goto("/");
+  await alice.goto("/");
 
-  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+  await alice.getByText("Create a Calendar").waitFor({ state: "visible" });
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type("test event");
+  const eventName = `test event ${Math.random().toString(36).substring(2, 15)}`;
 
-  await page.getByRole("button", { name: "next month" }).click();
+  await alice.keyboard.press("Tab");
+  await alice.keyboard.type(eventName);
+
+  await alice.getByRole("button", { name: "next month" }).click();
 
   const today = new Date();
   const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -23,51 +26,60 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
     month: "long",
   });
 
-  await expect(page.getByText(nextMonthName)).toBeVisible();
+  await expect(alice.getByText(nextMonthName)).toBeVisible();
 
   const START_DAY = 6;
   const END_DAY = 12;
-  const CREATOR_NAME = "Piotr";
+  const CREATOR_NAME = "Alice";
 
   // Select start and end dates
-  await page
+  await alice
     .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
     .click();
-  await page
+  await alice
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await page.getByText("Create Event").click();
+  await alice.getByText("Create Event").click();
 
   // Verify we're redirected to the event page
-  await expect(page.getByText("test event")).toBeVisible();
-  await expect(page.getByText("Event dates")).toBeVisible();
+  await expect(alice.getByText("test event")).toBeVisible();
+  await expect(alice.getByText("Event dates")).toBeVisible();
 
   // Type creator name
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(CREATOR_NAME);
+  await alice.keyboard.press("Tab");
+  await alice.keyboard.type(CREATOR_NAME);
 
   // select 6th, 8th, 10th and 11th
   // (yeah, React Day Picker (above) is using custom date formatting for aria  labels, so we have some inconsistencies here)
-  await page
+  await alice
     .getByRole("button", { name: `${nextMonthName} ${START_DAY}` })
     .click();
-  await page.getByRole("button", { name: `${nextMonthName} 8` }).click();
-  await page.getByRole("button", { name: `${nextMonthName} 10` }).click();
-  await page.getByRole("button", { name: `${nextMonthName} 11` }).click();
+  await alice.getByRole("button", { name: `${nextMonthName} 8` }).click();
+  await alice.getByRole("button", { name: `${nextMonthName} 10` }).click();
+  await alice.getByRole("button", { name: `${nextMonthName} 11` }).click();
 
   // Take note that there's no clipboard isolation, so this could technically  conflict with other tests.
-  await page.getByRole("button", { name: "Copy to clipboard" }).click();
-  await expect(page.getByText("Copied to clipboard")).toBeVisible();
+  await alice.getByRole("button", { name: "Copy to clipboard" }).click();
+  await expect(alice.getByText("Copied to clipboard")).toBeVisible();
 
-  const url = await page.getByLabel("Event URL").first().inputValue();
+  const url = await alice.getByLabel("Event URL").first().inputValue();
   const eventId = new URL(url).searchParams.get("id");
   if (!eventId) {
     throw new Error("No event ID found");
   }
 
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export to JSON" }).click();
+  await using bobContext = await browser.newContext();
+  await using bob = await bobContext.newPage();
+
+  await bob.goto(`/?id=${eventId}`);
+
+  await bob.getByLabel("name").fill("Bob");
+  await bob.getByRole("button", { name: `${nextMonthName} 7` }).click();
+  await bob.getByRole("button", { name: `${nextMonthName} 11` }).click();
+
+  const downloadPromise = alice.waitForEvent("download");
+  await alice.getByRole("button", { name: "Export to JSON" }).click();
   const download = await downloadPromise;
 
   // Wait for download to complete
@@ -76,28 +88,58 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
     throw new Error("Download failed or path is null");
   }
 
-  const json = await fs.readFile(path, "utf-8");
+  const downloadedJson = await fs.readFile(path, "utf-8");
   await fs.unlink(path);
 
-  const exported = v.parse(YDocJsonSchema, JSON.parse(json));
+  const exported = v.parse(YDocJsonSchema, JSON.parse(downloadedJson));
 
   const event = v.parse(CalendarEvent, exported.event);
 
-  expect(event.startDate).toBe(
-    `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`,
-  );
-  expect(event.endDate).toBe(
-    `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${END_DAY}`,
-  );
-  expect(event.name).toBe("test event");
+  const year = nextMonth.getFullYear();
+  const month = (nextMonth.getMonth() + 1).toString().padStart(2, "0");
+
+  {
+    // Assert that event metadata matches what we selected in the UI
+    expect(event.startDate).toBe(
+      `${year}-${month}-${START_DAY.toString().padStart(2, "0")}`,
+    );
+    expect(event.endDate).toBe(
+      `${year}-${month}-${END_DAY.toString().padStart(2, "0")}`,
+    );
+    expect(event.name).toBe(eventName);
+  }
+
+  const names = exported.names;
+  const bobId = Object.entries(names).find(([_, name]) => name === "Bob")?.[0];
+
+  if (!bobId) {
+    throw new Error("Bob ID not found");
+  }
 
   const creatorId = event.creator;
-
-  const names = (exported as { names: Record<string, string> }).names;
   const creatorName = names[creatorId];
   expect(creatorName).toBe(CREATOR_NAME);
+
+  {
+    // Assert that both Alice and Bob are available on 11th.
+    const eleventh = `${year}-${month}-11` as IsoDate;
+
+    expect(
+      exported.availability[AvailabilityKey(bobId as UserId, eleventh)],
+    ).toBe(true);
+
+    expect(
+      exported.availability[AvailabilityKey(creatorId as UserId, eleventh)],
+    ).toBe(true);
+  }
+
+  // Another user opens the page and copies the event to clipboard.
+  const title = bob.getByText(eventName);
+  title.dispatchEvent("contextmenu");
+
+  await bob.getByText("Copy event JSON").click();
+
+  const copiedJson = await bob.evaluate(() => navigator.clipboard.readText());
+
+  expect(copiedJson).toBe(downloadedJson);
 });
