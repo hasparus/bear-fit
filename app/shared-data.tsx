@@ -1,6 +1,6 @@
-import * as v from "valibot";
-
 import type { Doc } from "yjs";
+
+import * as v from "valibot";
 
 import { CalendarEvent } from "./schemas";
 

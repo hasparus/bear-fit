@@ -1,7 +1,9 @@
-import * as v from "valibot";
 import type { Doc } from "yjs";
+
+import * as v from "valibot";
+
 import { getUserId } from "../getUserId";
-import { type UserId, AvailabilityKey } from "../schemas";
+import { AvailabilityKey, type UserId } from "../schemas";
 import { YDocJsonSchema } from "../shared-data";
 
 export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
