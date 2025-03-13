@@ -15,5 +15,8 @@
       "entry": "app/client.tsx",
       "esbuildPlugins": ["./esbuild-postcss-plugin.cjs"]
     }
+  },
+  "define": {
+    "import.meta.env.ALWAYS_PROD": "'0'"
   }
 }

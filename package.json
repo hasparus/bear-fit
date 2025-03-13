@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "partykit dev --live",
+    "dev:prod": "partykit --define process.env.ALWAYS_PROD=1 dev --live",
     "release": "sh scripts/deploy.sh",
     "lint": "eslint app party",
     "format": "prettier --write .",

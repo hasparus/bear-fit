@@ -25,10 +25,10 @@ export default defineConfig({
       instances: [
         {
           browser: "chromium",
+          screenshotDirectory: "./test/screenshots",
           testTimeout: 60_000,
           context: {
             permissions: ["clipboard-read", "clipboard-write"],
-            
           },
           launch: {
             downloadsPath: "./test/downloads",

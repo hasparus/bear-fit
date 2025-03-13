@@ -333,9 +333,20 @@ export function EventDetails() {
                                 ),
                               )
                             }
-                            onPointerDown={() =>
-                              handlePointerDown(dateStr, !!currentUserAvailable)
-                            }
+                            onPointerDown={(event) => {
+                              if (
+                                event.pointerType === "mouse" &&
+                                event.button === 2
+                              ) {
+                                // right clicks open context menu
+                                return;
+                              }
+
+                              handlePointerDown(
+                                dateStr,
+                                !!currentUserAvailable,
+                              );
+                            }}
                             onPointerEnter={(event) =>
                               handlePointerEnter(dateStr, event)
                             }

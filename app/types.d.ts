@@ -7,3 +7,11 @@ declare global {
     }
   }
 }
+
+interface ImportMeta {
+  env: ImportMetaEnv;
+}
+
+interface ImportMetaEnv {
+  readonly ALWAYS_PROD: "0" | "1";
+}

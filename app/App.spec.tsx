@@ -9,7 +9,8 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 import { render } from "vitest-browser-react";
 
 import { TestStyles } from "../test/TestStyles";
-import { _waitForHuman } from "../test/utils/_waitForHuman";
+import { sleep } from "../test/utils/sleep";
+import { waitForHuman } from "../test/utils/waitForHuman";
 import { App } from "./App";
 import { CalendarEvent } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
@@ -25,16 +26,26 @@ afterAll(async () => {
 it("creates a new event, fills dates, opens a new browser and fills more dates", async () => {
   const iframeId = "other-user-iframe";
   function Setup(props: { eventId?: string }) {
+    if (props.eventId) {
+      window.location.href = `${server.href}?id=${props.eventId}`;
+    }
+
     return (
-      <div className="pt-8">
-        <App serverUrl={server.href} />
-        {props.eventId && (
-          <iframe
-            className="w-full mt-4 h-[600px]"
-            id={iframeId}
-            src={`${server.href}?id=${props.eventId}`}
-          />
-        )}
+      <div className="overflow-x-auto">
+        <div className="p-4 flex gap-2 w-[800px]">
+          <div className="w-1/2">
+            <App serverUrl={server.href} />
+          </div>
+          <div className="w-1/2 overflow-y-auto bg-white">
+            {props.eventId && (
+              <iframe
+                className="size-full"
+                data-testid={iframeId}
+                src={`${server.href}?id=${props.eventId}`}
+              />
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -88,17 +99,20 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
   const url = (
     page.getByLabelText("Event URL").first().element() as HTMLInputElement
   ).value;
+  const eventId = new URL(url).searchParams.get("id");
+  if (!eventId) {
+    throw new Error("No event ID found");
+  }
 
-  root.rerender(<Setup eventId={new URL(url).searchParams.get("id")!} />);
+  root.rerender(<Setup eventId={eventId} />);
 
-  await page.getByRole("button", { name: "Export to JSON" }).click();
+  await sleep(1000);
+  const iframe = await page.getByTestId(iframeId).screenshot();
+  console.error(">>", iframe);
 
-  // TODO: Interact with the iframe.
-  // TODO: Copy JSON on right click from the iframe.
-  await page.getByTestId(iframeId).element();
+  await waitForHuman();
 
-  await _waitForHuman();
-
+  // await page.getByRole("button", { name: "Export to JSON" }).click();
   // const json = await commands.readDownloadedJsonExport();
 
   // const exported = v.parse(YDocJsonSchema, JSON.parse(json));

@@ -13,7 +13,12 @@ import { Loading } from "./ui/Loading";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
 
-const ALWAYS_PROD = true;
+let ALWAYS_PROD = import.meta.env.ALWAYS_PROD === "1";
+if (process.env.NODE_ENV === "test") ALWAYS_PROD = false;
+
+if (ALWAYS_PROD) {
+  console.log("Client is running against production server.");
+}
 
 export function App({
   serverUrl,
