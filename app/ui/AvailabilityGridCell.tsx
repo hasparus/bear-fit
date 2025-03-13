@@ -1,14 +1,12 @@
 import type { UserId } from "../schemas";
 
 import { cn } from "./cn";
-import { TooltipContent } from "./TooltipContent";
 
 export interface AvailabilityGridCellProps
   extends React.HTMLAttributes<HTMLButtonElement> {
   availableUsers: UserId[];
   className?: string;
   day: Date;
-  names: Record<UserId, string>;
   totalUsers: number;
 }
 
@@ -16,7 +14,6 @@ export function AvailabilityGridCell({
   availableUsers,
   className,
   day,
-  names,
   totalUsers,
   ...rest
 }: AvailabilityGridCellProps) {
@@ -38,12 +35,6 @@ export function AvailabilityGridCell({
       {...rest}
     >
       {day.toLocaleDateString("en-US", { day: "numeric" })}
-      {availableUsers.length > 0 && (
-        // todo: lift up and animate names using experimental_ViewTransition
-        <TooltipContent className="whitespace-pre text-left opacity-0 group-hover:opacity-100">
-          {availableUsers.map((userId) => names[userId]).join("\n")}
-        </TooltipContent>
-      )}
     </button>
   );
 }

@@ -1,6 +1,14 @@
+.cursors-root {
+  overflow: hidden;
+  isolation: isolate;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .presence-cursor {
   filter: drop-shadow(var(--drop-shadow-lg));
-  position: absolute;
+  position: absolute !important;
   pointer-events: none;
   z-index: 9999;
 

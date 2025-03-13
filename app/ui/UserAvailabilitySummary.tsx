@@ -31,7 +31,7 @@ export function UserAvailabilitySummary({
     <dl
       className={cn(
         allUsersCount > 6 &&
-          "max-h-[144px] overflow-y-auto overflow-x-clip border border-black p-2 rounded-sm bg-neutral-50 inset-shadow-2xs",
+          "max-h-[144px] overflow-y-auto overflow-x-clip border border-black p-2 rounded-sm bg-neutral-50 dark:bg-neutral-200 inset-shadow-2xs",
       )}
       onMouseLeave={() => onHover(null)}
     >

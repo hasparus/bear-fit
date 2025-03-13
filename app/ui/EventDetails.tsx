@@ -1,4 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import type {} from "react/experimental";
+
+import React, {
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useY } from "react-yjs";
 
 import { getUserId } from "../getUserId";
@@ -31,6 +39,7 @@ import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
+import { TooltipContent, type TooltipContentProps } from "./TooltipContent";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
 const userId = getUserId();
@@ -51,6 +60,12 @@ export function EventDetails() {
   const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
     {},
   );
+
+  const [_tooltipTransition, startTooltipTransition] = useTransition();
+  const [hoveredCell, setHoveredCell] = useState<HoveredCellData | undefined>();
+  const hoveredCellRef = useRef<HoveredCellData | undefined>(undefined);
+  hoveredCellRef.current = hoveredCell;
+  const previousHoveredCell = useRef<HoveredCellData | undefined>(undefined);
 
   const isCreator = userId === event.creator || !event.creator;
 
@@ -150,12 +165,21 @@ export function EventDetails() {
 
   const handlePointerEnter = (
     date: IsoDate,
+    availableUsers: UserId[],
     event: React.PointerEvent<HTMLButtonElement>,
   ) => {
     if (userId && dragMode !== "none" && lastToggled !== date) {
       setAvailability(userId, date, dragMode === "painting");
       setLastToggled(date);
       lastToggledByDrag.current = event.currentTarget;
+    } else if (!hoveredCell || hoveredCell.date !== date) {
+      startTooltipTransition(() => {
+        previousHoveredCell.current = hoveredCell;
+        setHoveredCell({
+          availableUsers,
+          date,
+        });
+      });
     }
   };
 
@@ -279,9 +303,7 @@ export function EventDetails() {
               </div>
               <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
             </div>
-
             <div className="w-px bg-neutral-200 max-lg:hidden" />
-
             <div className="mb-6 mt-2 min-h-[72px]" role="grid">
               {event.startDate &&
                 Object.entries(groupedDays).map(([monthKey, monthDays]) => (
@@ -291,7 +313,12 @@ export function EventDetails() {
                         month: "long",
                       })}
                     </div>
-                    <div className="grid grid-cols-7 gap-1">
+                    <div className="grid grid-cols-7 gap-1 relative">
+                      <GridCellTooltip
+                        hoveredCell={hoveredCell}
+                        names={names}
+                        previousHoveredCell={previousHoveredCell}
+                      />
                       {getWeekDayNames(tryGetFirstDayOfTheWeek() ?? 0).map(
                         (name) => (
                           <div
@@ -348,17 +375,17 @@ export function EventDetails() {
                             className={cn(
                               !hoveredUser &&
                                 currentUserAvailable &&
-                                "border-neutral-200 border-4 hover:border-4",
+                                "border-neutral-200 border-[6px] hover:border-[6px]",
                               hoveredUserIsAvailable &&
                                 "border-neutral-200 border-4",
                               atLeastOneSelectedUserIsUnavailable &&
                                 "opacity-80 saturate-25",
                               hoveredUserIsUnavailable &&
                                 "opacity-60 saturate-25",
+                              "hover:[anchor-name:--tooltip-anchor]",
                             )}
                             day={day}
                             key={`${day}-${i}`}
-                            names={names}
                             onKeyDown={(event) =>
                               moveFocusWithArrowKeys(event, () =>
                                 setAvailability(
@@ -382,9 +409,23 @@ export function EventDetails() {
                                 !!currentUserAvailable,
                               );
                             }}
-                            onPointerEnter={(event) =>
-                              handlePointerEnter(dateStr, event)
-                            }
+                            onPointerEnter={(event) => {
+                              handlePointerEnter(
+                                dateStr,
+                                availableUsers,
+                                event,
+                              );
+                            }}
+                            onPointerLeave={(event) => {
+                              if (event.target === event.currentTarget) {
+                                setTimeout(() => {
+                                  if (hoveredCellRef.current === hoveredCell) {
+                                    previousHoveredCell.current = hoveredCell;
+                                    setHoveredCell(undefined);
+                                  }
+                                }, 150);
+                              }
+                            }}
                             tabIndex={i === 0 ? 0 : -1}
                             totalUsers={totalUsers}
                           />
@@ -448,4 +489,86 @@ export function EventDetails() {
       </ContextMenuContent>
     </ContextMenu>
   );
+}
+
+function GridCellTooltip({
+  hoveredCell,
+  names,
+  previousHoveredCell,
+}: {
+  hoveredCell: HoveredCellData | undefined;
+  names: Record<UserId, string>;
+  previousHoveredCell: RefObject<HoveredCellData | undefined>;
+}) {
+  const tooltipRef = useRef<HTMLSpanElement | null>(null);
+
+  const users =
+    hoveredCell?.availableUsers || previousHoveredCell.current?.availableUsers;
+
+  // Track mouse position
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Effect to update the tooltip position based on mouse position
+  useEffect(() => {
+    const updateMousePosition = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener("mousemove", updateMousePosition);
+
+    return () => {
+      window.removeEventListener("mousemove", updateMousePosition);
+    };
+  }, []);
+
+  // Effect to position the tooltip
+  useEffect(() => {
+    if (tooltipRef.current && hoveredCell) {
+      const grid = tooltipRef.current.closest(".grid");
+
+      if (grid) {
+        const gridRect = grid.getBoundingClientRect();
+
+        let x = mousePosition.x - gridRect.left;
+        const y = mousePosition.y - gridRect.top;
+
+        const paddingX = 16;
+
+        x = Math.min(Math.max(x, paddingX), gridRect.width - paddingX);
+
+        tooltipRef.current.style.transform = `translate3d(calc(${x}px - 50%), ${y - 8}px, 0)`;
+      }
+    }
+  }, [hoveredCell, mousePosition, tooltipRef]);
+
+  // TODO: We can't use view transitions together with system.css, because the `filter: invert(0.9)`
+  // isn't applied to transition layer, and the colors blink jarringly. If we migrated out of system.css,
+  // to our own stylesheet with proper dark mode support, we could add `<unstable_ViewTransition>` here.
+  return (
+    <TooltipContent
+      className="whitespace-pre text-left left-0 z-10 translate-none motion-reduce:!transition-none"
+      ref={tooltipRef}
+      style={{
+        opacity: hoveredCell && hoveredCell.availableUsers.length > 0 ? 1 : 0,
+        transform: "translate3d(-9999px, -9999px, 0)",
+        transition:
+          hoveredCell && previousHoveredCell.current
+            ? "opacity 150ms, transform 75ms"
+            : "opacity 150ms",
+      }}
+    >
+      {users && (
+        <ul className="flex flex-col">
+          {users.map((userId) => (
+            <li key={userId}>{names[userId]}</li>
+          ))}
+        </ul>
+      )}
+    </TooltipContent>
+  );
+}
+
+interface HoveredCellData {
+  availableUsers: UserId[];
+  date: IsoDate;
 }
