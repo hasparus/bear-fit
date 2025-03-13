@@ -4,7 +4,8 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 
-if (process.env.NODE_ENV === "development") {
+const SCAN = false;
+if (process.env.NODE_ENV === "development" && SCAN) {
   const { scan } = await import("react-scan");
   scan({
     enabled: true,

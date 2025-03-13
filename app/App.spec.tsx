@@ -1,58 +1,19 @@
-import {
-  commands,
-  server as ctx,
-  page,
-  userEvent,
-} from "@vitest/browser/context";
+import { expect, test } from "@playwright/test";
+import fs from "fs/promises";
 import * as v from "valibot";
-import { afterAll, beforeAll, expect, it } from "vitest";
-import { render } from "vitest-browser-react";
 
-import { TestStyles } from "../test/TestStyles";
-import { sleep } from "../test/utils/sleep";
-import { waitForHuman } from "../test/utils/waitForHuman";
-import { App } from "./App";
 import { CalendarEvent } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
 
-let server: Awaited<ReturnType<typeof commands.startServer>>;
-beforeAll(async () => {
-  server = await commands.startServer();
-});
-afterAll(async () => {
-  await commands.stopServer(server.pid);
-});
+test("creates a new event, fills dates, opens a new browser and fills more dates", async ({
+  page,
+}) => {
+  await page.goto("/");
 
-it("creates a new event, fills dates, opens a new browser and fills more dates", async () => {
-  const iframeId = "other-user-iframe";
-  function Setup(props: { eventId?: string }) {
-    if (props.eventId) {
-      window.location.href = `${server.href}?id=${props.eventId}`;
-    }
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
-    return (
-      <div className="overflow-x-auto">
-        <div className="p-4 flex gap-2 w-[800px]">
-          <div className="w-1/2">
-            <App serverUrl={server.href} />
-          </div>
-          <div className="w-1/2 overflow-y-auto bg-white">
-            {props.eventId && (
-              <iframe
-                className="size-full"
-                data-testid={iframeId}
-                src={`${server.href}?id=${props.eventId}`}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const root = render(<Setup />, { wrapper: TestStyles });
-
-  await userEvent.keyboard("{Tab}test event");
+  await page.keyboard.press("Tab");
+  await page.keyboard.type("test event");
 
   await page.getByRole("button", { name: "next month" }).click();
 
@@ -62,12 +23,13 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
     month: "long",
   });
 
-  await expect.element(page.getByText(nextMonthName)).toBeVisible();
+  await expect(page.getByText(nextMonthName)).toBeVisible();
 
   const START_DAY = 6;
   const END_DAY = 12;
   const CREATOR_NAME = "Piotr";
 
+  // Select start and end dates
   await page
     .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
     .click();
@@ -77,14 +39,16 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
 
   await page.getByText("Create Event").click();
 
-  // verify we're redirected to the event page
-  await expect.element(page.getByText("test event")).toBeVisible();
-  await expect.element(page.getByText("Event dates")).toBeVisible();
+  // Verify we're redirected to the event page
+  await expect(page.getByText("test event")).toBeVisible();
+  await expect(page.getByText("Event dates")).toBeVisible();
 
-  await userEvent.keyboard("{Tab}" + CREATOR_NAME);
+  // Type creator name
+  await page.keyboard.press("Tab");
+  await page.keyboard.type(CREATOR_NAME);
 
   // select 6th, 8th, 10th and 11th
-  // (yeah, React Day Picker (above) is using custom date formatting for aria labels, so we have some inconsistencies here)
+  // (yeah, React Day Picker (above) is using custom date formatting for aria  labels, so we have some inconsistencies here)
   await page
     .getByRole("button", { name: `${nextMonthName} ${START_DAY}` })
     .click();
@@ -92,48 +56,48 @@ it("creates a new event, fills dates, opens a new browser and fills more dates",
   await page.getByRole("button", { name: `${nextMonthName} 10` }).click();
   await page.getByRole("button", { name: `${nextMonthName} 11` }).click();
 
-  // Take note that there's no clipboard isolation, so this could technically conflict with other tests.
+  // Take note that there's no clipboard isolation, so this could technically  conflict with other tests.
   await page.getByRole("button", { name: "Copy to clipboard" }).click();
-  await expect.element(page.getByText("Copied to clipboard")).toBeVisible();
+  await expect(page.getByText("Copied to clipboard")).toBeVisible();
 
-  const url = (
-    page.getByLabelText("Event URL").first().element() as HTMLInputElement
-  ).value;
+  const url = await page.getByLabel("Event URL").first().inputValue();
   const eventId = new URL(url).searchParams.get("id");
   if (!eventId) {
     throw new Error("No event ID found");
   }
 
-  root.rerender(<Setup eventId={eventId} />);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export to JSON" }).click();
+  const download = await downloadPromise;
 
-  await sleep(1000);
-  const iframe = await page.getByTestId(iframeId).screenshot();
-  console.error(">>", iframe);
+  // Wait for download to complete
+  const path = await download.path();
+  if (!path) {
+    throw new Error("Download failed or path is null");
+  }
 
-  await waitForHuman();
+  const json = await fs.readFile(path, "utf-8");
+  await fs.unlink(path);
 
-  // await page.getByRole("button", { name: "Export to JSON" }).click();
-  // const json = await commands.readDownloadedJsonExport();
+  const exported = v.parse(YDocJsonSchema, JSON.parse(json));
 
-  // const exported = v.parse(YDocJsonSchema, JSON.parse(json));
+  const event = v.parse(CalendarEvent, exported.event);
 
-  // const event = v.parse(CalendarEvent, exported.event);
+  expect(event.startDate).toBe(
+    `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`,
+  );
+  expect(event.endDate).toBe(
+    `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${END_DAY}`,
+  );
+  expect(event.name).toBe("test event");
 
-  // expect(event.startDate).toBe(
-  //   `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
-  //     .toString()
-  //     .padStart(2, "0")}-${START_DAY.toString().padStart(2, "0")}`,
-  // );
-  // expect(event.endDate).toBe(
-  //   `${nextMonth.getFullYear()}-${(nextMonth.getMonth() + 1)
-  //     .toString()
-  //     .padStart(2, "0")}-${END_DAY}`,
-  // );
-  // expect(event.name).toBe("test event");
+  const creatorId = event.creator;
 
-  // const creatorId = event.creator;
-
-  // const names = (exported as { names: Record<string, string> }).names;
-  // const creatorName = names[creatorId];
-  // expect(creatorName).toBe(CREATOR_NAME);
+  const names = (exported as { names: Record<string, string> }).names;
+  const creatorName = names[creatorId];
+  expect(creatorName).toBe(CREATOR_NAME);
 });
