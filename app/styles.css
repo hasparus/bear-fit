@@ -91,9 +91,6 @@ label,
   :root {
     --accent: #049;
   }
-  ::view-transition-group(*) {
-    filter: invert(0.9);
-  }
 }
 
 ::view-transition-group(*) {

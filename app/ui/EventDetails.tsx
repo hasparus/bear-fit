@@ -541,6 +541,9 @@ function GridCellTooltip({
     }
   }, [hoveredCell, mousePosition, tooltipRef]);
 
+  // TODO: We can't use view transitions together with system.css, because the `filter: invert(0.9)`
+  // isn't applied to transition layer, and the colors blink jarringly. If we migrated out of system.css,
+  // to our own stylesheet with proper dark mode support, we could add `<unstable_ViewTransition>` here.
   return (
     <TooltipContent
       className="whitespace-pre text-left left-0 z-10 translate-none motion-reduce:!transition-none"
