@@ -39,7 +39,7 @@ import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
-import { TooltipContent } from "./TooltipContent";
+import { TooltipContent, type TooltipContentProps } from "./TooltipContent";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
 const userId = getUserId();
@@ -63,10 +63,9 @@ export function EventDetails() {
 
   const [_tooltipTransition, startTooltipTransition] = useTransition();
   const [hoveredCell, setHoveredCell] = useState<HoveredCellData | undefined>();
-  const previousHoveredCell = useRef<HoveredCellData | undefined>();
-
-  const hoveredCellRef = useRef<typeof hoveredCell>(undefined);
+  const hoveredCellRef = useRef<HoveredCellData | undefined>(undefined);
   hoveredCellRef.current = hoveredCell;
+  const previousHoveredCell = useRef<HoveredCellData | undefined>(undefined);
 
   const isCreator = userId === event.creator || !event.creator;
 
@@ -179,12 +178,6 @@ export function EventDetails() {
         setHoveredCell({
           availableUsers,
           date,
-          position: {
-            y: event.currentTarget.offsetTop,
-            x:
-              event.currentTarget.offsetLeft +
-              event.currentTarget.offsetWidth / 2,
-          },
         });
       });
     }
@@ -382,7 +375,7 @@ export function EventDetails() {
                             className={cn(
                               !hoveredUser &&
                                 currentUserAvailable &&
-                                "border-neutral-200 border-4 hover:border-4",
+                                "border-neutral-200 border-[6px] hover:border-[6px]",
                               hoveredUserIsAvailable &&
                                 "border-neutral-200 border-4",
                               atLeastOneSelectedUserIsUnavailable &&
@@ -507,23 +500,57 @@ function GridCellTooltip({
   names: Record<UserId, string>;
   previousHoveredCell: RefObject<HoveredCellData | undefined>;
 }) {
-  const position =
-    hoveredCell?.position || previousHoveredCell.current?.position;
+  const tooltipRef = useRef<HTMLSpanElement | null>(null);
+
   const users =
     hoveredCell?.availableUsers || previousHoveredCell.current?.availableUsers;
+
+  // Track mouse position
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  // Effect to update the tooltip position based on mouse position
+  useEffect(() => {
+    const updateMousePosition = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener("mousemove", updateMousePosition);
+
+    return () => {
+      window.removeEventListener("mousemove", updateMousePosition);
+    };
+  }, []);
+
+  // Effect to position the tooltip
+  useEffect(() => {
+    if (tooltipRef.current && hoveredCell) {
+      const grid = tooltipRef.current.closest(".grid");
+
+      if (grid) {
+        const gridRect = grid.getBoundingClientRect();
+
+        let x = mousePosition.x - gridRect.left;
+        const y = mousePosition.y - gridRect.top;
+
+        const paddingX = 16;
+
+        x = Math.min(Math.max(x, paddingX), gridRect.width - paddingX);
+
+        tooltipRef.current.style.transform = `translate3d(calc(${x}px - 50%), ${y - 8}px, 0)`;
+      }
+    }
+  }, [hoveredCell, mousePosition, tooltipRef]);
 
   return (
     <TooltipContent
       className="whitespace-pre text-left left-0 z-10 translate-none motion-reduce:!transition-none"
+      ref={tooltipRef}
       style={{
         opacity: hoveredCell && hoveredCell.availableUsers.length > 0 ? 1 : 0,
-        transform: position
-          ? `translate3d(calc(${position.x}px - 50%), ${position.y}px, 0)`
-          : "translate3d(-9999px, -9999px, 0)",
-        // we animate enter and exit only on opacity, but moving the hover animates the transform too
+        transform: "translate3d(-9999px, -9999px, 0)",
         transition:
           hoveredCell && previousHoveredCell.current
-            ? "opacity 150ms, transform 250ms"
+            ? "opacity 150ms, transform 75ms"
             : "opacity 150ms",
       }}
     >
@@ -541,8 +568,4 @@ function GridCellTooltip({
 interface HoveredCellData {
   availableUsers: UserId[];
   date: IsoDate;
-  position: {
-    x: number;
-    y: number;
-  };
 }
