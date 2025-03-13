@@ -13,11 +13,13 @@ import { Loading } from "./ui/Loading";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
 
-let ALWAYS_PROD = import.meta.env.ALWAYS_PROD === "1";
+let ALWAYS_PROD = import.meta.env.ALWAYS_PROD === 1;
 if (process.env.NODE_ENV === "test") ALWAYS_PROD = false;
 
 if (ALWAYS_PROD) {
-  console.log("Client is running against production server.");
+  console.log("🌎 Running against production server.");
+} else if (process.env.NODE_ENV === "development") {
+  console.log("🏠 Running against the local server.");
 }
 
 export function App({

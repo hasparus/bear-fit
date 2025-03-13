@@ -48,6 +48,9 @@ export function EventDetails() {
   const availability = useY(availabilityMap) as AvailabilitySet;
 
   const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
+    {},
+  );
 
   const isCreator = userId === event.creator || !event.creator;
 
@@ -262,6 +265,14 @@ export function EventDetails() {
                     creatorId={event.creator}
                     names={names}
                     onHover={(userId) => setHoveredUser(userId)}
+                    onSelect={(userId) => {
+                      if (!userId) return;
+                      setSelectedUsers((prev) => ({
+                        ...prev,
+                        [userId]: !prev[userId],
+                      }));
+                    }}
+                    selectedUsers={selectedUsers}
                     userId={userId}
                   />
                 )}
@@ -307,21 +318,45 @@ export function EventDetails() {
                         const dateStr = isoDate(day);
                         const availableUsers =
                           availabilityForDates.get(dateStr) || [];
+
                         const currentUserAvailable =
                           !!userId && availableUsers.includes(userId);
+
+                        let atLeastOneSelectedUserIsUnavailable = false;
+                        for (const [userId, selected] of Object.entries(
+                          selectedUsers,
+                        )) {
+                          const unavailable = !availableUsers.includes(
+                            userId as UserId,
+                          );
+
+                          if (selected && unavailable) {
+                            atLeastOneSelectedUserIsUnavailable = true;
+                            break;
+                          }
+                        }
+
+                        const hoveredUserIsAvailable =
+                          hoveredUser && availableUsers.includes(hoveredUser);
+
+                        const hoveredUserIsUnavailable =
+                          hoveredUser && !availableUsers.includes(hoveredUser);
 
                         return (
                           <AvailabilityGridCell
                             availableUsers={availableUsers}
-                            currentUserAvailable={currentUserAvailable}
+                            className={cn(
+                              !hoveredUser &&
+                                currentUserAvailable &&
+                                "border-neutral-200 border-4 hover:border-4",
+                              hoveredUserIsAvailable &&
+                                "border-neutral-200 border-4",
+                              atLeastOneSelectedUserIsUnavailable &&
+                                "opacity-80 saturate-25",
+                              hoveredUserIsUnavailable &&
+                                "opacity-60 saturate-25",
+                            )}
                             day={day}
-                            hoveredUser={
-                              hoveredUser
-                                ? availableUsers.includes(hoveredUser)
-                                  ? "available"
-                                  : "unavailable"
-                                : "none"
-                            }
                             key={`${day}-${i}`}
                             names={names}
                             onKeyDown={(event) =>

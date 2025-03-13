@@ -13,5 +13,5 @@ interface ImportMeta {
 }
 
 interface ImportMetaEnv {
-  readonly ALWAYS_PROD: "0" | "1";
+  readonly ALWAYS_PROD: 0 | 1;
 }

@@ -5,23 +5,21 @@ import type { IsoDate, UserId } from "../schemas";
 
 import { cn } from "./cn";
 
-// TODO: Click users to visualize a subset of the availability grid
-
 export function UserAvailabilitySummary({
   availabilityForUsers,
   creatorId,
   names,
   onHover,
-  // TODO
-  onSelect: _,
+  onSelect,
+  selectedUsers,
   userId,
 }: {
-  availabilityForUsers: Record<UserId, IsoDate[]>;
+  availabilityForUsers: Readonly<Record<UserId, IsoDate[]>>;
   creatorId: UserId | undefined;
-  names: Record<UserId, string>;
+  names: Readonly<Record<UserId, string>>;
   onHover: (userId: UserId | null) => void;
-  // TODO
-  onSelect?: (userId: UserId | null) => void;
+  onSelect: (userId: UserId | null) => void;
+  selectedUsers: Readonly<Record<UserId, boolean>>;
   userId: UserId | null;
 }) {
   const userIds = unsafeKeys(availabilityForUsers);
@@ -44,8 +42,10 @@ export function UserAvailabilitySummary({
             dates={dates}
             isCreator={user === creatorId}
             isCurrentUser={user === userId}
+            isSelected={selectedUsers[user as UserId]}
             key={user}
             name={names[user as UserId] ?? user}
+            onClick={() => onSelect?.(user as UserId)}
             onMouseEnter={() => onHover(user as UserId)}
           />
         );
@@ -55,6 +55,7 @@ export function UserAvailabilitySummary({
           dates={[]}
           isCreator={creatorId === userId}
           isCurrentUser={true}
+          isSelected={selectedUsers[userId as UserId]}
           key={userId}
           name={names[userId as UserId] ?? userId}
           onMouseEnter={() => onHover(userId as UserId)}
@@ -69,6 +70,7 @@ interface UserAvailabilitySummaryItemProps
   dates: IsoDate[];
   isCreator: boolean;
   isCurrentUser: boolean;
+  isSelected: boolean;
   name: string;
 }
 
@@ -76,6 +78,7 @@ function UserAvailabilitySummaryItem({
   dates,
   isCreator,
   isCurrentUser,
+  isSelected,
   name,
   ...rest
 }: UserAvailabilitySummaryItemProps) {
@@ -89,10 +92,10 @@ function UserAvailabilitySummaryItem({
 
   return (
     <div
-      className="-mx-1 -my-0.5 flex cursor-default justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800 "
+      className="-mx-1 -my-0.5 flex cursor-pointer justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800 "
       {...rest}
     >
-      <dt>
+      <dt className={cn(isSelected && "before:content-['✓_'] text-black")}>
         {name}
         {labels ? ` (${labels})` : ""}
       </dt>

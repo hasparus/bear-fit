@@ -17,6 +17,6 @@
     }
   },
   "define": {
-    "import.meta.env.ALWAYS_PROD": "'0'"
+    "import.meta.env.ALWAYS_PROD": "0"
   }
 }
