@@ -10,8 +10,13 @@ import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
+import { useUserState, useUserDispatch } from "./ui/UserStateContext";
+import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
+import { Container } from "./ui/Container";
+import { cn } from "./ui/cn";
+import { CheckboxField } from "./ui/CheckboxField";
 
 export function App({ serverUrl }: { serverUrl: string }) {
   const params = useSearchParams();
@@ -23,30 +28,33 @@ export function App({ serverUrl }: { serverUrl: string }) {
   }
 
   return (
-    <>
-      {eventId ? (
-        <Suspense fallback={<Loading />}>
-          <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
-            <EventDetails />
-          </YProvider>
-        </Suspense>
-      ) : (
-        <CreateEventForm
-          onSubmit={(calendarEvent) => {
-            initializeEventMap(yDoc.current!, calendarEvent);
+    <PreferencesProvider>
+      <div className="flex-1 flex items-center">
+        {eventId ? (
+          <Suspense fallback={<Loading />}>
+            <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
+              <EventDetails />
+            </YProvider>
+          </Suspense>
+        ) : (
+          <CreateEventForm
+            onSubmit={(calendarEvent) => {
+              initializeEventMap(yDoc.current!, calendarEvent);
 
-            return postEvent(calendarEvent, serverUrl)
-              .catch((error) => {
-                console.error("creating event failed", error);
-              })
-              .then(() => {
-                params.set("id", calendarEvent.id);
-              });
-          }}
-        />
-      )}
+              return postEvent(calendarEvent, serverUrl)
+                .catch((error) => {
+                  console.error("creating event failed", error);
+                })
+                .then(() => {
+                  params.set("id", calendarEvent.id);
+                });
+            }}
+          />
+        )}
+      </div>
+      <AppFooter />
       <CursorPartyScript />
-    </>
+    </PreferencesProvider>
   );
 }
 
@@ -94,4 +102,26 @@ function YProvider({
   });
 
   return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;
+}
+
+function AppFooter() {
+  const { nerdMode } = useUserState();
+  const dispatch = useUserDispatch();
+
+  return (
+    <footer className="overflow-hidden px-2 pt-1">
+      <Container className="translate-y-1 ![box-shadow:2px_1px]">
+        {/* TODO: Your last events open in a modal. */}
+        <form>
+          <CheckboxField
+            checked={nerdMode}
+            id="nerd-mode"
+            onChange={(e) => {
+              dispatch({ type: "set-nerd-mode", payload: e.target.checked });
+            }}
+          />
+        </form>
+      </Container>
+    </footer>
+  );
 }

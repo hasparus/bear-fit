@@ -1,4 +1,5 @@
 import type {} from "react/experimental";
+import type { Doc } from "yjs";
 
 import React, {
   type RefObject,
@@ -38,8 +39,9 @@ import { getWeekDayNames } from "./getWeekDayNames";
 import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
+import { useUserState } from "./UserStateContext";
 import { Skeleton } from "./Skeleton";
-import { TooltipContent, type TooltipContentProps } from "./TooltipContent";
+import { TooltipContent } from "./TooltipContent";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 
 const userId = getUserId();
@@ -439,14 +441,9 @@ export function EventDetails() {
             {importEventJson.hiddenInputElement}
           </form>
 
-          <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
-            {event.name && (
-              <>
-                {isCreator && <ImportEventJson />}
-                <ExportEventJson yDoc={yDoc} />
-              </>
-            )}
-          </footer>
+          {event.name && (
+            <EventDetailsFooter isCreator={isCreator} yDoc={yDoc} />
+          )}
         </ContextMenuTrigger>
       </Container>
       <ContextMenuContent>
@@ -571,4 +568,24 @@ function GridCellTooltip({
 interface HoveredCellData {
   availableUsers: UserId[];
   date: IsoDate;
+}
+
+interface EventDetailsFooterProps {
+  isCreator: boolean;
+  yDoc: Doc;
+}
+
+function EventDetailsFooter({ isCreator, yDoc }: EventDetailsFooterProps) {
+  const { nerdMode } = useUserState();
+
+  if (!nerdMode) return null;
+
+  return (
+    <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
+      <>
+        {isCreator && <ImportEventJson />}
+        <ExportEventJson yDoc={yDoc} />
+      </>
+    </footer>
+  );
 }
