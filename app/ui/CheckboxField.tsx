@@ -13,7 +13,7 @@ export function CheckboxField({
       <input type="checkbox" {...rest} />
       <label
         htmlFor="nerd-mode"
-        className="!cursor-pointer text-xs [input:checked+&]:after:!content-['x'] after:!bg-none  after:absolute after:!left-[-16.66px] after:!top-[3px] py-1 w-full !leading-[14px]"
+        className="!cursor-pointer text-xs [input:checked+&]:after:!content-['x'] after:!bg-none  after:absolute after:!left-[-16.66px] after:!top-[3px] py-1 w-full !leading-[14px] select-none"
       >
         {children}
       </label>

@@ -52,7 +52,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
           />
         )}
       </div>
-      <AppFooter />
+      {eventId && <AppFooter />}
       <CursorPartyScript />
     </PreferencesProvider>
   );
@@ -108,6 +108,8 @@ function AppFooter() {
   const { nerdMode } = useUserState();
   const dispatch = useUserDispatch();
 
+  // todo: the footer should only show on hover or drag from the bottom on mobile
+  // actually, let's ditch the footer and add menu icon that opens a modal
   return (
     <footer className="overflow-hidden px-2 pt-1">
       <Container className="translate-y-1 ![box-shadow:2px_1px]">
@@ -119,7 +121,9 @@ function AppFooter() {
             onChange={(e) => {
               dispatch({ type: "set-nerd-mode", payload: e.target.checked });
             }}
-          />
+          >
+            Nerd Mode
+          </CheckboxField>
         </form>
       </Container>
     </footer>
