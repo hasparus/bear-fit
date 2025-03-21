@@ -149,6 +149,7 @@
   padding: 0;
   margin: 0;
   cursor: pointer;
+  border-radius: 2px;
   font-family: Chicago;
   color: inherit;
   -moz-appearance: none;
@@ -161,6 +162,11 @@
 
   width: var(--rdp-nav_button-width);
   height: var(--rdp-nav_button-height);
+
+  &:hover {
+    background-color: #fafafa;
+    border: 1px solid #ddd;
+  }
 }
 
 .rdp-button_next:disabled,
@@ -350,4 +356,9 @@
 
 .rdp-focusable {
   cursor: pointer;
+}
+
+.rdp-month_grid {
+  background-color: #fdfdfd;
+  border: 1.5px solid #ddd;
 }

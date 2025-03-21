@@ -116,6 +116,8 @@ export function CreateEventForm({
             selected={dateRange}
             timeZone="UTC"
             weekStartsOn={tryGetFirstDayOfTheWeek()}
+            fixedWeeks // avoid layout shift when changing months
+            showOutsideDays
           />
         </div>
         <button
