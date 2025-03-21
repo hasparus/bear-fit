@@ -29,7 +29,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
 
   return (
     <PreferencesProvider>
-      <div className="flex-1 flex items-center">
+      <div className="h-[93vh] flex items-center">
         {eventId ? (
           <Suspense fallback={<Loading />}>
             <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
@@ -52,7 +52,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
           />
         )}
       </div>
-      {eventId && <AppFooter />}
+      <AppFooter />
       <CursorPartyScript />
     </PreferencesProvider>
   );
@@ -111,21 +111,37 @@ function AppFooter() {
   // todo: the footer should only show on hover or drag from the bottom on mobile
   // actually, let's ditch the footer and add menu icon that opens a modal
   return (
-    <footer className="overflow-hidden px-2 pt-1">
-      <Container className="translate-y-1 ![box-shadow:2px_1px]">
+    <footer className="overflow-hidden px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2">
+      <div className="title-bar">
+        <h2 className="title">bear fit</h2>
+      </div>
+
+      <div className="max-w-[600px] text-sm mx-auto mt-8">
+        {/* todo: stats */}
+
+        <p>
+          Finding a time that works for more than 2 adult humans is{" "}
+          <strong>unbearable</strong>. Bear fit is a small app that hopes to
+          help. It's a small tool designed to be used and forgotten until the
+          next time you need it.
+        </p>
+
         {/* TODO: Your last events open in a modal. */}
-        <form>
-          <CheckboxField
-            checked={nerdMode}
-            id="nerd-mode"
-            onChange={(e) => {
-              dispatch({ type: "set-nerd-mode", payload: e.target.checked });
-            }}
-          >
-            Nerd Mode
-          </CheckboxField>
-        </form>
-      </Container>
+        <section>
+          <h3 className="font-sans mt-4">Settings</h3>
+          <form className="mt-2">
+            <CheckboxField
+              checked={nerdMode}
+              id="nerd-mode"
+              onChange={(e) => {
+                dispatch({ type: "set-nerd-mode", payload: e.target.checked });
+              }}
+            >
+              Nerd Mode
+            </CheckboxField>
+          </form>
+        </section>
+      </div>
     </footer>
   );
 }
