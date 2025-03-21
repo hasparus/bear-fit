@@ -1,4 +1,5 @@
 import { CheckboxField } from "./ui/CheckboxField";
+import { GitHubIcon } from "./ui/GitHubIcon";
 import { useUserDispatch, useUserState } from "./ui/UserStateContext";
 
 export function AppFooter() {
@@ -8,12 +9,12 @@ export function AppFooter() {
   // todo: the footer should only show on hover or drag from the bottom on mobile
   // actually, let's ditch the footer and add menu icon that opens a modal
   return (
-    <footer className="overflow-hidden px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2">
+    <footer className="px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2">
       <div className="title-bar">
         <h2 className="title">bear fit</h2>
       </div>
 
-      <div className="max-w-[600px] text-sm mx-auto mt-8">
+      <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&_a]:hover:!text-accent">
         {/* todo: stats */}
         <p className="mb-6">
           Finding a time that works for more than two adult humans is{" "}
@@ -29,9 +30,9 @@ export function AppFooter() {
           </li>
           <li>
             🦀 My friends' big paws were too clumsy to use{" "}
-            <a href="https://crab.fit/">crab.fit</a> on phones, so I made this
-            instead. Ben seems like a cool guy tho, so please use app if you
-            want to select hours with pincerlike precision.
+            <a href="https://crab.fit/">crab.fit</a> on phones. Ben seems like a
+            cool guy tho, so please use app if you want to select hours with
+            pincerlike precision.
           </li>
           <li>
             📅 You probably wanna use <a href="https://cal.com">cal.com</a> if
@@ -39,6 +40,26 @@ export function AppFooter() {
             business.
           </li>
         </ul>
+        <h3 className="mb-6 font-sans">Other Bears</h3>
+        <p className="mb-6">
+          <span className="font-sans">bear fit</span> has no connection to{" "}
+          <a href="https://bearblog.dev/">Bear</a> the blog platform apart from
+          the programmer's affinity for bad puns. It is also not affiliated with{" "}
+          <a href="https://www.bear.app/">Bear</a>&nbsp;the note-taking app.
+        </p>
+        <h3 className="mb-6 font-sans">Mea Culpa</h3>
+        <p className="mb-6">
+          Bear Fit was built by me,{" "}
+          <a href="https://haspar.us/">Piotr Monwid-Olechnowicz</a> 👋
+        </p>
+        <p className="mb-6">
+          The code is open source, so if you'd like to open an issue, fix an
+          issue, or fork it to make your own little scheduling app, you can find{" "}
+          <a href="https://github.com/hasparus/bear-fit">
+            the repo on GitHub
+            <GitHubIcon className="size-4 inline ml-1 mb-px" />
+          </a>
+        </p>
         <hr />
         <section>
           <h3 className="font-sans mt-4">Settings</h3>
@@ -51,6 +72,7 @@ export function AppFooter() {
               }}
             >
               Nerd Mode
+              {/* todo: explain nerd mode, show last commit hash */}
             </CheckboxField>
           </form>
         </section>

@@ -8,7 +8,12 @@
 
 .presence-cursor {
   filter: drop-shadow(var(--drop-shadow-lg));
-  position: absolute !important;
+  /* todo: fix it in my cursor-party app, maybe? */
+  /* the cursors should have an absolute 
+     position measured from the center of the of the app,
+     because that's where the content is, to minimize the
+     error if you're pointing at things */
+  /* position: absolute !important; */
   pointer-events: none;
   z-index: 9999;
 
