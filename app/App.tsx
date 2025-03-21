@@ -10,13 +10,10 @@ import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
-import { useUserState, useUserDispatch } from "./ui/UserStateContext";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
-import { Container } from "./ui/Container";
-import { cn } from "./ui/cn";
-import { CheckboxField } from "./ui/CheckboxField";
+import { AppFooter } from "./AppFooter";
 
 export function App({ serverUrl }: { serverUrl: string }) {
   const params = useSearchParams();
@@ -102,46 +99,4 @@ function YProvider({
   });
 
   return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;
-}
-
-function AppFooter() {
-  const { nerdMode } = useUserState();
-  const dispatch = useUserDispatch();
-
-  // todo: the footer should only show on hover or drag from the bottom on mobile
-  // actually, let's ditch the footer and add menu icon that opens a modal
-  return (
-    <footer className="overflow-hidden px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2">
-      <div className="title-bar">
-        <h2 className="title">bear fit</h2>
-      </div>
-
-      <div className="max-w-[600px] text-sm mx-auto mt-8">
-        {/* todo: stats */}
-
-        <p>
-          Finding a time that works for more than 2 adult humans is{" "}
-          <strong>unbearable</strong>. Bear fit is a small app that hopes to
-          help. It's a small tool designed to be used and forgotten until the
-          next time you need it.
-        </p>
-
-        {/* TODO: Your last events open in a modal. */}
-        <section>
-          <h3 className="font-sans mt-4">Settings</h3>
-          <form className="mt-2">
-            <CheckboxField
-              checked={nerdMode}
-              id="nerd-mode"
-              onChange={(e) => {
-                dispatch({ type: "set-nerd-mode", payload: e.target.checked });
-              }}
-            >
-              Nerd Mode
-            </CheckboxField>
-          </form>
-        </section>
-      </div>
-    </footer>
-  );
 }
