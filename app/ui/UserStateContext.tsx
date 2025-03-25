@@ -1,6 +1,16 @@
-import { createContext, type Dispatch, useContext, useReducer } from "react";
+import {
+  createContext,
+  type Dispatch,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useRef,
+} from "react";
 
 import { UnreachableCaseError } from "./UnreachableCaseError";
+
+const LOCAL_STORAGE_KEY = "🐻👤";
 
 /**
  * The preferences and user metadata are stored in localStorage.
@@ -15,6 +25,25 @@ interface UserStateContextValue {
    * Events the user interacted with.
    */
   events: string[];
+}
+
+function parseUserState(value: string): UserStateContextValue {
+  try {
+    const json = JSON.parse(value);
+    if (
+      typeof json !== "object" ||
+      json === null ||
+      typeof json.nerdMode !== "boolean" ||
+      !Array.isArray(json.events || {}) ||
+      json.events.some((event: unknown) => typeof event !== "string")
+    ) {
+      throw new Error("invalid user state");
+    }
+    return json as UserStateContextValue;
+  } catch (error) {
+    console.error(error);
+    throw new Error("invalid user state");
+  }
 }
 
 const DEFAULT_USER_STATE: UserStateContextValue = {
@@ -61,6 +90,10 @@ export type UserStateAction =
       type: "forget-event";
       /** event ID */
       payload: string;
+    }
+  | {
+      type: "~load-from-storage";
+      payload: UserStateContextValue;
     };
 
 function userStateReducer(
@@ -68,6 +101,8 @@ function userStateReducer(
   action: UserStateAction,
 ) {
   switch (action.type) {
+    case "~load-from-storage":
+      return { ...state, ...action.payload };
     case "set-nerd-mode":
       return { ...state, nerdMode: action.payload };
     case "remember-event":
@@ -88,6 +123,21 @@ export function PreferencesProvider({
   children: React.ReactNode;
 }) {
   const [state, dispatch] = useReducer(userStateReducer, DEFAULT_USER_STATE);
+
+  useLayoutEffect(() => {
+    const storedState = localStorage.getItem("🐻👤");
+    const parsedState = storedState ? parseUserState(storedState) : null;
+    if (parsedState) {
+      dispatch({
+        type: "~load-from-storage",
+        payload: parsedState,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
 
   return (
     <UserStateDispatchContext.Provider value={dispatch}>
