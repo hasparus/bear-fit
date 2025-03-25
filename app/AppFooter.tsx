@@ -25,19 +25,19 @@ export function AppFooter() {
         <h3 className="mb-6 font-sans">Motivation and Alternatives</h3>
         <ul className="list-inside *:mb-6">
           <li>
-            ✏️ Doodle was bad, now it's bad, corporate, and has too many
-            features.
+            <span className="dark:invert-100">✏️</span> Doodle was bad, now it's
+            bad, corporate, and has too many features.
           </li>
           <li>
-            🦀 My friends' big paws were too clumsy to use{" "}
-            <a href="https://crab.fit/">crab.fit</a> on phones. Ben seems like a
-            cool guy tho, so please use app if you want to select hours with
-            pincerlike precision.
+            <span className="dark:invert-100">🦀</span> My friends' big paws
+            were too clumsy to use <a href="https://crab.fit/">crab.fit</a> on
+            phones. Ben seems like a cool guy tho, so please use app if you want
+            to select hours with pincerlike precision.
           </li>
           <li>
-            📅 You probably wanna use <a href="https://cal.com">cal.com</a> if
-            you need something like this but better, and built by an actual
-            business.
+            <span className="dark:invert-100">📅</span> You probably wanna use{" "}
+            <a href="https://cal.com">cal.com</a> if you need something like
+            this but better, and built by an actual business.
           </li>
         </ul>
         <h3 className="mb-6 font-sans">Other Bears</h3>
@@ -50,7 +50,8 @@ export function AppFooter() {
         <h3 className="mb-6 font-sans">Mea Culpa</h3>
         <p className="mb-6">
           Bear Fit was built by me,{" "}
-          <a href="https://haspar.us/">Piotr Monwid-Olechnowicz</a> 👋
+          <a href="https://haspar.us/">Piotr Monwid-Olechnowicz</a>{" "}
+          <span className="dark:invert-100">👋</span>
         </p>
         <p className="mb-6">
           The code is open source, so if you'd like to open an issue, fix an
