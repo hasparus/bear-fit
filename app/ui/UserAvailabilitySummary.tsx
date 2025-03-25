@@ -92,7 +92,7 @@ function UserAvailabilitySummaryItem({
 
   return (
     <div
-      className="-mx-1 -my-0.5 flex cursor-pointer justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800 "
+      className="-mx-1 -my-0.5 flex cursor-pointer justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
       {...rest}
     >
       <dt className={cn(isSelected && "before:content-['✓_'] text-black")}>

@@ -2,9 +2,15 @@ import { CheckboxField } from "./ui/CheckboxField";
 import { GitHubIcon } from "./ui/GitHubIcon";
 import { useUserDispatch, useUserState } from "./ui/UserStateContext";
 
-export function AppFooter() {
-  const { nerdMode } = useUserState();
+export function AppFooter({
+  currentEventId,
+}: {
+  currentEventId: string | null;
+}) {
+  const { nerdMode, events } = useUserState();
   const dispatch = useUserDispatch();
+
+  const otherEvents = events.filter((event) => event.id !== currentEventId);
 
   // todo: the footer should only show on hover or drag from the bottom on mobile
   // actually, let's ditch the footer and add menu icon that opens a modal
@@ -14,15 +20,44 @@ export function AppFooter() {
         <h2 className="title">bear fit</h2>
       </div>
 
-      <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&_a]:hover:!text-accent">
+      <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:!text-accent">
+        {otherEvents.length > 0 && (
+          <section className="mb-6">
+            <h3 className="font-sans mt-4">Your recent events</h3>
+            <ul className="mt-2">
+              {otherEvents.map((event) => (
+                <li key={event.id}>
+                  <a
+                    href={`?id=${event.id}`}
+                    className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 !text-neutral-500 hover:!text-neutral-800 !no-underline"
+                  >
+                    {event.name}{" "}
+                    <span>
+                      (
+                      <time dateTime={event.startDate}>
+                        {new Date(event.startDate).toLocaleDateString()}
+                      </time>
+                      {" - "}
+                      <time dateTime={event.endDate}>
+                        {new Date(event.endDate).toLocaleDateString()}
+                      </time>
+                      )
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {/* todo: stats */}
+        <hr className="my-6" />
         <p className="mb-6">
           Finding a time that works for more than two adult humans is{" "}
           <strong>unbearable</strong>. Bear Fit is a tiny app that hopes to
           help. It's a small tool designed to be used and forgotten until the
           next time you need it.
         </p>
-        <h3 className="mb-6 font-sans">Motivation and Alternatives</h3>
+        <h3 className="mb-6 font-sans">Motivation and alternatives</h3>
         <ul className="list-inside *:mb-6">
           <li>
             <span className="dark:invert-100">✏️</span> Doodle was bad, now it's
@@ -61,9 +96,9 @@ export function AppFooter() {
             <GitHubIcon className="size-4 inline ml-1 mb-px" />
           </a>
         </p>
-        <hr />
+        <hr className="my-6" />
         <section>
-          <h3 className="font-sans mt-4">Settings</h3>
+          <h3 className="font-sans">Settings</h3>
           <form className="mt-2">
             <CheckboxField
               checked={nerdMode}

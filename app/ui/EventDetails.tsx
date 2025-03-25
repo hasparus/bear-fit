@@ -39,7 +39,7 @@ import { getWeekDayNames } from "./getWeekDayNames";
 import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
-import { useUserState } from "./UserStateContext";
+import { useUserDispatch, useUserState } from "./UserStateContext";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
@@ -51,6 +51,8 @@ export function EventDetails() {
 
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
+
+  useRememberEvent(event);
 
   const namesMap = yDoc.getMap("names");
   const names = useY(namesMap) as Record<UserId, string>;
@@ -588,4 +590,14 @@ function EventDetailsFooter({ isCreator, yDoc }: EventDetailsFooterProps) {
       </>
     </footer>
   );
+}
+
+function useRememberEvent(event: Partial<CalendarEvent>) {
+  const dispatch = useUserDispatch();
+
+  useEffect(() => {
+    if (event.id) {
+      dispatch({ type: "remember-event", payload: event as CalendarEvent });
+    }
+  }, [event]);
 }

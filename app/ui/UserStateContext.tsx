@@ -5,12 +5,13 @@ import {
   useEffect,
   useLayoutEffect,
   useReducer,
-  useRef,
 } from "react";
+import * as v from "valibot";
 
 import { UnreachableCaseError } from "./UnreachableCaseError";
+import { CalendarEvent } from "../schemas";
 
-const LOCAL_STORAGE_KEY = "🐻👤";
+const LOCAL_STORAGE_KEY = "🐻👤state";
 
 /**
  * The preferences and user metadata are stored in localStorage.
@@ -24,27 +25,13 @@ interface UserStateContextValue {
   /**
    * Events the user interacted with.
    */
-  events: string[];
+  events: CalendarEvent[];
 }
 
-function parseUserState(value: string): UserStateContextValue {
-  try {
-    const json = JSON.parse(value);
-    if (
-      typeof json !== "object" ||
-      json === null ||
-      typeof json.nerdMode !== "boolean" ||
-      !Array.isArray(json.events || {}) ||
-      json.events.some((event: unknown) => typeof event !== "string")
-    ) {
-      throw new Error("invalid user state");
-    }
-    return json as UserStateContextValue;
-  } catch (error) {
-    console.error(error);
-    throw new Error("invalid user state");
-  }
-}
+const UserStateContextValue = v.object({
+  nerdMode: v.boolean(),
+  events: v.array(CalendarEvent),
+});
 
 const DEFAULT_USER_STATE: UserStateContextValue = {
   nerdMode: false,
@@ -83,8 +70,7 @@ export type UserStateAction =
   | {
       // we only store events you interacted with
       type: "remember-event";
-      /** event ID */
-      payload: string;
+      payload: CalendarEvent;
     }
   | {
       type: "forget-event";
@@ -106,11 +92,23 @@ function userStateReducer(
     case "set-nerd-mode":
       return { ...state, nerdMode: action.payload };
     case "remember-event":
-      return { ...state, events: [...state.events, action.payload] };
-    case "forget-event":
+      if (state.events.some((event) => event.id === action.payload.id)) {
+        return state;
+      }
       return {
         ...state,
-        events: state.events.filter((id) => id !== action.payload),
+        events: [action.payload, ...state.events].slice(0, 10),
+      };
+    case "forget-event":
+      const newEvents = state.events.filter(
+        (event) => event.id !== action.payload,
+      );
+
+      if (newEvents.length === state.events.length) return state;
+
+      return {
+        ...state,
+        events: newEvents,
       };
     default:
       throw new UnreachableCaseError(action);
@@ -126,11 +124,14 @@ export function PreferencesProvider({
 
   useLayoutEffect(() => {
     const storedState = localStorage.getItem("🐻👤");
-    const parsedState = storedState ? parseUserState(storedState) : null;
-    if (parsedState) {
+    const parsedState = storedState
+      ? v.safeParse(UserStateContextValue, storedState)
+      : null;
+
+    if (parsedState?.success) {
       dispatch({
         type: "~load-from-storage",
-        payload: parsedState,
+        payload: parsedState.output,
       });
     }
   }, []);

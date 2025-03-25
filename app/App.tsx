@@ -49,7 +49,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
           />
         )}
       </div>
-      <AppFooter />
+      <AppFooter currentEventId={eventId} />
       <CursorPartyScript />
     </PreferencesProvider>
   );
