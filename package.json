@@ -28,7 +28,7 @@
     "partysocket": "^1.0.3",
     "react": "19.0.0",
     "react-day-picker": "^9.5.1",
-    "react-dom": "0.0.0-experimental-f457d0b4-20250313",
+    "react-dom": "19.0.0",
     "react-scan": "^0.2.9",
     "react-yjs": "^2.0.1",
     "tailwind-merge": "^3.0.2",
