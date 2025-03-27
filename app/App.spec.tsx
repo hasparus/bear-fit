@@ -78,6 +78,9 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await bob.getByRole("button", { name: `${nextMonthName} 7` }).click();
   await bob.getByRole("button", { name: `${nextMonthName} 11` }).click();
 
+  await alice.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await alice.getByText("Nerd Mode").click();
+
   const downloadPromise = alice.waitForEvent("download");
   await alice.getByRole("button", { name: "Export to JSON" }).click();
   const download = await downloadPromise;

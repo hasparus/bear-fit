@@ -119,8 +119,8 @@ let stateFromStorage: UserStateContextValue | null = null;
 try {
   const storage = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
   stateFromStorage = v.parse(UserStateContextValue, storage);
-} catch (error) {
-  console.error("Error parsing user state from localStorage", error);
+} catch {
+  // we don't care about the error here
 }
 
 export function PreferencesProvider({
