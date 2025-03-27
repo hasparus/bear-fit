@@ -18,6 +18,6 @@
   },
   "define": {
     "import.meta.env.ALWAYS_PROD": "0",
-    "APP_VERSION": "local"
+    "APP_VERSION": "'localhost'"
   }
 }

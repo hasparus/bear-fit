@@ -12,6 +12,9 @@ if (process.env.NODE_ENV === "development" && SCAN) {
   });
 }
 
+console.log("import.meta.env.ALWAYS_PROD", import.meta.env.ALWAYS_PROD);
+console.log("window.APP_VERSION", (window as any).APP_VERSION);
+
 let ALWAYS_PROD = import.meta.env.ALWAYS_PROD === 1;
 if (process.env.NODE_ENV === "test") ALWAYS_PROD = false;
 

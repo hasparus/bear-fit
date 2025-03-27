@@ -36,7 +36,17 @@ export default tseslint.config(
       "perfectionist/sort-classes": "off",
       "perfectionist/sort-enums": "off",
       "perfectionist/sort-interfaces": ["warn", objectsOrderOptions],
-      "perfectionist/sort-jsx-props": ["warn", objectsOrderOptions],
+      "perfectionist/sort-jsx-props": [
+        "warn",
+        (() => {
+          const jsxOptions = { ...objectsOrderOptions };
+          delete (
+            /** @type {Partial<typeof jsxOptions>} */ (jsxOptions)
+              .partitionByComment
+          );
+          return jsxOptions;
+        })(),
+      ],
       "perfectionist/sort-modules": "off",
       "perfectionist/sort-named-imports": "warn",
       "perfectionist/sort-objects": ["warn", objectsOrderOptions],
