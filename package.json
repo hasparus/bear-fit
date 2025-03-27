@@ -60,6 +60,12 @@
     },
     "overrides": {
       "@types/react": "19.0.12"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "deasync",
+      "esbuild",
+      "msw",
+      "workerd"
+    ]
   }
 }
