@@ -3,7 +3,9 @@ set -e
 BRANCH_NAME=${BRANCH_NAME:-$(git rev-parse --abbrev-ref HEAD)}
 COMMIT_HASH=${COMMIT_HASH:-$(git rev-parse --short HEAD)}
 
-APP_VERSION="$BRANCH_NAME.$COMMIT_HASH"
+DEPLOY_DATE=$(date -u +"%Y-%m-%d")
+
+APP_VERSION="$BRANCH_NAME.$COMMIT_HASH.$DEPLOY_DATE"
 
 export APP_VERSION
 
