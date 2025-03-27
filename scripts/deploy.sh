@@ -14,7 +14,7 @@ if [ "$BRANCH_NAME" = "main" ]; then
   partykit deploy --var APP_VERSION="$APP_VERSION" -d APP_VERSION="$APP_VERSION"
 else
   HOST="$BRANCH_NAME.bear-fit.hasparus.partykit.dev"
-  partykit deploy --preview $BRANCH_NAME --var APP_VERSION="$APP_VERSION" -d APP_VERSION="$APP_VERSION"
+  partykit deploy --preview $BRANCH_NAME --var APP_VERSION="$APP_VERSION" -d APP_VERSION="'$APP_VERSION'"
 fi
 
 if [ ! -z "$GITHUB_ENV" ]; then
