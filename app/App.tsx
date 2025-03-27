@@ -4,12 +4,14 @@ import { Doc } from "yjs";
 
 import type { CalendarEvent } from "./schemas";
 
-import { initializeEventMap } from "./shared-data";
+import { AppFooter } from "./AppFooter";
 import "./styles.css";
+import { initializeEventMap } from "./shared-data";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
+import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
 
@@ -23,30 +25,33 @@ export function App({ serverUrl }: { serverUrl: string }) {
   }
 
   return (
-    <>
-      {eventId ? (
-        <Suspense fallback={<Loading />}>
-          <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
-            <EventDetails />
-          </YProvider>
-        </Suspense>
-      ) : (
-        <CreateEventForm
-          onSubmit={(calendarEvent) => {
-            initializeEventMap(yDoc.current!, calendarEvent);
+    <PreferencesProvider>
+      <div className="h-[93vh] flex items-center">
+        {eventId ? (
+          <Suspense fallback={<Loading />}>
+            <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
+              <EventDetails />
+            </YProvider>
+          </Suspense>
+        ) : (
+          <CreateEventForm
+            onSubmit={(calendarEvent) => {
+              initializeEventMap(yDoc.current!, calendarEvent);
 
-            return postEvent(calendarEvent, serverUrl)
-              .catch((error) => {
-                console.error("creating event failed", error);
-              })
-              .then(() => {
-                params.set("id", calendarEvent.id);
-              });
-          }}
-        />
-      )}
+              return postEvent(calendarEvent, serverUrl)
+                .catch((error) => {
+                  console.error("creating event failed", error);
+                })
+                .then(() => {
+                  params.set("id", calendarEvent.id);
+                });
+            }}
+          />
+        )}
+      </div>
+      <AppFooter currentEventId={eventId} />
       <CursorPartyScript />
-    </>
+    </PreferencesProvider>
   );
 }
 

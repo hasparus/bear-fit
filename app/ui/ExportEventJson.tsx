@@ -42,6 +42,8 @@ export function ExportEventJson({
 
   return (
     <button
+      type="button"
+      title="Export to JSON"
       className={cn(
         "relative flex p-1 bg-neu-tral-100 hover:bg-neutral-200 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white group-hover:bg-neutral-200",
         className,
@@ -51,8 +53,6 @@ export function ExportEventJson({
         exportEventJson(yDoc);
         setTimeout(() => setShowTooltip(false), 2000);
       }}
-      title="Export to JSON"
-      type="button"
       {...rest}
     >
       <DownloadIcon className="size-5" />

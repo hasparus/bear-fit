@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "pnpm": ">=10"
+  },
   "scripts": {
     "dev": "partykit dev --live",
     "dev:prod": "partykit dev -d import.meta.env.ALWAYS_PROD=1 --live",
@@ -15,48 +18,55 @@
   },
   "dependencies": {
     "@radix-ui/react-context-menu": "^2.2.6",
-    "@tailwindcss/postcss": "^4.0.10",
-    "@tailwindcss/vite": "^4.0.10",
-    "@types/node": "^22.13.9",
-    "autoprefixer": "^10.4.20",
+    "@tailwindcss/postcss": "^4.0.17",
+    "@tailwindcss/vite": "^4.0.17",
+    "@types/node": "^22.13.14",
+    "autoprefixer": "^10.4.21",
     "deasync-promise": "^1.0.1",
     "esbuild-style-plugin": "^1.6.3",
-    "nanoid": "^5.1.2",
+    "nanoid": "^5.1.5",
     "partysocket": "^1.0.3",
-    "react": "0.0.0-experimental-f457d0b4-20250313",
+    "react": "19.0.0",
     "react-day-picker": "^9.5.1",
-    "react-dom": "0.0.0-experimental-f457d0b4-20250313",
+    "react-dom": "19.0.0",
     "react-scan": "^0.2.9",
     "react-yjs": "^2.0.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss": "^4.0.10",
     "unique-names-generator": "^4.7.1",
     "unsafe-keys": "^1.0.0",
-    "valibot": "1.0.0-rc.3",
+    "valibot": "1.0.0",
     "y-partykit": "^0.0.32",
     "yjs": "^13.6.24"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.7",
-    "@eslint/js": "^9.21.0",
+    "@eslint/js": "^9.23.0",
     "@hasparus/eslint-plugin-tailwindcss": "^3.17.5",
-    "@playwright/test": "^1.51.0",
-    "@types/react": "^19.0.10",
+    "@playwright/test": "^1.51.1",
+    "@types/react": "19.0.12",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
-    "eslint-plugin-perfectionist": "^4.9.0",
+    "eslint": "^9.23.0",
+    "eslint-plugin-perfectionist": "^4.10.1",
     "partykit": "^0.0.111",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.26.0",
-    "vitest": "^3.0.7"
+    "typescript-eslint": "^8.28.0",
+    "vitest": "^3.0.9"
   },
   "pnpm": {
     "patchedDependencies": {
       "partykit@0.0.111": "patches/partykit@0.0.110.patch"
     },
     "overrides": {
-      "@types/react": "19.0.10"
-    }
+      "@types/react": "19.0.12"
+    },
+    "onlyBuiltDependencies": [
+      "deasync",
+      "esbuild",
+      "msw",
+      "workerd"
+    ]
   }
 }

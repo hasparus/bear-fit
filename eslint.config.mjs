@@ -35,6 +35,7 @@ export default tseslint.config(
       ],
       "perfectionist/sort-classes": "off",
       "perfectionist/sort-enums": "off",
+      "perfectionist/sort-interfaces": ["warn", objectsOrderOptions],
       "perfectionist/sort-modules": "off",
       "perfectionist/sort-named-imports": "warn",
       "perfectionist/sort-objects": ["warn", objectsOrderOptions],
@@ -43,6 +44,18 @@ export default tseslint.config(
         {
           internalPattern: ["^#.*"],
         },
+      ],
+      "perfectionist/sort-jsx-props": [
+        "warn",
+        (() => {
+          /** @type {any} */
+          const jsxOptions = { ...objectsOrderOptions };
+          delete jsxOptions.partitionByComment;
+          jsxOptions.customGroups = {
+            frontmatter: "type|id",
+          };
+          return jsxOptions;
+        })(),
       ],
     },
   },

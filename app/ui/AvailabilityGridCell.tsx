@@ -20,6 +20,7 @@ export function AvailabilityGridCell({
   const fill = availableUsers.length / totalUsers;
   return (
     <button
+      type="button"
       aria-label={day.toLocaleDateString(undefined, { dateStyle: "full" })}
       className={cn(
         "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition-all border-transparent",
@@ -31,7 +32,6 @@ export function AvailabilityGridCell({
           ? `hsl(from var(--accent) h s l / ${fill})`
           : undefined,
       }}
-      type="button"
       {...rest}
     >
       {day.toLocaleDateString("en-US", { day: "numeric" })}

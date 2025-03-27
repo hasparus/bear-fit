@@ -29,11 +29,11 @@ export function UserAvailabilitySummary({
 
   return (
     <dl
+      onMouseLeave={() => onHover(null)}
       className={cn(
         allUsersCount > 6 &&
           "max-h-[144px] overflow-y-auto overflow-x-clip border border-black p-2 rounded-sm bg-neutral-50 dark:bg-neutral-200 inset-shadow-2xs",
       )}
-      onMouseLeave={() => onHover(null)}
     >
       {userIds.map((user) => {
         const dates = availabilityForUsers[user];
@@ -92,7 +92,7 @@ function UserAvailabilitySummaryItem({
 
   return (
     <div
-      className="-mx-1 -my-0.5 flex cursor-pointer justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800 "
+      className="-mx-1 -my-0.5 flex cursor-pointer justify-between gap-2 rounded-sm px-1 py-0.5 hover:bg-neutral-100 hover:text-neutral-800"
       {...rest}
     >
       <dt className={cn(isSelected && "before:content-['✓_'] text-black")}>
