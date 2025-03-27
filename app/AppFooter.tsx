@@ -105,6 +105,14 @@ export function AppFooter({
               id="nerd-mode"
               onChange={(e) => {
                 dispatch({ type: "set-nerd-mode", payload: e.target.checked });
+                if (e.target.checked) {
+                  requestAnimationFrame(() => {
+                    window.scrollTo({
+                      top: window.innerHeight,
+                      behavior: "smooth",
+                    });
+                  });
+                }
               }}
             >
               Nerd Mode
@@ -112,7 +120,7 @@ export function AppFooter({
             </CheckboxField>
           </form>
         </section>
-        {nerdMode && <p>App version: {APP_VERSION}</p>}
+        {nerdMode && <p className="mt-2">Application version: {APP_VERSION}</p>}
       </div>
     </footer>
   );
