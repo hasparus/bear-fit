@@ -7,7 +7,7 @@ export function AppFooter({
 }: {
   currentEventId: string | null;
 }) {
-  const { nerdMode, events } = useUserState();
+  const { events, nerdMode } = useUserState();
   const dispatch = useUserDispatch();
 
   const otherEvents = events.filter((event) => event.id !== currentEventId);
@@ -28,8 +28,8 @@ export function AppFooter({
               {otherEvents.map((event) => (
                 <li key={event.id}>
                   <a
-                    href={`?id=${event.id}`}
                     className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 !text-neutral-500 hover:!text-neutral-800 !no-underline"
+                    href={`?id=${event.id}`}
                   >
                     {event.name}{" "}
                     <span>
@@ -101,15 +101,15 @@ export function AppFooter({
           <h3 className="font-sans">Settings</h3>
           <form className="mt-2">
             <CheckboxField
-              checked={nerdMode}
               id="nerd-mode"
+              checked={nerdMode}
               onChange={(e) => {
                 dispatch({ type: "set-nerd-mode", payload: e.target.checked });
                 if (e.target.checked) {
                   requestAnimationFrame(() => {
                     window.scrollTo({
-                      top: window.innerHeight,
                       behavior: "smooth",
+                      top: window.innerHeight,
                     });
                   });
                 }

@@ -94,10 +94,10 @@ export function CreateEventForm({
             </small>
           </label>
           <input
-            autoComplete="off"
-            className="w-full border p-2"
             id="eventName"
             type="text"
+            autoComplete="off"
+            className="w-full border p-2"
           />
         </div>
         <div className="mb-4">
@@ -108,28 +108,28 @@ export function CreateEventForm({
             </small>
           </label>
           <DayPicker
+            showOutsideDays
             disabled={{ before: new Date() }}
+            fixedWeeks // avoid layout shift when changing months
             mode="range"
-            onSelect={(range) =>
-              setDateRange(range || { from: undefined, to: undefined })
-            }
             selected={dateRange}
             timeZone="UTC"
             weekStartsOn={tryGetFirstDayOfTheWeek()}
-            fixedWeeks // avoid layout shift when changing months
-            showOutsideDays
+            onSelect={(range) =>
+              setDateRange(range || { from: undefined, to: undefined })
+            }
           />
         </div>
         <button
+          type="submit"
           className="btn btn-default w-full hover:bg-neutral-100 "
+          style={{ borderWidth: "0.5em" }}
           disabled={
             !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to
           }
           onClick={(event) => {
             event.currentTarget.textContent = "Creating...";
           }}
-          style={{ borderWidth: "0.5em" }}
-          type="submit"
         >
           {isSubmitting ? "Creating..." : "Create Event"}
         </button>

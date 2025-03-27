@@ -4,8 +4,9 @@ import { Doc } from "yjs";
 
 import type { CalendarEvent } from "./schemas";
 
-import { initializeEventMap } from "./shared-data";
+import { AppFooter } from "./AppFooter";
 import "./styles.css";
+import { initializeEventMap } from "./shared-data";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { EventDetails } from "./ui/EventDetails";
@@ -13,7 +14,6 @@ import { Loading } from "./ui/Loading";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
-import { AppFooter } from "./AppFooter";
 
 export function App({ serverUrl }: { serverUrl: string }) {
   const params = useSearchParams();

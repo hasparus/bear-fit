@@ -3,13 +3,12 @@ import {
   type Dispatch,
   useContext,
   useEffect,
-  useLayoutEffect,
   useReducer,
 } from "react";
 import * as v from "valibot";
 
-import { UnreachableCaseError } from "./UnreachableCaseError";
 import { CalendarEvent } from "../schemas";
+import { UnreachableCaseError } from "./UnreachableCaseError";
 
 const LOCAL_STORAGE_KEY = "🐻👤state";
 
@@ -29,13 +28,13 @@ interface UserStateContextValue {
 }
 
 const UserStateContextValue = v.object({
-  nerdMode: v.boolean(),
   events: v.array(CalendarEvent),
+  nerdMode: v.boolean(),
 });
 
 const DEFAULT_USER_STATE: UserStateContextValue = {
-  nerdMode: false,
   events: [],
+  nerdMode: false,
 };
 
 const UserStateContext = createContext<UserStateContextValue | null>(null);
@@ -64,10 +63,6 @@ export function useUserDispatch() {
 
 export type UserStateAction =
   | {
-      type: "set-nerd-mode";
-      payload: boolean;
-    }
-  | {
       // we only store events you interacted with
       type: "remember-event";
       payload: CalendarEvent;
@@ -76,6 +71,10 @@ export type UserStateAction =
       type: "forget-event";
       /** event ID */
       payload: string;
+    }
+  | {
+      type: "set-nerd-mode";
+      payload: boolean;
     }
   | {
       type: "~load-from-storage";
@@ -87,19 +86,7 @@ function userStateReducer(
   action: UserStateAction,
 ) {
   switch (action.type) {
-    case "~load-from-storage":
-      return { ...state, ...action.payload };
-    case "set-nerd-mode":
-      return { ...state, nerdMode: action.payload };
-    case "remember-event":
-      if (state.events.some((event) => event.id === action.payload.id)) {
-        return state;
-      }
-      return {
-        ...state,
-        events: [action.payload, ...state.events].slice(0, 10),
-      };
-    case "forget-event":
+    case "forget-event": {
       const newEvents = state.events.filter(
         (event) => event.id !== action.payload,
       );
@@ -110,6 +97,19 @@ function userStateReducer(
         ...state,
         events: newEvents,
       };
+    }
+    case "remember-event":
+      if (state.events.some((event) => event.id === action.payload.id)) {
+        return state;
+      }
+      return {
+        ...state,
+        events: [action.payload, ...state.events].slice(0, 10),
+      };
+    case "set-nerd-mode":
+      return { ...state, nerdMode: action.payload };
+    case "~load-from-storage":
+      return { ...state, ...action.payload };
     default:
       throw new UnreachableCaseError(action);
   }

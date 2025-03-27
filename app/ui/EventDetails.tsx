@@ -39,10 +39,10 @@ import { getWeekDayNames } from "./getWeekDayNames";
 import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
-import { useUserDispatch, useUserState } from "./UserStateContext";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
+import { useUserDispatch, useUserState } from "./UserStateContext";
 
 const userId = getUserId();
 
@@ -233,12 +233,12 @@ export function EventDetails() {
       <Container wide={monthCount > 1}>
         <ContextMenuTrigger>
           <form
+            onSubmit={(e) => e.preventDefault()}
             className={cn(
               "font-[inherit] text-base",
               monthCount > 1 &&
                 "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4",
             )}
-            onSubmit={(e) => e.preventDefault()}
           >
             <div>
               <p className="block font-mono text-sm">Calendar</p>
@@ -266,8 +266,10 @@ export function EventDetails() {
                   Your name
                 </label>
                 <input
-                  className="w-full border p-2 rounded-sm"
                   id="name"
+                  type="text"
+                  className="w-full border p-2 rounded-sm"
+                  value={userName || ""}
                   onChange={(e) => {
                     if (!userId) {
                       throw new Error("user id is missing");
@@ -280,8 +282,6 @@ export function EventDetails() {
                       localStorage.setItem("userName", value);
                     });
                   }}
-                  type="text"
-                  value={userName || ""}
                 />
               </div>
               <div className="mb-4 font-mono text-sm text-neutral-500">
@@ -293,6 +293,8 @@ export function EventDetails() {
                     creatorId={event.creator}
                     names={names}
                     onHover={(userId) => setHoveredUser(userId)}
+                    selectedUsers={selectedUsers}
+                    userId={userId}
                     onSelect={(userId) => {
                       if (!userId) return;
                       setSelectedUsers((prev) => ({
@@ -300,8 +302,6 @@ export function EventDetails() {
                         [userId]: !prev[userId],
                       }));
                     }}
-                    selectedUsers={selectedUsers}
-                    userId={userId}
                   />
                 )}
               </div>
@@ -376,6 +376,10 @@ export function EventDetails() {
                         return (
                           <AvailabilityGridCell
                             availableUsers={availableUsers}
+                            day={day}
+                            key={`${day}-${i}`}
+                            tabIndex={i === 0 ? 0 : -1}
+                            totalUsers={totalUsers}
                             className={cn(
                               !hoveredUser &&
                                 currentUserAvailable &&
@@ -388,8 +392,6 @@ export function EventDetails() {
                                 "opacity-60 saturate-25",
                               "hover:[anchor-name:--tooltip-anchor]",
                             )}
-                            day={day}
-                            key={`${day}-${i}`}
                             onKeyDown={(event) =>
                               moveFocusWithArrowKeys(event, () =>
                                 setAvailability(
@@ -430,8 +432,6 @@ export function EventDetails() {
                                 }, 150);
                               }
                             }}
-                            tabIndex={i === 0 ? 0 : -1}
-                            totalUsers={totalUsers}
                           />
                         );
                       })}

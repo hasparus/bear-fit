@@ -9,7 +9,7 @@ export interface RadioIconProps extends React.HTMLAttributes<HTMLDivElement> {
 export function RadioIcon({ checked, ...rest }: RadioIconProps) {
   return (
     <div aria-hidden {...rest}>
-      <input checked={checked} type="radio" />
+      <input type="radio" checked={checked} />
       <label />
     </div>
   );

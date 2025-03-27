@@ -33,12 +33,12 @@ export function ImportEventJson({
       ) : (
         <>
           <label
+            htmlFor="import-json"
+            title="Import from JSON"
             className={cn(
               "relative flex p-1 bg-neu-tral-100 hover:bg-neutral-200 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white group-hover:bg-neutral-200",
               className,
             )}
-            htmlFor="import-json"
-            title="Import from JSON"
             {...rest}
           >
             <UploadIcon className="size-5" />
@@ -93,12 +93,12 @@ export function useImportEventJson() {
     return {
       hiddenInputElement: (
         <input
+          id="import-json"
+          type="file"
           accept=".json"
           className="hidden"
-          id="import-json"
           onChange={handleImport}
           ref={fileInputRef}
-          type="file"
         />
       ),
       fileInputRef,
