@@ -112,6 +112,7 @@ export function AppFooter({
             </CheckboxField>
           </form>
         </section>
+        {nerdMode && <p>App version: {APP_VERSION}</p>}
       </div>
     </footer>
   );
