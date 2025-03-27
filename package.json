@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "pnpm": ">=10"
+  },
   "scripts": {
     "dev": "partykit dev --live",
     "dev:prod": "partykit dev -d import.meta.env.ALWAYS_PROD=1 --live",
