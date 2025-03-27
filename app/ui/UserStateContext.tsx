@@ -115,6 +115,14 @@ function userStateReducer(
   }
 }
 
+let stateFromStorage: UserStateContextValue | null = null;
+try {
+  const storage = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
+  stateFromStorage = v.parse(UserStateContextValue, storage);
+} catch (error) {
+  console.error("Error parsing user state from localStorage", error);
+}
+
 export function PreferencesProvider({
   children,
 }: {
@@ -122,21 +130,16 @@ export function PreferencesProvider({
 }) {
   const [state, dispatch] = useReducer(userStateReducer, DEFAULT_USER_STATE);
 
-  useLayoutEffect(() => {
-    const storedState = localStorage.getItem("🐻👤");
-    const parsedState = storedState
-      ? v.safeParse(UserStateContextValue, storedState)
-      : null;
-
-    if (parsedState?.success) {
+  useEffect(() => {
+    if (stateFromStorage) {
       dispatch({
         type: "~load-from-storage",
-        payload: parsedState.output,
+        payload: stateFromStorage,
       });
+      stateFromStorage = null;
+      return;
     }
-  }, []);
 
-  useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
