@@ -391,6 +391,7 @@ export function EventDetails() {
                               hoveredUserIsUnavailable &&
                                 "opacity-60 saturate-25",
                               "hover:[anchor-name:--tooltip-anchor]",
+                              "touch-pan-y touch-pinch-zoom",
                             )}
                             onKeyDown={(event) =>
                               moveFocusWithArrowKeys(event, () =>
@@ -410,6 +411,7 @@ export function EventDetails() {
                                 return;
                               }
 
+                              console.log("pointer down", dateStr);
                               handlePointerDown(
                                 dateStr,
                                 !!currentUserAvailable,
