@@ -1,7 +1,7 @@
 import type * as Party from "partykit/server";
 
 import * as v from "valibot";
-import { onConnect, type YPartyKitOptions } from "y-partykit";
+import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
 import { Doc } from "yjs";
 
 import { CalendarEvent } from "../app/schemas";
@@ -24,62 +24,27 @@ export default class EditorServer implements Party.Server {
   //   hibernate: true,
   // };
 
-  // This was unused, right?
-  // TODO: Migrate out of my custom storage to use this.
-  yjsOptions: YPartyKitOptions = {
+  constructor(public room: Party.Room) {
+    unstable_getYDoc(this.room, this.yPartyKitOptions).then((doc) => {
+      this.doc = doc;
+      if (this.event && !hasCalendarEvent(doc)) {
+        initializeEventMap(doc, this.event);
+      }
+    });
+  }
+
+  /**
+   * Must be the same when calling unstable_getYDoc and onConnect.
+   */
+  yPartyKitOptions: YPartyKitOptions = {
+    callback: { handler: (doc) => this.handleYDocChange(doc) },
     persist: { mode: "history" },
   };
-
-  constructor(public room: Party.Room) {}
-
-  private getOpts() {
-    // options must match when calling unstable_getYDoc and onConnect
-    const opts: YPartyKitOptions = {
-      callback: { handler: (doc) => this.handleYDocChange(doc) },
-      load: async () => {
-        const json = (await this.room.storage.get("doc")) as
-          | ReturnType<typeof yDocToJson>
-          | undefined;
-
-        if (typeof json === "object") {
-          const doc = new Doc();
-          initializeEventMap(doc, json.event as CalendarEvent);
-
-          const availabilityMap = doc.getMap("availability");
-          for (const [key, value] of Object.entries(json.availability)) {
-            availabilityMap.set(key, value);
-          }
-
-          const namesMap = doc.getMap("names");
-          for (const [key, value] of Object.entries(json.names)) {
-            namesMap.set(key, value);
-          }
-
-          return doc;
-        }
-
-        return null;
-      },
-    };
-    return opts;
-  }
 
   private handleYDocChange(doc: Doc) {
     if (VERBOSE) {
       console.log("↠ handleYDocChange", yDocToJson(doc));
     }
-
-    if (!this.doc) {
-      this.doc = doc;
-      if (this.event && !hasCalendarEvent(doc)) {
-        initializeEventMap(doc, this.event);
-      }
-    }
-  }
-
-  private async saveDoc(doc: Doc) {
-    const json = yDocToJson(doc);
-    await this.room.storage.put("doc", json);
   }
 
   private async updateCount() {
@@ -100,9 +65,6 @@ export default class EditorServer implements Party.Server {
 
   async onClose(_: Party.Connection) {
     void this.updateCount();
-    if (this.doc) {
-      void this.saveDoc(this.doc);
-    }
   }
 
   async onConnect(conn: Party.Connection) {
@@ -112,7 +74,7 @@ export default class EditorServer implements Party.Server {
       console.log("↠ onConnect", this.room.id);
     }
 
-    return onConnect(conn, this.room, this.getOpts());
+    return onConnect(conn, this.room, this.yPartyKitOptions);
   }
 
   async onRequest(req: Party.Request) {
