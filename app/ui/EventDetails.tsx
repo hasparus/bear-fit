@@ -416,6 +416,11 @@ export function EventDetails() {
                                 dateStr,
                                 !!currentUserAvailable,
                               );
+
+                              // This is needed for drag-painting to work on mobiles.
+                              event.currentTarget.releasePointerCapture(
+                                event.pointerId,
+                              );
                             }}
                             onPointerEnter={(event) => {
                               handlePointerEnter(
@@ -433,6 +438,9 @@ export function EventDetails() {
                                   }
                                 }, 150);
                               }
+                            }}
+                            onPointerOver={(event) => {
+                              console.log("pointer over", dateStr);
                             }}
                           />
                         );
