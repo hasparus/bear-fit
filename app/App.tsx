@@ -26,7 +26,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
 
   return (
     <PreferencesProvider>
-      <div className="h-[93vh] flex items-center">
+      <div className="min-h-[89vh] flex items-center">
         {eventId ? (
           <Suspense fallback={<Loading />}>
             <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
@@ -49,7 +49,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
           />
         )}
       </div>
-      <AppFooter currentEventId={eventId} />
+      <AppFooter className="!mt-8" currentEventId={eventId} />
       <CursorPartyScript />
     </PreferencesProvider>
   );

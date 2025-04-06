@@ -1,10 +1,13 @@
 import { CheckboxField } from "./ui/CheckboxField";
+import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
 import { useUserDispatch, useUserState } from "./ui/UserStateContext";
 
 export function AppFooter({
+  className,
   currentEventId,
 }: {
+  className?: string;
   currentEventId: string | null;
 }) {
   const { events, nerdMode } = useUserState();
@@ -15,7 +18,12 @@ export function AppFooter({
   // todo: the footer should only show on hover or drag from the bottom on mobile
   // actually, let's ditch the footer and add menu icon that opens a modal
   return (
-    <footer className="px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2">
+    <footer
+      className={cn(
+        "px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2",
+        className,
+      )}
+    >
       <div className="title-bar">
         <h2 className="title">bear fit</h2>
       </div>
@@ -53,9 +61,9 @@ export function AppFooter({
         <hr className="my-6" />
         <p className="mb-6">
           Finding a time that works for more than two adult humans is{" "}
-          <strong>unbearable</strong>. Bear Fit is a tiny app that hopes to
-          help. It's a small tool designed to be used and forgotten until the
-          next time you need it.
+          <strong>unbearable</strong>.{" "}
+          <span className="font-sans">bear fit</span> is a small tool designed
+          to be used and forgotten until the next time you need it.
         </p>
         <h3 className="mb-6 font-sans">Motivation and alternatives</h3>
         <ul className="list-inside *:mb-6">

@@ -242,7 +242,8 @@ export function EventDetails() {
           >
             <div>
               <p className="block font-mono text-sm">Calendar</p>
-              <h1 className="mb-4 text-2xl">
+              {/* todo: I should really use CSS layers or ditch system.css to avoid all these !important */}
+              <h1 className="mb-4 !text-2xl">
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Event dates</p>
@@ -286,7 +287,7 @@ export function EventDetails() {
               </div>
               <div className="mb-4 font-mono text-sm text-neutral-500">
                 {!event.id ? (
-                  <>&nbsp;</>
+                  <Skeleton className="h-[48px]" />
                 ) : (
                   <UserAvailabilitySummary
                     availabilityForUsers={availabilityForUsers}
@@ -411,7 +412,6 @@ export function EventDetails() {
                                 return;
                               }
 
-                              console.log("pointer down", dateStr);
                               handlePointerDown(
                                 dateStr,
                                 !!currentUserAvailable,
@@ -439,9 +439,6 @@ export function EventDetails() {
                                 }, 150);
                               }
                             }}
-                            onPointerOver={(event) => {
-                              console.log("pointer over", dateStr);
-                            }}
                           />
                         );
                       })}
@@ -453,9 +450,11 @@ export function EventDetails() {
             {importEventJson.hiddenInputElement}
           </form>
 
-          {event.name && (
-            <EventDetailsFooter isCreator={isCreator} yDoc={yDoc} />
-          )}
+          <EventDetailsFooter
+            isCreator={isCreator}
+            isLoading={!event.name}
+            yDoc={yDoc}
+          />
         </ContextMenuTrigger>
       </Container>
       <ContextMenuContent>
@@ -584,20 +583,28 @@ interface HoveredCellData {
 
 interface EventDetailsFooterProps {
   isCreator: boolean;
+  isLoading: boolean;
   yDoc: Doc;
 }
 
-function EventDetailsFooter({ isCreator, yDoc }: EventDetailsFooterProps) {
+function EventDetailsFooter({
+  isCreator,
+  isLoading,
+  yDoc,
+}: EventDetailsFooterProps) {
   const { nerdMode } = useUserState();
 
   if (!nerdMode) return null;
 
   return (
-    <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
-      <>
-        {isCreator && <ImportEventJson />}
-        <ExportEventJson yDoc={yDoc} />
-      </>
+    <footer
+      className={cn(
+        "flex justify-end gap-2 border-t border-neutral-200 pt-3",
+        isLoading && "cursor-progress *:pointer-events-none",
+      )}
+    >
+      {isCreator && <ImportEventJson />}
+      <ExportEventJson yDoc={yDoc} />
     </footer>
   );
 }
