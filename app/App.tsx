@@ -2,10 +2,10 @@ import { Suspense, useRef } from "react";
 import useYProvider from "y-partykit/react";
 import { Doc } from "yjs";
 
-import type { CalendarEvent } from "./schemas";
-
-import { AppFooter } from "./AppFooter";
+import { postEvent } from "./api/postEvent";
 import "./styles.css";
+import { serverUrl } from "./api/serverUrl";
+import { AppFooter } from "./AppFooter";
 import { initializeEventMap } from "./shared-data";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
@@ -15,7 +15,7 @@ import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
 
-export function App({ serverUrl }: { serverUrl: string }) {
+export function App() {
   const params = useSearchParams();
   const eventId = params.get("id");
 
@@ -29,7 +29,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
       <div className="min-h-[89vh] flex items-center">
         {eventId ? (
           <Suspense fallback={<Loading />}>
-            <YProvider host={serverUrl} room={eventId} yDoc={yDoc.current}>
+            <YProvider room={eventId} yDoc={yDoc.current}>
               <EventDetails />
             </YProvider>
           </Suspense>
@@ -38,7 +38,7 @@ export function App({ serverUrl }: { serverUrl: string }) {
             onSubmit={(calendarEvent) => {
               initializeEventMap(yDoc.current!, calendarEvent);
 
-              return postEvent(calendarEvent, serverUrl)
+              return postEvent(calendarEvent)
                 .catch((error) => {
                   console.error("creating event failed", error);
                 })
@@ -55,34 +55,12 @@ export function App({ serverUrl }: { serverUrl: string }) {
   );
 }
 
-async function postEvent(
-  calendarEvent: CalendarEvent,
-  serverUrl: string,
-): Promise<unknown> {
-  const res = await fetch(`${serverUrl}/parties/main/${calendarEvent.id}`, {
-    body: JSON.stringify(calendarEvent),
-    method: "POST",
-  });
-
-  if (res.status === 404) {
-    throw new Error("server not found");
-  }
-
-  const json = await res.json();
-  // TODO: If the status was not 200, we should show an error message and retry.
-  //       We can test this with a test that passes a wrong server URL.
-
-  return json;
-}
-
 function YProvider({
   children,
-  host,
   room,
   yDoc,
 }: {
   children: React.ReactNode;
-  host: string;
   room: string;
   yDoc: Doc;
 }) {
@@ -90,7 +68,7 @@ function YProvider({
   // `useYProvider`, and we don't know the room until we create the event.
   const _yProvider = useYProvider({
     doc: yDoc,
-    host,
+    host: serverUrl,
     room,
     options: {
       connect: true,

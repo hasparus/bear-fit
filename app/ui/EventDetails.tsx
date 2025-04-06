@@ -33,6 +33,7 @@ import {
 } from "./ContextMenu";
 import { CopyEventUrl } from "./CopyEventUrl";
 import { eachDayOfInterval } from "./eachDayOfInterval";
+import { EventHistory } from "./EventHistory";
 import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
@@ -451,6 +452,7 @@ export function EventDetails() {
           </form>
 
           <EventDetailsFooter
+            eventId={event.id}
             isCreator={isCreator}
             isLoading={!event.name}
             yDoc={yDoc}
@@ -582,12 +584,14 @@ interface HoveredCellData {
 }
 
 interface EventDetailsFooterProps {
+  eventId: string | undefined;
   isCreator: boolean;
   isLoading: boolean;
   yDoc: Doc;
 }
 
 function EventDetailsFooter({
+  eventId,
   isCreator,
   isLoading,
   yDoc,
@@ -603,6 +607,7 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
+      
       {isCreator && <ImportEventJson />}
       <ExportEventJson yDoc={yDoc} />
     </footer>

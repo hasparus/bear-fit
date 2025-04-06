@@ -6,11 +6,7 @@ import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
 import { CalendarEvent } from "../app/schemas";
-import {
-  hasCalendarEvent,
-  initializeEventMap,
-  yDocToJson,
-} from "../app/shared-data";
+import { initializeEventMap, yDocToJson } from "../app/shared-data";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
 const VERBOSE = process.env.NODE_ENV === "development";
@@ -25,14 +21,7 @@ export default class EditorServer implements Party.Server {
   //   hibernate: true,
   // };
 
-  constructor(public room: Party.Room) {
-    unstable_getYDoc(this.room, this.yPartyKitOptions).then((doc) => {
-      this.doc = doc;
-      if (this.event && !hasCalendarEvent(doc)) {
-        initializeEventMap(doc, this.event);
-      }
-    });
-  }
+  constructor(public room: Party.Room) {}
 
   /**
    * Must be the same when calling unstable_getYDoc and onConnect.
@@ -103,10 +92,10 @@ export default class EditorServer implements Party.Server {
             { headers, status: 403 },
           );
         } else {
-          this.event = event;
-          if (this.doc) {
-            initializeEventMap(this.doc, event);
-          }
+          initializeEventMap(
+            await unstable_getYDoc(this.room, this.yPartyKitOptions),
+            event,
+          );
           return Response.json({ message: "created" }, { headers });
         }
       } catch (error) {
@@ -119,14 +108,25 @@ export default class EditorServer implements Party.Server {
     }
 
     if (req.method === "GET") {
+      if (url.pathname === `/parties/main/${this.room.id}/history`) {
+        const updates = await getLevelUpdates(this.room.storage, this.room.id);
+
+        return new Response(encodeUpdatesToOneUint8Array(updates), {
+          headers: {
+            ...headers,
+            "Content-Type": "application/octet-stream",
+          },
+        });
+      }
+
       if (url.pathname === "/parties/main/status") {
         return new Response("ok", { headers });
       }
 
-      return Response.json({
-        doc: this.doc ? yDocToJson(this.doc) : null,
-        event: this.event,
-      });
+      return Response.json(
+        yDocToJson(await unstable_getYDoc(this.room, this.yPartyKitOptions)),
+        { headers },
+      );
     }
 
     return Response.json({ message: "not found" }, { headers, status: 404 });
@@ -181,29 +181,28 @@ function createDocumentUpdateKey(
 }
 
 const BINARY_BITS_32 = 0xffffffff;
-
-/**
- * Keys are arrays of strings + numbers, so we keep a
- * couple of helpers to encode/decode them.
- */
-const keyEncoding = {
-  encode(arr: StorageKey) {
-    const resultArr = [];
-    for (const item of arr) {
-      resultArr.push(
-        // TODO: This is a bit hacky, but it works
-        typeof item === "string" ? `"${item}"` : `${item}`.padStart(9, "0")
-      );
-    }
-    return resultArr.join("#");
-  },
-  decode(str: string): StorageKey {
-    return str
-      .split("#")
-      .map((el) =>
-        el.startsWith('"') ? (JSON.parse(el) as StorageKey) : parseInt(el, 10)
-      ) as StorageKey;
-  }
-};
-
 // #endregion
+
+function encodeUpdatesToOneUint8Array(updates: Datum[]): Uint8Array {
+  const textEncoder = new TextEncoder();
+  const separator = textEncoder.encode("\n\n");
+  const parts: Uint8Array[] = [];
+
+  for (const update of updates) {
+    const clock = update.key[3] ?? "sv"; // we either have a clock number or it's state vector
+    parts.push(textEncoder.encode(`${clock}`));
+    parts.push(separator);
+    parts.push(update.value);
+    parts.push(separator); // if it's the last update, we end the file with LF
+  }
+
+  const totalSize = parts.reduce((acc, part) => acc + part.length, 0);
+  const body = new Uint8Array(totalSize);
+  let offset = 0;
+  for (const part of parts) {
+    body.set(part, offset);
+    offset += part.length;
+  }
+
+  return body;
+}

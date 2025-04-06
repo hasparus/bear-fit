@@ -13,8 +13,6 @@ export function AppFooter({
   const { events, nerdMode } = useUserState();
   const dispatch = useUserDispatch();
 
-  const otherEvents = events.filter((event) => event.id !== currentEventId);
-
   // todo: the footer should only show on hover or drag from the bottom on mobile
   // actually, let's ditch the footer and add menu icon that opens a modal
   return (
@@ -29,15 +27,21 @@ export function AppFooter({
       </div>
 
       <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:!text-accent">
-        {otherEvents.length > 0 && (
+        {events.length > 0 && (
           <section className="mb-6">
             <h3 className="font-sans mt-4">Your recent events</h3>
             <ul className="mt-2">
-              {otherEvents.map((event) => (
+              {events.map((event) => (
                 <li key={event.id}>
                   <a
                     className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 !text-neutral-500 hover:!text-neutral-800 !no-underline"
                     href={`?id=${event.id}`}
+                    onClick={(e) => {
+                      if (event.id === currentEventId) {
+                        e.preventDefault();
+                        document.body.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}
                   >
                     {event.name}{" "}
                     <span>
@@ -51,6 +55,7 @@ export function AppFooter({
                       </time>
                       )
                     </span>
+                    {event.id === currentEventId && <span> (current)</span>}
                   </a>
                 </li>
               ))}
