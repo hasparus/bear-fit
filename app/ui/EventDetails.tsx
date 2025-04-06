@@ -385,7 +385,7 @@ export function EventDetails() {
                             className={cn(
                               !hoveredUser &&
                                 currentUserAvailable &&
-                                "border-neutral-200 border-[6px] hover:border-[6px]",
+                                "border-neutral-200 border-[6px] hover:border-[7px]",
                               hoveredUserIsAvailable &&
                                 "border-neutral-200 border-4",
                               atLeastOneSelectedUserIsUnavailable &&
@@ -570,7 +570,7 @@ function GridCellTooltip({
       {users && (
         <ul className="flex flex-col">
           {users.map((userId) => (
-            <li key={userId}>{names[userId]}</li>
+            <li key={userId}>{names[userId] || userId}</li>
           ))}
         </ul>
       )}
@@ -603,11 +603,11 @@ function EventDetailsFooter({
   return (
     <footer
       className={cn(
-        "flex justify-end gap-2 border-t border-neutral-200 pt-3",
+        "flex justify-end gap-2 border-t border-neutral-100 pt-3",
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
-      
+      <EventHistory eventId={eventId} />
       {isCreator && <ImportEventJson />}
       <ExportEventJson yDoc={yDoc} />
     </footer>
