@@ -2,6 +2,7 @@ import type * as Party from "partykit/server";
 
 import * as v from "valibot";
 import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
+import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
 import { CalendarEvent } from "../app/schemas";
@@ -131,3 +132,78 @@ export default class EditorServer implements Party.Server {
     return Response.json({ message: "not found" }, { headers, status: 404 });
   }
 }
+
+// #region HACK: Copied from y-partykit/storage.ts (it wasn't exported, probably for a reason)
+
+/**
+ *
+ * Get all document updates for a specific document.
+ */
+async function getLevelUpdates(
+  db: Party.Storage,
+  docName: string,
+  opts: {
+    keys: boolean;
+    limit?: number;
+    reverse?: boolean;
+    values: boolean;
+  } = {
+    keys: false,
+    values: true,
+  },
+): Promise<Datum[]> {
+  return getLevelBulkData(db, {
+    gte: createDocumentUpdateKey(docName, 0),
+    lt: createDocumentUpdateKey(docName, BINARY_BITS_32),
+    ...opts,
+  });
+}
+
+interface Datum {
+  key: StorageKey;
+  value: Uint8Array;
+}
+
+type StorageKey = DocumentStateVectorKey | DocumentUpdateKey;
+
+/**
+ * Create a unique key for a update message.
+ * We encode the result using `keyEncoding` which expects an array.
+ */
+type DocumentUpdateKey = ["v1", string, "update", number];
+type DocumentStateVectorKey = ["v1_sv", string];
+
+function createDocumentUpdateKey(
+  docName: string,
+  clock: number,
+): DocumentUpdateKey {
+  return ["v1", docName, "update", clock];
+}
+
+const BINARY_BITS_32 = 0xffffffff;
+
+/**
+ * Keys are arrays of strings + numbers, so we keep a
+ * couple of helpers to encode/decode them.
+ */
+const keyEncoding = {
+  encode(arr: StorageKey) {
+    const resultArr = [];
+    for (const item of arr) {
+      resultArr.push(
+        // TODO: This is a bit hacky, but it works
+        typeof item === "string" ? `"${item}"` : `${item}`.padStart(9, "0")
+      );
+    }
+    return resultArr.join("#");
+  },
+  decode(str: string): StorageKey {
+    return str
+      .split("#")
+      .map((el) =>
+        el.startsWith('"') ? (JSON.parse(el) as StorageKey) : parseInt(el, 10)
+      ) as StorageKey;
+  }
+};
+
+// #endregion
