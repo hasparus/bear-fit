@@ -43,7 +43,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await alice.getByText("Create Event").click();
 
   // Verify we're redirected to the event page
-  await expect(alice.getByText("test event")).toBeVisible();
+  await expect(alice.getByRole("heading")).toHaveText("test event");
   await expect(alice.getByText("Event dates")).toBeVisible();
 
   // Type creator name
