@@ -12,17 +12,23 @@ import * as Y from "yjs";
 import { getHistory } from "../../api/getHistory";
 import { YDocContext } from "../../useYDoc";
 import { ClockIcon } from "../ClockIcon";
+import { cn } from "../cn";
 import { EventDetails } from "../EventDetails";
 import { getUpdatesFromUint8Array } from "./getUpdatesFromUint8Array";
 
 const EventHistoryContext = createContext<boolean>(false);
 
 export interface EventHistoryProps {
+  eventIsWide: boolean;
   eventId: string | undefined;
   onRestoreVersion: (doc: Y.Doc) => void;
 }
 
-export function EventHistory({ eventId, onRestoreVersion }: EventHistoryProps) {
+export function EventHistory({
+  eventIsWide,
+  eventId,
+  onRestoreVersion,
+}: EventHistoryProps) {
   const isHistoricalAlready = useContext(EventHistoryContext);
 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -37,8 +43,14 @@ export function EventHistory({ eventId, onRestoreVersion }: EventHistoryProps) {
         <ClockIcon className="size-5" />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/10 dark:bg-white/10 animate-overlay-show" />
-        <div className="grid fixed max-h-screen [@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [place-items:center_end] [@media(width>=1120px)]:[place-items:center_start] inset-0">
+        <Dialog.Overlay className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
+        <div
+          className={cn(
+            "grid fixed max-h-screen inset-0 [place-items:center_end]",
+            !eventIsWide &&
+              "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
+          )}
+        >
           <Dialog.Content className="window animate-content-show -col-end-1">
             <EventHistoryContext.Provider value={true}>
               <div className="title-bar">
@@ -169,7 +181,7 @@ function EventHistoryContent({
           </div>
 
           <YDocContext.Provider value={historicalDoc}>
-            <EventDetails className="!shadow-none" />
+            <EventDetails className="!shadow-none [&_form]:pointer-events-none" />
           </YDocContext.Provider>
 
           {index !== latestVersionRef.current && onRestoreVersion && (

@@ -228,10 +228,11 @@ export function EventDetails({ className }: { className?: string }) {
   const monthCount = Object.keys(groupedDays).length;
 
   const importEventJson = useImportEventJson();
+  const eventIsWide = monthCount > 1;
 
   return (
     <ContextMenu>
-      <Container wide={monthCount > 1} className={className}>
+      <Container wide={eventIsWide} className={className}>
         <ContextMenuTrigger>
           <form
             onSubmit={(e) => e.preventDefault()}
@@ -452,6 +453,7 @@ export function EventDetails({ className }: { className?: string }) {
           </form>
 
           <EventDetailsFooter
+            eventIsWide={eventIsWide}
             eventId={event.id}
             isCreator={isCreator}
             isLoading={!event.name}
@@ -584,6 +586,7 @@ interface HoveredCellData {
 }
 
 interface EventDetailsFooterProps {
+  eventIsWide: boolean;
   eventId: string | undefined;
   isCreator: boolean;
   isLoading: boolean;
@@ -591,6 +594,7 @@ interface EventDetailsFooterProps {
 }
 
 function EventDetailsFooter({
+  eventIsWide,
   eventId,
   isCreator,
   isLoading,
@@ -608,6 +612,7 @@ function EventDetailsFooter({
       )}
     >
       <EventHistory
+        eventIsWide={eventIsWide}
         eventId={eventId}
         onRestoreVersion={(doc) => {
           // TODO:
