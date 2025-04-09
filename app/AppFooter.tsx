@@ -71,7 +71,7 @@ export function AppFooter({
           to be used and forgotten until the next time you need it.
         </p>
         <h3 className="mb-6 font-sans">Motivation and alternatives</h3>
-        <ul className="list-inside *:mb-6">
+        <ul className="list-inside *:!mb-6">
           <li>
             <span className="dark:invert-100">✏️</span> Doodle was bad, now it's
             bad, corporate, and has too many features.

@@ -10,10 +10,13 @@ import {
 import * as Y from "yjs";
 
 import { getHistory } from "../../api/getHistory";
+import { yDocToJson } from "../../shared-data";
 import { YDocContext } from "../../useYDoc";
+import { CheckboxField } from "../CheckboxField";
 import { ClockIcon } from "../ClockIcon";
 import { cn } from "../cn";
 import { EventDetails } from "../EventDetails";
+import { useUserState } from "../UserStateContext";
 import { getUpdatesFromUint8Array } from "./getUpdatesFromUint8Array";
 
 const EventHistoryContext = createContext<boolean>(false);
@@ -96,6 +99,9 @@ function EventHistoryContent({
   // eslint-disable-next-line prefer-const
   let [index, setIndex] = useState<number | undefined>(undefined);
 
+  const [showData, setShowData] = useState(false);
+  const { nerdMode } = useUserState();
+
   const latestVersionRef = useRef(0);
 
   const latestVersion = updates ? updates.length - 1 : 0;
@@ -165,6 +171,17 @@ function EventHistoryContent({
               <span className="text-sm text-gray-600 h-5">
                 {updates && updates[index].clock}
               </span>
+              {nerdMode && (
+                <CheckboxField
+                  id="show-data"
+                  checked={showData}
+                  onChange={(e) => {
+                    setShowData(e.target.checked);
+                  }}
+                >
+                  Show JSON
+                </CheckboxField>
+              )}
             </div>
 
             {/* todo: style the input */}
@@ -179,7 +196,13 @@ function EventHistoryContent({
             />
           </div>
 
-          {updates ? (
+          {showData ? (
+            <>
+              {historicalDoc && (
+                <pre>{JSON.stringify(yDocToJson(historicalDoc), null, 2)}</pre>
+              )}
+            </>
+          ) : updates ? (
             <YDocContext.Provider value={historicalDoc}>
               <EventDetails
                 className="!shadow-none shrink overflow-y-auto"
