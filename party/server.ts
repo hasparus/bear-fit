@@ -25,11 +25,14 @@ export default class EditorServer implements Party.Server {
 
   /**
    * Must be the same when calling unstable_getYDoc and onConnect.
+   * But at the same time we can't use *the same* object, because `gc` gets added to it, and then we get an error.
    */
-  yPartyKitOptions: YPartyKitOptions = {
-    callback: { handler: (doc) => this.handleYDocChange(doc) },
-    persist: { mode: "history" },
-  };
+  get yPartyKitOptions(): YPartyKitOptions {
+    return {
+      callback: { handler: (doc) => this.handleYDocChange(doc) },
+      persist: { mode: "history" },
+    };
+  }
 
   private handleYDocChange(doc: Doc) {
     if (VERBOSE) {
