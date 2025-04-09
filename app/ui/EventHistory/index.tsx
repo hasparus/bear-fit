@@ -181,7 +181,7 @@ function EventHistoryContent({
           </div>
 
           <YDocContext.Provider value={historicalDoc}>
-            <EventDetails className="!shadow-none [&_form]:pointer-events-none" />
+            <EventDetails className="!shadow-none" disabled />
           </YDocContext.Provider>
 
           {index !== latestVersionRef.current && onRestoreVersion && (

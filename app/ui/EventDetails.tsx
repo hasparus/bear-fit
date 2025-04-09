@@ -47,7 +47,13 @@ import { useUserDispatch, useUserState } from "./UserStateContext";
 
 const userId = getUserId();
 
-export function EventDetails({ className }: { className?: string }) {
+export function EventDetails({
+  className,
+  disabled,
+}: {
+  className?: string;
+  disabled?: boolean;
+}) {
   const yDoc = useYDoc();
 
   const eventMap = getEventMap(yDoc);
@@ -380,6 +386,7 @@ export function EventDetails({ className }: { className?: string }) {
                           <AvailabilityGridCell
                             availableUsers={availableUsers}
                             day={day}
+                            disabled={disabled}
                             key={`${day}-${i}`}
                             tabIndex={i === 0 ? 0 : -1}
                             totalUsers={totalUsers}
@@ -406,6 +413,7 @@ export function EventDetails({ className }: { className?: string }) {
                               )
                             }
                             onPointerDown={(event) => {
+                              if (disabled) return;
                               if (
                                 event.pointerType === "mouse" &&
                                 event.button === 2
