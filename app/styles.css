@@ -78,6 +78,7 @@
 
 :root {
   --accent: var(--color-accent);
+  --container-width: 340px;
 }
 
 html,

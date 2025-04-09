@@ -607,7 +607,16 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
-      <EventHistory eventId={eventId} />
+      <EventHistory
+        eventId={eventId}
+        onRestoreVersion={(doc) => {
+          // TODO:
+          console.log(
+            "version restoration not implemented yet",
+            yDocToJson(doc),
+          );
+        }}
+      />
       {isCreator && <ImportEventJson />}
       <ExportEventJson yDoc={yDoc} />
     </footer>

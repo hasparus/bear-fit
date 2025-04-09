@@ -1,19 +1,35 @@
 import { Dialog } from "radix-ui";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as Y from "yjs";
 
 import { getHistory } from "../../api/getHistory";
-import { yDocToJson } from "../../shared-data";
+import { YDocContext } from "../../useYDoc";
 import { ClockIcon } from "../ClockIcon";
+import { EventDetails } from "../EventDetails";
 import { getUpdatesFromUint8Array } from "./getUpdatesFromUint8Array";
+
+const EventHistoryContext = createContext<boolean>(false);
 
 export interface EventHistoryProps {
   eventId: string | undefined;
-  onRestoreVersion?: (doc: Y.Doc) => void;
+  onRestoreVersion: (doc: Y.Doc) => void;
 }
 
 export function EventHistory({ eventId, onRestoreVersion }: EventHistoryProps) {
+  const isHistoricalAlready = useContext(EventHistoryContext);
+
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  if (isHistoricalAlready) {
+    return null;
+  }
 
   return (
     <Dialog.Root>
@@ -22,23 +38,25 @@ export function EventHistory({ eventId, onRestoreVersion }: EventHistoryProps) {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/10 dark:bg-white/10 animate-overlay-show" />
-        <Dialog.Content className="window fixed animate-content-show inset-8">
-          <div className="title-bar">
-            <Dialog.Close
-              aria-label="Close"
-              className="close"
-              ref={closeButtonRef}
+        <Dialog.Content className="window fixed animate-content-show top-0 bottom-0 right-0">
+          <EventHistoryContext.Provider value={true}>
+            <div className="title-bar">
+              <Dialog.Close
+                aria-label="Close"
+                className="close"
+                ref={closeButtonRef}
+              />
+              <Dialog.Title className="title">Version History</Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Inspect the history of the event.
+              </Dialog.Description>
+            </div>
+            <EventHistoryContent
+              closeButtonRef={closeButtonRef}
+              eventId={eventId}
+              onRestoreVersion={onRestoreVersion}
             />
-            <Dialog.Title className="title">Version History</Dialog.Title>
-            <Dialog.Description className="sr-only">
-              Inspect the history of the event.
-            </Dialog.Description>
-          </div>
-          <EventHistoryContent
-            closeButtonRef={closeButtonRef}
-            eventId={eventId}
-            onRestoreVersion={onRestoreVersion}
-          />
+          </EventHistoryContext.Provider>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
@@ -71,7 +89,11 @@ function EventHistoryContent({
     index = latestVersion;
   }
 
-  // Fetch history on render
+  // We fetch history on render, because it's not exposed in a websocket
+  // and we'd have to rebuild the document model a bit to make it so.
+  // (Maybe even go for event sourcing.)
+  // Fortunately, YPartyKit allows us to access the history of the document,
+  // event if we don't design it that way.
   useEffect(() => {
     if (eventId) {
       void getHistory(eventId)
@@ -143,15 +165,9 @@ function EventHistoryContent({
             />
           </div>
 
-          <div className="flex flex-col gap-2 mt-2">
-            <h4 className="font-medium">Document at Selected Version</h4>
-            <div className="bg-gray-100 p-3 rounded overflow-auto max-h-96">
-              <pre className="text-sm">
-                {historicalDoc &&
-                  JSON.stringify(yDocToJson(historicalDoc), null, 2)}
-              </pre>
-            </div>
-          </div>
+          <YDocContext.Provider value={historicalDoc}>
+            <EventDetails />
+          </YDocContext.Provider>
 
           {index !== latestVersionRef.current && onRestoreVersion && (
             <button
