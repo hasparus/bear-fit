@@ -157,6 +157,7 @@ function EventHistoryContent({
               </span>
             </div>
 
+            {/* todo: style the input */}
             <input
               type="range"
               className="w-full"

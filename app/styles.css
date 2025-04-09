@@ -12,7 +12,7 @@
   --color-gray-*: initial;
   --color-slate-*: initial;
   --color-stone-*: initial;
-  --color-accent: blue;
+  --color-accent: #05e;
 
   --ease-overshoot: linear(
     0 0%,
@@ -114,6 +114,7 @@ label,
     background: black;
   }
   :root {
+    --color-accent: #049;
     --accent: #049;
   }
 }
