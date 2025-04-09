@@ -158,14 +158,12 @@ function EventHistoryContent({
     <div className="p-4 flex flex-col gap-4" {...rest}>
       {error ? (
         <div className="text-red-500">Error: {error.message}</div>
-      ) : !updates ? (
-        <div>Loading history...</div>
       ) : (
         <>
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">
-                {updates[index].clock}
+              <span className="text-sm text-gray-600 h-5">
+                {updates && updates[index].clock}
               </span>
             </div>
 
@@ -173,22 +171,29 @@ function EventHistoryContent({
             <input
               type="range"
               className="w-full"
-              max={updates.length - 1}
+              disabled={!updates}
+              max={updates ? updates.length - 1 : 1}
               min={0}
               onChange={(e) => setIndex(parseInt(e.target.value))}
               value={index}
             />
           </div>
 
-          <YDocContext.Provider value={historicalDoc}>
+          {updates ? (
+            <YDocContext.Provider value={historicalDoc}>
+              <EventDetails className="!shadow-none" disabled />
+            </YDocContext.Provider>
+          ) : (
             <EventDetails className="!shadow-none" disabled />
-          </YDocContext.Provider>
-
-          {index !== latestVersionRef.current && onRestoreVersion && (
-            <button className="btn btn-default" onClick={handleRestore}>
-              Restore This Version
-            </button>
           )}
+
+          <button
+            className="btn btn-default h-[45px]"
+            disabled={!updates || index === latestVersionRef.current}
+            onClick={handleRestore}
+          >
+            Restore This Version
+          </button>
         </>
       )}
     </div>
