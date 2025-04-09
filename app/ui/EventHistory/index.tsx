@@ -155,7 +155,7 @@ function EventHistoryContent({
   };
 
   return (
-    <div className="p-4 flex flex-col gap-4" {...rest}>
+    <div className="p-4 flex flex-col gap-4 max-h-screen" {...rest}>
       {error ? (
         <div className="text-red-500">Error: {error.message}</div>
       ) : (
@@ -181,14 +181,20 @@ function EventHistoryContent({
 
           {updates ? (
             <YDocContext.Provider value={historicalDoc}>
-              <EventDetails className="!shadow-none" disabled />
+              <EventDetails
+                className="!shadow-none shrink overflow-y-auto"
+                disabled
+              />
             </YDocContext.Provider>
           ) : (
-            <EventDetails className="!shadow-none" disabled />
+            <EventDetails
+              className="!shadow-none shrink overflow-y-auto"
+              disabled
+            />
           )}
 
           <button
-            className="btn btn-default h-[45px]"
+            className="btn btn-default h-[45px] shrink-0"
             disabled={!updates || index === latestVersionRef.current}
             onClick={handleRestore}
           >
