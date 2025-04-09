@@ -11,7 +11,7 @@ export APP_VERSION
 
 if [ "$BRANCH_NAME" = "main" ]; then
   HOST="bear-fit.hasparus.partykit.dev"
-  partykit deploy --var APP_VERSION="$APP_VERSION" -d APP_VERSION="$APP_VERSION"
+  partykit deploy --var APP_VERSION="$APP_VERSION" -d APP_VERSION="'$APP_VERSION'"
 else
   HOST="$BRANCH_NAME.bear-fit.hasparus.partykit.dev"
   partykit deploy --preview $BRANCH_NAME --var APP_VERSION="$APP_VERSION" -d APP_VERSION="'$APP_VERSION'"
