@@ -122,7 +122,7 @@ export function CreateEventForm({
         </div>
         <button
           type="submit"
-          className="btn btn-default w-full hover:bg-neutral-100 "
+          className="btn btn-default w-full"
           style={{ borderWidth: "0.5em" }}
           disabled={
             !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to

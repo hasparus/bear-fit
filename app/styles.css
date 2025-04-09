@@ -121,3 +121,7 @@ label,
 ::view-transition-group(*) {
   animation-duration: 0.3s;
 }
+
+.btn {
+  @apply hover:bg-neutral-100;
+}

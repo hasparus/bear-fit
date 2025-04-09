@@ -38,26 +38,28 @@ export function EventHistory({ eventId, onRestoreVersion }: EventHistoryProps) {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/10 dark:bg-white/10 animate-overlay-show" />
-        <Dialog.Content className="window fixed animate-content-show top-0 bottom-0 right-0">
-          <EventHistoryContext.Provider value={true}>
-            <div className="title-bar">
-              <Dialog.Close
-                aria-label="Close"
-                className="close"
-                ref={closeButtonRef}
+        <div className="grid fixed max-h-screen [@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [place-items:center_end] [@media(width>=1120px)]:[place-items:center_start] inset-0">
+          <Dialog.Content className="window animate-content-show -col-end-1">
+            <EventHistoryContext.Provider value={true}>
+              <div className="title-bar">
+                <Dialog.Close
+                  aria-label="Close"
+                  className="close"
+                  ref={closeButtonRef}
+                />
+                <Dialog.Title className="title">Version History</Dialog.Title>
+                <Dialog.Description className="sr-only">
+                  Inspect the history of the event.
+                </Dialog.Description>
+              </div>
+              <EventHistoryContent
+                closeButtonRef={closeButtonRef}
+                eventId={eventId}
+                onRestoreVersion={onRestoreVersion}
               />
-              <Dialog.Title className="title">Version History</Dialog.Title>
-              <Dialog.Description className="sr-only">
-                Inspect the history of the event.
-              </Dialog.Description>
-            </div>
-            <EventHistoryContent
-              closeButtonRef={closeButtonRef}
-              eventId={eventId}
-              onRestoreVersion={onRestoreVersion}
-            />
-          </EventHistoryContext.Provider>
-        </Dialog.Content>
+            </EventHistoryContext.Provider>
+          </Dialog.Content>
+        </div>
       </Dialog.Portal>
     </Dialog.Root>
   );
@@ -166,14 +168,11 @@ function EventHistoryContent({
           </div>
 
           <YDocContext.Provider value={historicalDoc}>
-            <EventDetails />
+            <EventDetails className="!shadow-none" />
           </YDocContext.Provider>
 
           {index !== latestVersionRef.current && onRestoreVersion && (
-            <button
-              className="px-4 py-2 mt-2 bg-blue-500 text-white rounded hover:bg-blue-600 self-start"
-              onClick={handleRestore}
-            >
+            <button className="btn btn-default" onClick={handleRestore}>
               Restore This Version
             </button>
           )}

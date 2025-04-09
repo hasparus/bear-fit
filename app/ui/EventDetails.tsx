@@ -47,7 +47,7 @@ import { useUserDispatch, useUserState } from "./UserStateContext";
 
 const userId = getUserId();
 
-export function EventDetails() {
+export function EventDetails({ className }: { className?: string }) {
   const yDoc = useYDoc();
 
   const eventMap = getEventMap(yDoc);
@@ -231,7 +231,7 @@ export function EventDetails() {
 
   return (
     <ContextMenu>
-      <Container wide={monthCount > 1}>
+      <Container wide={monthCount > 1} className={className}>
         <ContextMenuTrigger>
           <form
             onSubmit={(e) => e.preventDefault()}
