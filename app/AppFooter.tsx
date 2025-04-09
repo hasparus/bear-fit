@@ -1,35 +1,47 @@
 import { CheckboxField } from "./ui/CheckboxField";
+import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
 import { useUserDispatch, useUserState } from "./ui/UserStateContext";
 
 export function AppFooter({
+  className,
   currentEventId,
 }: {
+  className?: string;
   currentEventId: string | null;
 }) {
   const { events, nerdMode } = useUserState();
   const dispatch = useUserDispatch();
 
-  const otherEvents = events.filter((event) => event.id !== currentEventId);
-
   // todo: the footer should only show on hover or drag from the bottom on mobile
   // actually, let's ditch the footer and add menu icon that opens a modal
   return (
-    <footer className="px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2">
+    <footer
+      className={cn(
+        "px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2",
+        className,
+      )}
+    >
       <div className="title-bar">
         <h2 className="title">bear fit</h2>
       </div>
 
       <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:!text-accent">
-        {otherEvents.length > 0 && (
+        {events.length > 0 && (
           <section className="mb-6">
             <h3 className="font-sans mt-4">Your recent events</h3>
             <ul className="mt-2">
-              {otherEvents.map((event) => (
+              {events.map((event) => (
                 <li key={event.id}>
                   <a
                     className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 !text-neutral-500 hover:!text-neutral-800 !no-underline"
                     href={`?id=${event.id}`}
+                    onClick={(e) => {
+                      if (event.id === currentEventId) {
+                        e.preventDefault();
+                        document.body.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}
                   >
                     {event.name}{" "}
                     <span>
@@ -43,6 +55,7 @@ export function AppFooter({
                       </time>
                       )
                     </span>
+                    {event.id === currentEventId && <span> (current)</span>}
                   </a>
                 </li>
               ))}
@@ -53,9 +66,9 @@ export function AppFooter({
         <hr className="my-6" />
         <p className="mb-6">
           Finding a time that works for more than two adult humans is{" "}
-          <strong>unbearable</strong>. Bear Fit is a tiny app that hopes to
-          help. It's a small tool designed to be used and forgotten until the
-          next time you need it.
+          <strong>unbearable</strong>.{" "}
+          <span className="font-sans">bear fit</span> is a small tool designed
+          to be used and forgotten until the next time you need it.
         </p>
         <h3 className="mb-6 font-sans">Motivation and alternatives</h3>
         <ul className="list-inside *:mb-6">

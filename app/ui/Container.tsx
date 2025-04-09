@@ -9,8 +9,8 @@ export function Container({ wide, ...props }: ContainerProps) {
     <div
       {...props}
       className={cn(
-        "container standard-dialog rounded-sm mx-auto p-4 bg-white w-[340px]",
-        wide && "lg:w-[680px]",
+        "container standard-dialog rounded-sm mx-auto p-4 bg-white w-[--container-width]",
+        wide && "lg:w-[calc(2*var(--container-width))]",
         props.className,
       )}
     />

@@ -33,6 +33,7 @@ import {
 } from "./ContextMenu";
 import { CopyEventUrl } from "./CopyEventUrl";
 import { eachDayOfInterval } from "./eachDayOfInterval";
+import { EventHistory } from "./EventHistory";
 import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
@@ -46,7 +47,7 @@ import { useUserDispatch, useUserState } from "./UserStateContext";
 
 const userId = getUserId();
 
-export function EventDetails() {
+export function EventDetails({ className }: { className?: string }) {
   const yDoc = useYDoc();
 
   const eventMap = getEventMap(yDoc);
@@ -230,7 +231,7 @@ export function EventDetails() {
 
   return (
     <ContextMenu>
-      <Container wide={monthCount > 1}>
+      <Container wide={monthCount > 1} className={className}>
         <ContextMenuTrigger>
           <form
             onSubmit={(e) => e.preventDefault()}
@@ -242,7 +243,8 @@ export function EventDetails() {
           >
             <div>
               <p className="block font-mono text-sm">Calendar</p>
-              <h1 className="mb-4 text-2xl">
+              {/* todo: I should really use CSS layers or ditch system.css to avoid all these !important */}
+              <h1 className="mb-4 !text-2xl">
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Event dates</p>
@@ -286,7 +288,7 @@ export function EventDetails() {
               </div>
               <div className="mb-4 font-mono text-sm text-neutral-500">
                 {!event.id ? (
-                  <>&nbsp;</>
+                  <Skeleton className="h-[48px]" />
                 ) : (
                   <UserAvailabilitySummary
                     availabilityForUsers={availabilityForUsers}
@@ -383,7 +385,7 @@ export function EventDetails() {
                             className={cn(
                               !hoveredUser &&
                                 currentUserAvailable &&
-                                "border-neutral-200 border-[6px] hover:border-[6px]",
+                                "border-neutral-200 border-[6px] hover:border-[7px]",
                               hoveredUserIsAvailable &&
                                 "border-neutral-200 border-4",
                               atLeastOneSelectedUserIsUnavailable &&
@@ -391,6 +393,7 @@ export function EventDetails() {
                               hoveredUserIsUnavailable &&
                                 "opacity-60 saturate-25",
                               "hover:[anchor-name:--tooltip-anchor]",
+                              "touch-pan-y touch-pinch-zoom",
                             )}
                             onKeyDown={(event) =>
                               moveFocusWithArrowKeys(event, () =>
@@ -413,6 +416,11 @@ export function EventDetails() {
                               handlePointerDown(
                                 dateStr,
                                 !!currentUserAvailable,
+                              );
+
+                              // This is needed for drag-painting to work on mobiles.
+                              event.currentTarget.releasePointerCapture(
+                                event.pointerId,
                               );
                             }}
                             onPointerEnter={(event) => {
@@ -443,9 +451,12 @@ export function EventDetails() {
             {importEventJson.hiddenInputElement}
           </form>
 
-          {event.name && (
-            <EventDetailsFooter isCreator={isCreator} yDoc={yDoc} />
-          )}
+          <EventDetailsFooter
+            eventId={event.id}
+            isCreator={isCreator}
+            isLoading={!event.name}
+            yDoc={yDoc}
+          />
         </ContextMenuTrigger>
       </Container>
       <ContextMenuContent>
@@ -559,7 +570,7 @@ function GridCellTooltip({
       {users && (
         <ul className="flex flex-col">
           {users.map((userId) => (
-            <li key={userId}>{names[userId]}</li>
+            <li key={userId}>{names[userId] || userId}</li>
           ))}
         </ul>
       )}
@@ -573,21 +584,41 @@ interface HoveredCellData {
 }
 
 interface EventDetailsFooterProps {
+  eventId: string | undefined;
   isCreator: boolean;
+  isLoading: boolean;
   yDoc: Doc;
 }
 
-function EventDetailsFooter({ isCreator, yDoc }: EventDetailsFooterProps) {
+function EventDetailsFooter({
+  eventId,
+  isCreator,
+  isLoading,
+  yDoc,
+}: EventDetailsFooterProps) {
   const { nerdMode } = useUserState();
 
   if (!nerdMode) return null;
 
   return (
-    <footer className="flex justify-end gap-2 border-t border-neutral-200 pt-3">
-      <>
-        {isCreator && <ImportEventJson />}
-        <ExportEventJson yDoc={yDoc} />
-      </>
+    <footer
+      className={cn(
+        "flex justify-end gap-2 border-t border-neutral-100 pt-3",
+        isLoading && "cursor-progress *:pointer-events-none",
+      )}
+    >
+      <EventHistory
+        eventId={eventId}
+        onRestoreVersion={(doc) => {
+          // TODO:
+          console.log(
+            "version restoration not implemented yet",
+            yDocToJson(doc),
+          );
+        }}
+      />
+      {isCreator && <ImportEventJson />}
+      <ExportEventJson yDoc={yDoc} />
     </footer>
   );
 }

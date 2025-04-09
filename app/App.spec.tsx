@@ -43,7 +43,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await alice.getByText("Create Event").click();
 
   // Verify we're redirected to the event page
-  await expect(alice.getByText("test event")).toBeVisible();
+  await expect(alice.getByRole("heading").first()).toHaveText(eventName);
   await expect(alice.getByText("Event dates")).toBeVisible();
 
   // Type creator name
@@ -137,7 +137,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   }
 
   // Another user opens the page and copies the event to clipboard.
-  const title = bob.getByText(eventName);
+  const title = bob.getByRole("heading", { name: new RegExp(eventName) });
   title.dispatchEvent("contextmenu");
 
   await bob.getByText("Copy event JSON").click();

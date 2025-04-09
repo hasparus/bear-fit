@@ -1,15 +1,12 @@
 import type * as Party from "partykit/server";
 
 import * as v from "valibot";
-import { onConnect, type YPartyKitOptions } from "y-partykit";
+import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
+import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
 import { CalendarEvent } from "../app/schemas";
-import {
-  hasCalendarEvent,
-  initializeEventMap,
-  yDocToJson,
-} from "../app/shared-data";
+import { initializeEventMap, yDocToJson } from "../app/shared-data";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
 const VERBOSE = process.env.NODE_ENV === "development";
@@ -24,62 +21,23 @@ export default class EditorServer implements Party.Server {
   //   hibernate: true,
   // };
 
-  // This was unused, right?
-  // TODO: Migrate out of my custom storage to use this.
-  yjsOptions: YPartyKitOptions = {
-    persist: { mode: "history" },
-  };
-
   constructor(public room: Party.Room) {}
 
-  private getOpts() {
-    // options must match when calling unstable_getYDoc and onConnect
-    const opts: YPartyKitOptions = {
+  /**
+   * Must be the same when calling unstable_getYDoc and onConnect.
+   * But at the same time we can't use *the same* object, because `gc` gets added to it, and then we get an error.
+   */
+  get yPartyKitOptions(): YPartyKitOptions {
+    return {
       callback: { handler: (doc) => this.handleYDocChange(doc) },
-      load: async () => {
-        const json = (await this.room.storage.get("doc")) as
-          | ReturnType<typeof yDocToJson>
-          | undefined;
-
-        if (typeof json === "object") {
-          const doc = new Doc();
-          initializeEventMap(doc, json.event as CalendarEvent);
-
-          const availabilityMap = doc.getMap("availability");
-          for (const [key, value] of Object.entries(json.availability)) {
-            availabilityMap.set(key, value);
-          }
-
-          const namesMap = doc.getMap("names");
-          for (const [key, value] of Object.entries(json.names)) {
-            namesMap.set(key, value);
-          }
-
-          return doc;
-        }
-
-        return null;
-      },
+      persist: { mode: "history" },
     };
-    return opts;
   }
 
   private handleYDocChange(doc: Doc) {
     if (VERBOSE) {
       console.log("↠ handleYDocChange", yDocToJson(doc));
     }
-
-    if (!this.doc) {
-      this.doc = doc;
-      if (this.event && !hasCalendarEvent(doc)) {
-        initializeEventMap(doc, this.event);
-      }
-    }
-  }
-
-  private async saveDoc(doc: Doc) {
-    const json = yDocToJson(doc);
-    await this.room.storage.put("doc", json);
   }
 
   private async updateCount() {
@@ -100,9 +58,6 @@ export default class EditorServer implements Party.Server {
 
   async onClose(_: Party.Connection) {
     void this.updateCount();
-    if (this.doc) {
-      void this.saveDoc(this.doc);
-    }
   }
 
   async onConnect(conn: Party.Connection) {
@@ -112,7 +67,7 @@ export default class EditorServer implements Party.Server {
       console.log("↠ onConnect", this.room.id);
     }
 
-    return onConnect(conn, this.room, this.getOpts());
+    return onConnect(conn, this.room, this.yPartyKitOptions);
   }
 
   async onRequest(req: Party.Request) {
@@ -140,10 +95,10 @@ export default class EditorServer implements Party.Server {
             { headers, status: 403 },
           );
         } else {
-          this.event = event;
-          if (this.doc) {
-            initializeEventMap(this.doc, event);
-          }
+          initializeEventMap(
+            await unstable_getYDoc(this.room, this.yPartyKitOptions),
+            event,
+          );
           return Response.json({ message: "created" }, { headers });
         }
       } catch (error) {
@@ -156,16 +111,101 @@ export default class EditorServer implements Party.Server {
     }
 
     if (req.method === "GET") {
+      if (url.pathname === `/parties/main/${this.room.id}/history`) {
+        const updates = await getLevelUpdates(this.room.storage, this.room.id);
+
+        return new Response(encodeUpdatesToOneUint8Array(updates), {
+          headers: {
+            ...headers,
+            "Content-Type": "application/octet-stream",
+          },
+        });
+      }
+
       if (url.pathname === "/parties/main/status") {
         return new Response("ok", { headers });
       }
 
-      return Response.json({
-        doc: this.doc ? yDocToJson(this.doc) : null,
-        event: this.event,
-      });
+      return Response.json(
+        yDocToJson(await unstable_getYDoc(this.room, this.yPartyKitOptions)),
+        { headers },
+      );
     }
 
     return Response.json({ message: "not found" }, { headers, status: 404 });
   }
+}
+
+// #region HACK: Copied from y-partykit/storage.ts (it wasn't exported, probably for a reason)
+
+/**
+ *
+ * Get all document updates for a specific document.
+ */
+async function getLevelUpdates(
+  db: Party.Storage,
+  docName: string,
+  opts: {
+    keys: boolean;
+    limit?: number;
+    reverse?: boolean;
+    values: boolean;
+  } = {
+    keys: false,
+    values: true,
+  },
+): Promise<Datum[]> {
+  return getLevelBulkData(db, {
+    gte: createDocumentUpdateKey(docName, 0),
+    lt: createDocumentUpdateKey(docName, BINARY_BITS_32),
+    ...opts,
+  });
+}
+
+interface Datum {
+  key: StorageKey;
+  value: Uint8Array;
+}
+
+type StorageKey = DocumentStateVectorKey | DocumentUpdateKey;
+
+/**
+ * Create a unique key for a update message.
+ * We encode the result using `keyEncoding` which expects an array.
+ */
+type DocumentUpdateKey = ["v1", string, "update", number];
+type DocumentStateVectorKey = ["v1_sv", string];
+
+function createDocumentUpdateKey(
+  docName: string,
+  clock: number,
+): DocumentUpdateKey {
+  return ["v1", docName, "update", clock];
+}
+
+const BINARY_BITS_32 = 0xffffffff;
+// #endregion
+
+function encodeUpdatesToOneUint8Array(updates: Datum[]): Uint8Array {
+  const textEncoder = new TextEncoder();
+  const separator = textEncoder.encode("\n\n");
+  const parts: Uint8Array[] = [];
+
+  for (const update of updates) {
+    const clock = update.key[3] ?? "sv"; // we either have a clock number or it's state vector
+    parts.push(textEncoder.encode(`${clock}`));
+    parts.push(separator);
+    parts.push(update.value);
+    parts.push(separator); // if it's the last update, we end the file with LF
+  }
+
+  const totalSize = parts.reduce((acc, part) => acc + part.length, 0);
+  const body = new Uint8Array(totalSize);
+  let offset = 0;
+  for (const part of parts) {
+    body.set(part, offset);
+    offset += part.length;
+  }
+
+  return body;
 }
