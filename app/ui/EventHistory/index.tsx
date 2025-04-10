@@ -36,12 +36,28 @@ export function EventHistory({
 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
+  const [open, setOpen] = useState(false);
+  const onOpenChange = (open: boolean) => {
+    const url = new URL(window.location.href);
+    if (open) {
+      url.searchParams.set("history", "1");
+    } else {
+      url.searchParams.delete("history");
+    }
+    setOpen(open);
+    window.history.pushState({}, "", url.toString());
+  };
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    setOpen(url.searchParams.get("history") === "1");
+  }, []);
+
   if (isHistoricalAlready) {
     return null;
   }
 
   return (
-    <Dialog.Root>
+    <Dialog.Root onOpenChange={onOpenChange} open={open}>
       <Dialog.Trigger className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white">
         <ClockIcon className="size-5" />
       </Dialog.Trigger>
@@ -49,12 +65,12 @@ export function EventHistory({
         <Dialog.Overlay className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
         <div
           className={cn(
-            "grid fixed max-h-screen inset-0 [place-items:center_end]",
+            "grid fixed max-h-screen inset-0 sm:[place-items:center_end]",
             !eventIsWide &&
               "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
           )}
         >
-          <Dialog.Content className="window animate-content-show -col-end-1">
+          <Dialog.Content className="window max-sm:!m-0 animate-content-show -col-end-1">
             <EventHistoryContext.Provider value={true}>
               <div className="title-bar">
                 <Dialog.Close
@@ -161,7 +177,10 @@ function EventHistoryContent({
   };
 
   return (
-    <div className="p-4 flex flex-col gap-4 max-h-screen" {...rest}>
+    <div
+      className="p-1 sm:p-4 flex flex-col gap-4 max-h-[calc(100dvh-32px)]"
+      {...rest}
+    >
       {error ? (
         <div className="text-red-500">Error: {error.message}</div>
       ) : (
@@ -205,13 +224,13 @@ function EventHistoryContent({
           ) : updates ? (
             <YDocContext.Provider value={historicalDoc}>
               <EventDetails
-                className="!shadow-none shrink overflow-y-auto"
+                className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-auto"
                 disabled
               />
             </YDocContext.Provider>
           ) : (
             <EventDetails
-              className="!shadow-none shrink overflow-y-auto"
+              className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-auto"
               disabled
             />
           )}

@@ -18,7 +18,7 @@ export function AppFooter({
   return (
     <footer
       className={cn(
-        "px-2 pt-1 window w-[calc(100vw-40px)] ![box-shadow:2px_1px] !mb-[-1px] pb-2",
+        "px-2 pt-1 window sm:w-[calc(100vw-40px)] max-sm:!mx-0 max-sm:!border-x-0 ![box-shadow:2px_1px] !mb-[-1px] pb-2",
         className,
       )}
     >
@@ -71,18 +71,18 @@ export function AppFooter({
           to be used and forgotten until the next time you need it.
         </p>
         <h3 className="mb-6 font-sans">Motivation and alternatives</h3>
-        <ul className="list-inside *:!mb-6">
-          <li>
+        <ul className="list-inside">
+          <li className="mb-6">
             <span className="dark:invert-100">✏️</span> Doodle was bad, now it's
             bad, corporate, and has too many features.
           </li>
-          <li>
+          <li className="mb-6">
             <span className="dark:invert-100">🦀</span> My friends' big paws
             were too clumsy to use <a href="https://crab.fit/">crab.fit</a> on
             phones. Ben seems like a cool guy tho, so please use app if you want
             to select hours with pincerlike precision.
           </li>
-          <li>
+          <li className="mb-6">
             <span className="dark:invert-100">📅</span> You probably wanna use{" "}
             <a href="https://cal.com">cal.com</a> if you need something like
             this but better, and built by an actual business.
