@@ -15,3 +15,5 @@ interface ImportMeta {
 interface ImportMetaEnv {
   readonly ALWAYS_PROD: 0 | 1;
 }
+
+declare const PARTYKIT_HOST: string;

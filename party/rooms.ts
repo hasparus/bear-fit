@@ -1,19 +1,38 @@
 import type * as Party from "partykit/server";
 
-export type Rooms = Record<string, number>;
+type RoomId = string;
+type ConnectionsCount = number;
+export type Rooms = Record<RoomId, ConnectionsCount>;
 
 export default class OccupancyServer implements Party.Server {
-  // Track room occupancy
   rooms: Rooms = {};
 
   constructor(public room: Party.Room) {}
 
+  onStart(): Promise<void> | void {
+    this.room.storage.get("rooms").then((rooms) => {
+      let parsed = {};
+      try {
+        if (rooms) {
+          parsed = JSON.parse(`${rooms}`);
+        }
+      } catch {
+        // do nothing
+      }
+
+      this.rooms = { ...this.rooms, ...parsed };
+    });
+  }
+
   onConnect(connection: Party.Connection) {
-    connection.send(JSON.stringify({ type: "rooms", rooms: this.rooms }));
+    connection.send(JSON.stringify(makePublicRoomInfo(this.rooms)));
   }
 
   async onRequest(req: Party.Request) {
     if (req.method === "GET") {
+      // let path = new URL(req.url).pathname;
+      // path = path.replace(`/parties/rooms/${this.room.id}`, "");
+
       return new Response(
         `Hi! This is party '${this.room.name}' and room '${this.room.id}'!`,
       );
@@ -22,12 +41,28 @@ export default class OccupancyServer implements Party.Server {
     if (req.method === "POST") {
       const { count, room }: { count: number; room: string } = await req.json();
       this.rooms[room] = count;
-      // TODO: We should not expose other room ids to all clients.
-      this.room.broadcast(JSON.stringify({ type: "rooms", rooms: this.rooms }));
+      // todo: send full data to all admins
+      this.room.broadcast(JSON.stringify(makePublicRoomInfo(this.rooms)));
+
       return Response.json({ ok: true });
     }
 
     // Always return a Response
     return Response.json({ error: "Method not allowed" }, { status: 405 });
   }
+}
+
+function makePublicRoomInfo(rooms: Rooms) {
+  return {
+    rooms: Object.keys(rooms).length,
+    activeConnections: Object.values(rooms).reduce(
+      (acc, count) => acc + count,
+      0,
+    ),
+  };
+}
+
+export interface PublicRoomInfo {
+  activeConnections: number;
+  rooms: number;
 }
