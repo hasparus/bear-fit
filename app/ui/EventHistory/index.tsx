@@ -178,7 +178,7 @@ function EventHistoryContent({
 
   return (
     <div
-      className="p-1 sm:p-4 flex flex-col gap-4 max-h-[calc(100dvh-32px)]"
+      className="p-1 sm:p-2 flex flex-col gap-4 max-h-[calc(100dvh-32px)]"
       {...rest}
     >
       {error ? (
@@ -218,19 +218,21 @@ function EventHistoryContent({
           {showData ? (
             <>
               {historicalDoc && (
-                <pre>{JSON.stringify(yDocToJson(historicalDoc), null, 2)}</pre>
+                <pre className="text-xs">
+                  {JSON.stringify(yDocToJson(historicalDoc), null, 2)}
+                </pre>
               )}
             </>
           ) : updates ? (
             <YDocContext.Provider value={historicalDoc}>
               <EventDetails
-                className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-auto"
+                className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
                 disabled
               />
             </YDocContext.Provider>
           ) : (
             <EventDetails
-              className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-auto"
+              className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
               disabled
             />
           )}
