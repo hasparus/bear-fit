@@ -15,7 +15,7 @@ const file = await Bun.file(
 ).text();
 const rawKey = Buffer.from(file, "base64");
 
-const key = await crypto.subtle.importKey("raw", rawKey, "Ed25519", true, [
+const key = await crypto.subtle.importKey("raw", rawKey, "Ed25519", false, [
   "verify",
 ]);
 
