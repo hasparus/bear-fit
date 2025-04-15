@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import fs from "fs/promises";
-import * as v from "valibot";
 
 import { AvailabilityKey, CalendarEvent, IsoDate, UserId } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
@@ -94,9 +93,8 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   const downloadedJson = await fs.readFile(path, "utf-8");
   await fs.unlink(path);
 
-  const exported = v.parse(YDocJsonSchema, JSON.parse(downloadedJson));
-
-  const event = v.parse(CalendarEvent, exported.event);
+  const exported = YDocJsonSchema.assert(JSON.parse(downloadedJson));
+  const event = CalendarEvent.assert(exported.event);
 
   const year = nextMonth.getFullYear();
   const month = (nextMonth.getMonth() + 1).toString().padStart(2, "0");

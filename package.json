@@ -36,7 +36,6 @@
     "tailwindcss": "^4.0.10",
     "unique-names-generator": "^4.7.1",
     "unsafe-keys": "^1.0.0",
-    "valibot": "1.0.0",
     "y-partykit": "^0.0.32",
     "yjs": "^13.6.24"
   },

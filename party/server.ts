@@ -1,6 +1,5 @@
 import type * as Party from "partykit/server";
 
-import * as v from "valibot";
 import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
 import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
@@ -86,7 +85,8 @@ export default class EditorServer implements Party.Server {
       }
 
       try {
-        const event = v.parse(CalendarEvent, json);
+        const event = CalendarEvent.assert(json);
+
         if (this.event) {
           return Response.json(
             { error: "event already created" },

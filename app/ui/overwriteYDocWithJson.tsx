@@ -1,13 +1,11 @@
 import type { Doc } from "yjs";
 
-import * as v from "valibot";
-
 import { getUserId } from "../getUserId";
 import { AvailabilityKey, type UserId } from "../schemas";
 import { YDocJsonSchema } from "../shared-data";
 
 export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
-  const jsonData = v.parse(YDocJsonSchema, json);
+  const jsonData = YDocJsonSchema.assert(json);
 
   const currentUserId = getUserId();
 

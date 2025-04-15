@@ -1,3 +1,4 @@
+import { type } from "arktype";
 import {
   createContext,
   type Dispatch,
@@ -5,7 +6,6 @@ import {
   useEffect,
   useReducer,
 } from "react";
-import * as v from "valibot";
 
 import { CalendarEvent } from "../schemas";
 import { UnreachableCaseError } from "./UnreachableCaseError";
@@ -27,9 +27,9 @@ interface UserStateContextValue {
   events: CalendarEvent[];
 }
 
-const UserStateContextValue = v.object({
-  events: v.array(CalendarEvent),
-  nerdMode: v.boolean(),
+const UserStateContextValue = type({
+  events: CalendarEvent.array(),
+  nerdMode: "boolean",
 });
 
 const DEFAULT_USER_STATE: UserStateContextValue = {
@@ -118,7 +118,7 @@ function userStateReducer(
 let stateFromStorage: UserStateContextValue | null = null;
 try {
   const storage = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
-  stateFromStorage = v.parse(UserStateContextValue, storage);
+  stateFromStorage = UserStateContextValue.assert(storage);
 } catch {
   // we don't care about the error here
 }

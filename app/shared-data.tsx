@@ -1,8 +1,8 @@
 import type { Doc } from "yjs";
 
-import * as v from "valibot";
+import { type } from "arktype";
 
-import { CalendarEvent } from "./schemas";
+import { CalendarEvent, UserId } from "./schemas";
 
 export const getEventMap = (doc: Doc) => {
   return doc.getMap("event");
@@ -30,8 +30,10 @@ export function yDocToJson(doc: Doc) {
   };
 }
 
-export const YDocJsonSchema = v.object({
-  availability: v.record(v.string() /* availability key */, v.boolean()),
+export const YDocJsonSchema = type({
+  availability: type.Record("string" /* availability key */, "boolean"),
   event: CalendarEvent,
-  names: v.record(v.string(), v.string()),
+  names: type.Record(UserId, "string"),
 });
+
+export type YDocJson = typeof YDocJsonSchema.infer;
