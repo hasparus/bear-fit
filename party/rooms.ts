@@ -33,6 +33,7 @@ const PUBLIC_KEY = await crypto.subtle.importKey(
 
 const textEncoder = new TextEncoder();
 
+// TODO: On alarm, query storage of all rooms and sum up the users and the availabilities.
 export default class OccupancyServer implements Party.Server {
   rooms: Rooms = {};
   authorizedConnections = new Set<{ id: string; expiresAt: number }>();
