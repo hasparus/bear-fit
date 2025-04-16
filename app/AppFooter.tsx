@@ -1,3 +1,6 @@
+import { use } from "react";
+
+import { getPublicRoomInfo } from "./api/getRoomCount";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
@@ -62,7 +65,7 @@ export function AppFooter({
             </ul>
           </section>
         )}
-        {/* todo: stats */}
+
         <hr className="my-6" />
         <p className="mb-6">
           Finding a time that works for more than two adult humans is{" "}
@@ -70,6 +73,7 @@ export function AppFooter({
           <span className="font-sans">bear fit</span> is a small tool designed
           to be used and forgotten until the next time you need it.
         </p>
+
         <h3 className="mb-6 font-sans">Motivation and alternatives</h3>
         <ul className="list-inside">
           <li className="mb-6">
@@ -109,7 +113,7 @@ export function AppFooter({
             <GitHubIcon className="size-4 inline ml-1 mb-px" />
           </a>
         </p>
-        <hr className="my-6" />
+        <Stats className="mb-6 bg-neutral-100 p-2" />
         <section>
           <h3 className="font-sans">Settings</h3>
           <form className="mt-2">
@@ -118,14 +122,6 @@ export function AppFooter({
               checked={nerdMode}
               onChange={(e) => {
                 dispatch({ type: "set-nerd-mode", payload: e.target.checked });
-                if (e.target.checked) {
-                  requestAnimationFrame(() => {
-                    window.scrollTo({
-                      behavior: "smooth",
-                      top: window.innerHeight,
-                    });
-                  });
-                }
               }}
             >
               Nerd Mode
@@ -136,5 +132,20 @@ export function AppFooter({
         {nerdMode && <p className="mt-2">Application version: {APP_VERSION}</p>}
       </div>
     </footer>
+  );
+}
+
+const publicRoomInfo = getPublicRoomInfo();
+
+function Stats({ className }: { className?: string }) {
+  const { rooms } = use(publicRoomInfo);
+
+  return (
+    <dl className={cn("font-sans", className)}>
+      <div className="flex gap-2 flex-row-reverse justify-center items-center">
+        <dt>Event{rooms === 1 ? "" : "s"} created</dt>
+        <dd className="text-2xl">{rooms}</dd>
+      </div>
+    </dl>
   );
 }

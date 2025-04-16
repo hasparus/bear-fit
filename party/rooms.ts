@@ -39,19 +39,12 @@ export default class OccupancyServer implements Party.Server {
 
   constructor(public room: Party.Room) {}
 
-  onStart(): Promise<void> | void {
-    this.room.storage.get("rooms").then((rooms) => {
-      let parsed = {};
-      try {
-        if (rooms) {
-          parsed = JSON.parse(`${rooms}`);
-        }
-      } catch {
-        // do nothing
-      }
+  onStart() {
+    return this.loadFromStorage();
+  }
 
-      this.rooms = { ...this.rooms, ...parsed };
-    });
+  onClose() {
+    return this.saveToStorage();
   }
 
   onConnect(connection: Party.Connection) {
@@ -90,10 +83,7 @@ export default class OccupancyServer implements Party.Server {
     if (req.method === "GET") {
       // let path = new URL(req.url).pathname;
       // path = path.replace(`/parties/rooms/${this.room.id}`, "");
-
-      return new Response(
-        `Hi! This is party '${this.room.name}' and room '${this.room.id}'!`,
-      );
+      return new Response(JSON.stringify(makePublicRoomInfo(this.rooms)));
     }
 
     if (req.method === "POST") {
@@ -104,7 +94,10 @@ export default class OccupancyServer implements Party.Server {
 
       this.rooms[parsed.room] = parsed.count;
 
+      void this.saveToStorage();
+
       this.room.broadcast(JSON.stringify(makePublicRoomInfo(this.rooms)));
+
       for (const connection of this.authorizedConnections) {
         if (connection.expiresAt < Date.now()) {
           this.authorizedConnections.delete(connection);
@@ -120,6 +113,24 @@ export default class OccupancyServer implements Party.Server {
 
     // Always return a Response
     return Response.json({ error: "Method not allowed" }, { status: 405 });
+  }
+
+  private async loadFromStorage() {
+    const rooms = await this.room.storage.get("rooms");
+    let parsed = {};
+    try {
+      if (rooms) {
+        parsed = JSON.parse(`${rooms}`);
+      }
+    } catch {
+      // do nothing
+    }
+
+    this.rooms = { ...this.rooms, ...parsed };
+  }
+
+  private async saveToStorage() {
+    await this.room.storage.put("rooms", JSON.stringify(this.rooms));
   }
 }
 
