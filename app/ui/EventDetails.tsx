@@ -8,7 +8,13 @@ import React, {
   useTransition,
 } from "react";
 import { useY } from "react-yjs";
-import { applyUpdateV2, type Doc, encodeStateAsUpdateV2 } from "yjs";
+import {
+  applyUpdate,
+  applyUpdateV2,
+  type Doc,
+  encodeStateAsUpdate,
+  encodeStateAsUpdateV2,
+} from "yjs";
 
 import { getUserId } from "../getUserId";
 import {

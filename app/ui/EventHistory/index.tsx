@@ -90,6 +90,7 @@ export function EventHistory({
                 closeButtonRef={closeButtonRef}
                 eventId={eventId}
                 onRestoreVersion={onRestoreVersion}
+                open={open}
               />
             </EventHistoryContext.Provider>
           </Dialog.Content>
@@ -103,12 +104,14 @@ interface EventHistoryContentProps extends React.HTMLAttributes<HTMLElement> {
   closeButtonRef: React.RefObject<HTMLButtonElement | null>;
   eventId: string | undefined;
   onRestoreVersion?: (doc: Y.Doc) => void;
+  open: boolean;
 }
 
 function EventHistoryContent({
   closeButtonRef,
   eventId,
   onRestoreVersion,
+  open,
   ...rest
 }: EventHistoryContentProps) {
   const [error, setError] = useState<Error | undefined>(undefined);
@@ -179,8 +182,23 @@ function EventHistoryContent({
     closeButtonRef.current?.click();
   };
 
+  useEffect(() => {
+    if (open) {
+      const eventHistoryContent = document.getElementById(
+        "event-history-content",
+      );
+      if (eventHistoryContent) {
+        eventHistoryContent.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      }
+    }
+  }, [open]);
+
   return (
     <div
+      id="event-history-content"
       className="p-1 sm:p-2 flex flex-col gap-4 max-h-[calc(100dvh-32px)]"
       {...rest}
     >
