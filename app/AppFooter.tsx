@@ -135,7 +135,11 @@ export function AppFooter({
   );
 }
 
-const publicRoomInfo = getPublicRoomInfo();
+const publicRoomInfo = getPublicRoomInfo().catch((err) => {
+  // this may be a CORS error if we're running `dev:prod`
+  console.error("error fetching public room info", err);
+  return { rooms: 0 };
+});
 
 function Stats({ className }: { className?: string }) {
   const { rooms } = use(publicRoomInfo);

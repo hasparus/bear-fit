@@ -1,5 +1,4 @@
 import type {} from "react/experimental";
-import type { Doc } from "yjs";
 
 import React, {
   type RefObject,
@@ -9,6 +8,7 @@ import React, {
   useTransition,
 } from "react";
 import { useY } from "react-yjs";
+import { applyUpdateV2, type Doc, encodeStateAsUpdateV2 } from "yjs";
 
 import { getUserId } from "../getUserId";
 import {
@@ -38,6 +38,7 @@ import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
 import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
+import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
@@ -610,8 +611,6 @@ function EventDetailsFooter({
 }: EventDetailsFooterProps) {
   const { nerdMode } = useUserState();
 
-  if (!nerdMode) return null;
-
   return (
     <footer
       className={cn(
@@ -619,19 +618,23 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
-      <EventHistory
-        eventIsWide={eventIsWide}
-        eventId={eventId}
-        onRestoreVersion={(doc) => {
-          // TODO:
-          console.log(
-            "version restoration not implemented yet",
-            yDocToJson(doc),
-          );
-        }}
-      />
-      {isCreator && <ImportEventJson />}
-      <ExportEventJson yDoc={yDoc} />
+      {nerdMode ? (
+        <>
+          <EventHistory
+            eventIsWide={eventIsWide}
+            eventId={eventId}
+            onRestoreVersion={(doc) => {
+              applyUpdateV2(yDoc, encodeStateAsUpdateV2(doc));
+            }}
+          />
+          {isCreator && <ImportEventJson />}
+          <ExportEventJson yDoc={yDoc} />
+        </>
+      ) : (
+        <>
+          <MoreButton />
+        </>
+      )}
     </footer>
   );
 }
@@ -644,4 +647,23 @@ function useRememberEvent(event: Partial<CalendarEvent>) {
       dispatch({ type: "remember-event", payload: event as CalendarEvent });
     }
   }, [event]);
+}
+
+function MoreButton() {
+  return (
+    <button
+      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white"
+      onClick={(event) => {
+        event.currentTarget.dispatchEvent(
+          new MouseEvent("contextmenu", {
+            bubbles: true,
+            clientX: event.clientX,
+            clientY: event.clientY,
+          }),
+        );
+      }}
+    >
+      <MoreIcon className="size-5" />
+    </button>
+  );
 }
