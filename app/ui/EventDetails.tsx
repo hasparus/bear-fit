@@ -590,7 +590,7 @@ function EventDetailsFooter({
             eventIsWide={eventIsWide}
             eventId={eventId}
             onRestoreVersion={(doc) => {
-              applyUpdateV2(yDoc, encodeStateAsUpdateV2(doc));
+              overwriteYDocWithJson(yDoc, yDocToJson(doc));
             }}
           />
           {isCreator && <ImportEventJson />}
