@@ -27,11 +27,14 @@ import { cn } from "./cn";
 import { Container } from "./Container";
 import {
   ContextMenu,
+  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
 } from "./ContextMenu";
 import { CopyEventUrl } from "./CopyEventUrl";
+import { CopyIcon } from "./CopyIcon";
+import { DownloadIcon } from "./DownloadIcon";
 import { eachDayOfInterval } from "./eachDayOfInterval";
 import { EventHistory } from "./EventHistory";
 import { exportEventJson, ExportEventJson } from "./ExportEventJson";
@@ -43,6 +46,7 @@ import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
+import { UploadIcon } from "./UploadIcon";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 import { useUserDispatch, useUserState } from "./UserStateContext";
 
@@ -79,7 +83,8 @@ export function EventDetails({
   hoveredCellRef.current = hoveredCell;
   const previousHoveredCell = useRef<HoveredCellData | undefined>(undefined);
 
-  const isCreator = userId === event.creator || !event.creator;
+  const isCreator =
+    userId === event.creator || (!event.creator && !!event.name);
 
   const setAvailability = (userId: UserId, date: IsoDate, value: boolean) => {
     const key = AvailabilityKey(userId, date);
@@ -234,7 +239,6 @@ export function EventDetails({
 
   const monthCount = Object.keys(groupedDays).length;
 
-  const importEventJson = useImportEventJson();
   const eventIsWide = monthCount > 1;
 
   return (
@@ -458,7 +462,6 @@ export function EventDetails({
                 ))}
             </div>
             <CopyEventUrl className="lg:hidden" eventId={event.id} />
-            {importEventJson.hiddenInputElement}
           </form>
 
           <EventDetailsFooter
@@ -470,44 +473,7 @@ export function EventDetails({
           />
         </ContextMenuTrigger>
       </Container>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
-          Export to JSON file
-        </ContextMenuItem>
-        <ContextMenuItem
-          onClick={() => {
-            const json = yDocToJson(yDoc);
-            navigator.clipboard.writeText(JSON.stringify(json, null, 2));
-          }}
-        >
-          Copy event JSON
-        </ContextMenuItem>
-        {isCreator && (
-          <>
-            <ContextMenuItem
-              onClick={() => {
-                importEventJson.openFileDialog();
-              }}
-            >
-              Import from JSON file
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => {
-                navigator.clipboard
-                  .readText()
-                  .then((text) => {
-                    overwriteYDocWithJson(yDoc, JSON.parse(text));
-                  })
-                  .catch((error) => {
-                    console.error("Error importing JSON:", error);
-                  });
-              }}
-            >
-              Import from clipboard
-            </ContextMenuItem>
-          </>
-        )}
-      </ContextMenuContent>
+      <EventContextMenu isCreator={isCreator} yDoc={yDoc} />
     </ContextMenu>
   );
 }
@@ -618,7 +584,7 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
-      {nerdMode ? (
+      {nerdMode && (
         <>
           <EventHistory
             eventIsWide={eventIsWide}
@@ -630,11 +596,8 @@ function EventDetailsFooter({
           {isCreator && <ImportEventJson />}
           <ExportEventJson yDoc={yDoc} />
         </>
-      ) : (
-        <>
-          <MoreButton />
-        </>
       )}
+      <MoreButton />
     </footer>
   );
 }
@@ -665,5 +628,88 @@ function MoreButton() {
     >
       <MoreIcon className="size-5" />
     </button>
+  );
+}
+
+function ContextMenuNerdModeCheckbox() {
+  const { nerdMode } = useUserState();
+  const dispatch = useUserDispatch();
+
+  return (
+    <ContextMenuCheckboxItem
+      checked={nerdMode}
+      onCheckedChange={(checked) =>
+        dispatch({ type: "set-nerd-mode", payload: checked })
+      }
+    >
+      Nerd Mode
+    </ContextMenuCheckboxItem>
+  );
+}
+
+function EventContextMenu({
+  isCreator,
+  yDoc,
+}: {
+  isCreator: boolean;
+  yDoc: Doc;
+}) {
+  const importEventJson = useImportEventJson();
+
+  return (
+    <>
+      {importEventJson.hiddenInputElement}
+      <ContextMenuContent>
+        <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
+          <DownloadIcon className="size-4 mr-1.5" />
+          Export to JSON file
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            const json = yDocToJson(yDoc);
+            navigator.clipboard.writeText(JSON.stringify(json, null, 2));
+          }}
+        >
+          <CopyIcon className="size-4 mr-1.5" />
+          Copy event JSON
+        </ContextMenuItem>
+        {isCreator && (
+          <>
+            <ContextMenuItem
+              onClick={() => {
+                importEventJson.openFileDialog();
+              }}
+            >
+              <UploadIcon className="size-4 mr-1.5" />
+              Import from JSON file
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => {
+                navigator.clipboard
+                  .readText()
+                  .then((text) => {
+                    overwriteYDocWithJson(yDoc, JSON.parse(text));
+                  })
+                  .catch((error) => {
+                    console.error("Error importing JSON:", error);
+                  });
+              }}
+            >
+              <ClipboardIcon className="size-4 mr-1.5" />
+              Import from clipboard
+            </ContextMenuItem>
+          </>
+        )}
+        <ContextMenuNerdModeCheckbox />
+      </ContextMenuContent>
+    </>
+  );
+}
+
+function ClipboardIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
+      <path d="M10 2h6v2h4v18H4V4h4V2h2zm6 4v2H8V6H6v14h12V6h-2zm-2 0V4h-4v2h4z" />
+    </svg>
   );
 }
