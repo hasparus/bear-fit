@@ -12,7 +12,7 @@
     "edgeTTL": 120,
     "browserTTL": 120,
     "build": {
-      "entry": "app/client.tsx",
+      "entry": ["app/client.tsx", "app/dashboard/index.tsx"],
       "esbuildPlugins": ["./esbuild-postcss-plugin.cjs"]
     }
   },

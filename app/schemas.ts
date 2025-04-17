@@ -1,34 +1,40 @@
-import * as v from "valibot";
+import { type } from "arktype";
 
-export const IsoDate = () =>
-  v.pipe(v.string(), v.isoDate(), v.brand("IsoDate"));
+export const IsoDate = type("string")
+  .narrow((date, ctx): boolean => {
+    const parsed = new Date(date);
+    return (
+      date === isoDate(parsed) || ctx.reject("an ISO date in YYYY-MM-DD format")
+    );
+  })
+  .brand("IsoDate");
 
-export type IsoDate = v.InferOutput<ReturnType<typeof IsoDate>>;
+export type IsoDate = typeof IsoDate.infer;
 
 export const isoDate = (date: Date): IsoDate =>
   date.toISOString().split("T")[0] as IsoDate;
 
-export const UserId = v.pipe(v.string(), v.brand("UserId"));
-export type UserId = v.InferOutput<typeof UserId>;
+export const UserId = type("string").brand("UserId");
+export type UserId = typeof UserId.infer;
 
-export const CalendarEvent = v.object({
-  id: v.string(),
+export const CalendarEvent = type({
+  id: "string",
   creator: UserId,
-  endDate: IsoDate(),
-  name: v.string(),
-  startDate: IsoDate(),
+  endDate: IsoDate,
+  name: "string",
+  startDate: IsoDate,
 });
 
-export type CalendarEvent = v.InferOutput<typeof CalendarEvent>;
+export type CalendarEvent = typeof CalendarEvent.infer;
 
-export const AvailabilityDelta = v.object({
-  add: v.optional(v.array(v.string())),
-  name: v.optional(v.string()),
-  remove: v.optional(v.array(v.string())),
-  userId: v.string(),
+export const AvailabilityDelta = type({
+  "add?": type(["string"]),
+  "name?": type("string"),
+  "remove?": type(["string"]),
+  userId: "string",
 });
 
-export type AvailabilityDelta = v.InferOutput<typeof AvailabilityDelta>;
+export type AvailabilityDelta = typeof AvailabilityDelta.infer;
 
 const AVAILABILITY_KEY_SEPARATOR = "〷";
 export type AvailabilityKey =
@@ -48,7 +54,7 @@ AvailabilityKey.split = (key: AvailabilityKey) => {
 AvailabilityKey.parse = (key: string): AvailabilityKey => {
   const [_, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
 
-  if (!v.is(IsoDate(), date)) {
+  if (IsoDate(date) instanceof type.errors) {
     throw new Error(`Invalid AvailabilityKey with IsoDate: ${date}`);
   }
 
@@ -63,7 +69,7 @@ AvailabilityKey.parseToObject = (
 } => {
   const [userId, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
 
-  if (!v.is(IsoDate(), date)) {
+  if (IsoDate(date) instanceof type.errors) {
     throw new Error(`Invalid AvailabilityKey with IsoDate: ${date}`);
   }
 

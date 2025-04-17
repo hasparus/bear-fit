@@ -1,6 +1,5 @@
 import type * as Party from "partykit/server";
 
-import * as v from "valibot";
 import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
 import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
@@ -41,9 +40,7 @@ export default class EditorServer implements Party.Server {
   }
 
   private async updateCount() {
-    // Count the number of live connections
     const count = [...this.room.getConnections()].length;
-    // Send the count to the 'rooms' party using HTTP POST
     await this.room.context.parties.rooms
       .get(OCCUPANCY_SERVER_SINGLETON_ROOM_ID)
       .fetch({
@@ -88,7 +85,8 @@ export default class EditorServer implements Party.Server {
       }
 
       try {
-        const event = v.parse(CalendarEvent, json);
+        const event = CalendarEvent.assert(json);
+
         if (this.event) {
           return Response.json(
             { error: "event already created" },
