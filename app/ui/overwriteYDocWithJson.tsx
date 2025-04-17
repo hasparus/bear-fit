@@ -9,63 +9,61 @@ export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
 
   const currentUserId = getUserId();
 
-  yDoc.transact(() => {
-    const namesMap = yDoc.getMap("names");
+  const namesMap = yDoc.getMap("names");
 
-    const currentUserName =
-      namesMap.get(currentUserId) || localStorage.getItem("userName");
+  const currentUserName =
+    namesMap.get(currentUserId) || localStorage.getItem("userName");
 
-    const sameNameUserIds: UserId[] = [];
-    Object.entries(jsonData.names).forEach(([id, name]) => {
-      if (name === currentUserName && id !== currentUserId) {
-        sameNameUserIds.push(id as UserId);
-      }
-    });
+  const sameNameUserIds: UserId[] = [];
+  Object.entries(jsonData.names).forEach(([id, name]) => {
+    if (name === currentUserName && id !== currentUserId) {
+      sameNameUserIds.push(id as UserId);
+    }
+  });
 
-    const availabilityMap = yDoc.getMap("availability");
+  const availabilityMap = yDoc.getMap("availability");
 
-    const keysToDelete: string[] = [];
-    availabilityMap.forEach((_value, key) => {
-      keysToDelete.push(key);
-    });
+  const keysToDelete: string[] = [];
+  availabilityMap.forEach((_value, key) => {
+    keysToDelete.push(key);
+  });
 
-    keysToDelete.forEach((key) => {
-      availabilityMap.delete(key);
-    });
+  keysToDelete.forEach((key) => {
+    availabilityMap.delete(key);
+  });
 
-    Object.entries(jsonData.availability).forEach(([key, value]) => {
-      try {
-        const belongsToSameNameUser = sameNameUserIds.some((userId) =>
-          key.startsWith(userId),
-        );
+  Object.entries(jsonData.availability).forEach(([key, value]) => {
+    try {
+      const belongsToSameNameUser = sameNameUserIds.some((userId) =>
+        key.startsWith(userId),
+      );
 
-        if (belongsToSameNameUser) {
-          const { date } = AvailabilityKey.parseToObject(key);
-          const newKey = AvailabilityKey(currentUserId, date);
-          availabilityMap.set(newKey, value);
-        } else {
-          availabilityMap.set(key, value);
-        }
-      } catch (e: unknown) {
-        console.error("Error importing availability:", e);
+      if (belongsToSameNameUser) {
+        const { date } = AvailabilityKey.parseToObject(key);
+        const newKey = AvailabilityKey(currentUserId, date);
+        availabilityMap.set(newKey, value);
+      } else {
         availabilityMap.set(key, value);
       }
-    });
-
-    const eventMap = yDoc.getMap("event");
-    Object.entries(jsonData.event).forEach(([key, value]) => {
-      if (key === "creator") {
-        return;
-      }
-      eventMap.set(key, value);
-    });
-
-    Object.entries(jsonData.names).forEach(([key, value]) => {
-      if (!sameNameUserIds.includes(key as UserId)) {
-        namesMap.set(key, value);
-      }
-    });
-
-    namesMap.set(currentUserId, currentUserName);
+    } catch (e: unknown) {
+      console.error("Error importing availability:", e);
+      availabilityMap.set(key, value);
+    }
   });
+
+  const eventMap = yDoc.getMap("event");
+  Object.entries(jsonData.event).forEach(([key, value]) => {
+    if (key === "creator") {
+      return;
+    }
+    eventMap.set(key, value);
+  });
+
+  Object.entries(jsonData.names).forEach(([key, value]) => {
+    if (!sameNameUserIds.includes(key as UserId)) {
+      namesMap.set(key, value);
+    }
+  });
+
+  namesMap.set(currentUserId, currentUserName);
 }

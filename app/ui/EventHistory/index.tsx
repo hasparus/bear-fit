@@ -230,7 +230,7 @@ function EventHistoryContent({
               className="w-full"
               disabled={!updates}
               max={updates ? updates.length - 1 : 1}
-              min={0}
+              min={5}
               onChange={(e) => setIndex(parseInt(e.target.value))}
               value={index}
             />
