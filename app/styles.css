@@ -126,3 +126,7 @@ label,
 .btn {
   @apply hover:bg-neutral-100;
 }
+
+[data-radix-popper-content-wrapper] {
+  position: absolute !important;
+}
