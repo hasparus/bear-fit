@@ -1,5 +1,6 @@
 import type {} from "react/experimental";
 
+import Clarity from "@microsoft/clarity";
 import React, {
   type RefObject,
   useEffect,
@@ -8,13 +9,7 @@ import React, {
   useTransition,
 } from "react";
 import { useY } from "react-yjs";
-import {
-  applyUpdate,
-  applyUpdateV2,
-  type Doc,
-  encodeStateAsUpdate,
-  encodeStateAsUpdateV2,
-} from "yjs";
+import { type Doc } from "yjs";
 
 import { getUserId } from "../getUserId";
 import {
@@ -69,6 +64,13 @@ export function EventDetails({
 
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
+
+  useEffect(() => {
+    if (event.id && event.name) {
+      Clarity.setTag("event-id", event.id);
+      Clarity.setTag("event-name", event.name);
+    }
+  }, [event.id, event.name]);
 
   useRememberEvent(event);
 

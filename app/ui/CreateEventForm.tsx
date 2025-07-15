@@ -1,3 +1,4 @@
+import Clarity from "@microsoft/clarity";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
@@ -12,8 +13,8 @@ import {
 import { getUserId } from "../getUserId";
 import { CalendarEvent, isoDate } from "../schemas";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
-import { Container } from "./Container";
 import "./react-day-picker.css";
+import { Container } from "./Container";
 
 export function CreateEventForm({
   onSubmit,
@@ -81,6 +82,7 @@ export function CreateEventForm({
                 style: "capital",
               }),
           }).finally(() => {
+            Clarity.event("event-created");
             setIsSubmitting(false);
           });
         }}

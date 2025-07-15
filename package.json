@@ -17,6 +17,7 @@
     "test:ui": "VERBOSE=true playwright test --ui"
   },
   "dependencies": {
+    "@microsoft/clarity": "^1.0.0",
     "@tailwindcss/postcss": "^4.0.17",
     "@tailwindcss/vite": "^4.0.17",
     "@types/node": "^22.13.14",
