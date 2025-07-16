@@ -56,7 +56,7 @@ export function EventHistory({
         <Dialog.Backdrop className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
         <Dialog.Popup
           className={cn(
-            "grid fixed max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none",
+            "grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none",
             !eventIsWide &&
               "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
           )}
