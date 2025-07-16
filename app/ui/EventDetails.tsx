@@ -251,7 +251,7 @@ export function EventDetails({
 
   return (
     <ContextMenu>
-      <Container wide={eventIsWide} className={className}>
+      <Container wide={eventIsWide} className={cn(className, "max-sm:!mx-2 max-sm:!p-3")}>
         <ContextMenuTrigger>
           <form
             onSubmit={(e) => e.preventDefault()}
@@ -264,11 +264,11 @@ export function EventDetails({
             <div>
               <p className="block font-mono text-sm">Calendar</p>
               {/* todo: I should really use CSS layers or ditch system.css to avoid all these !important */}
-              <h1 className="mb-4 !text-2xl">
-                {event.name || <Skeleton className="h-[32px]" />}
+              <h1 className="mb-4 !text-xl sm:!text-2xl">
+                {event.name || <Skeleton className="h-[28px] sm:h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Event dates</p>
-              <p aria-busy={!event.startDate} className="mb-4">
+              <p aria-busy={!event.startDate} className="mb-4 text-sm sm:text-base">
                 {event.startDate && event.endDate ? (
                   <>
                     <time dateTime={event.startDate}>
@@ -284,13 +284,13 @@ export function EventDetails({
                 )}
               </p>
               <div className="mb-4">
-                <label className="block" htmlFor="name">
+                <label className="block text-sm sm:text-base" htmlFor="name">
                   Your name
                 </label>
                 <input
                   id="name"
                   type="text"
-                  className="w-full border p-2 rounded-sm"
+                  className="w-full border p-3 min-h-[48px] text-base rounded-sm"
                   value={userName || ""}
                   onChange={(e) => {
                     if (!userId) {
@@ -330,7 +330,7 @@ export function EventDetails({
               <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
             </div>
             <div className="w-px bg-neutral-200 max-lg:hidden" />
-            <div className="mb-6 mt-2 min-h-[72px]" role="grid">
+            <div className="mb-6 mt-2 min-h-[72px] max-sm:mb-4" role="grid">
               {event.startDate &&
                 Object.entries(groupedDays).map(([monthKey, monthDays]) => (
                   <React.Fragment key={monthKey}>
@@ -339,7 +339,7 @@ export function EventDetails({
                         month: "long",
                       })}
                     </div>
-                    <div className="grid grid-cols-7 gap-1 relative">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 relative">
                       <GridCellTooltip
                         hoveredCell={hoveredCell}
                         names={names}
@@ -348,7 +348,7 @@ export function EventDetails({
                       {getWeekDayNames(tryGetFirstDayOfTheWeek() ?? 0).map(
                         (name) => (
                           <div
-                            className="flex h-10 items-center justify-center text-[11.6667px] font-medium opacity-75"
+                            className="flex h-8 sm:h-10 items-center justify-center text-xs sm:text-[11.6667px] font-medium opacity-75"
                             key={name}
                           >
                             {name}
@@ -364,7 +364,7 @@ export function EventDetails({
                           ),
                         ),
                       ].map((_, i) => (
-                        <div className="h-10" key={`padding-${i}`} />
+                        <div className="h-8 sm:h-10" key={`padding-${i}`} />
                       ))}
 
                       {monthDays.map((day, i) => {
@@ -588,7 +588,7 @@ function EventDetailsFooter({
   return (
     <footer
       className={cn(
-        "flex justify-end gap-2 border-t border-neutral-100 pt-3",
+        "flex justify-end gap-2 sm:gap-3 border-t border-neutral-100 pt-3",
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
@@ -623,7 +623,7 @@ function useRememberEvent(event: Partial<CalendarEvent>) {
 function MoreButton() {
   return (
     <button
-      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white"
+      className="flex p-2 sm:p-1 min-h-[44px] min-w-[44px] sm:min-h-[32px] sm:min-w-[32px] hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white touch-manipulation"
       onClick={(event) => {
         event.currentTarget.dispatchEvent(
           new MouseEvent("contextmenu", {
