@@ -5,8 +5,9 @@ import {
   type ReactNode,
   use,
   useMemo,
-  useState,
 } from "react";
+
+import { useSearchParams } from "../useSearchParams";
 
 export interface DialogIds {
   // use declaration merging to add dialog ids here like
@@ -18,11 +19,9 @@ export type DialogsOpenStates = Partial<Record<DialogId, boolean>>;
 export interface DialogsContext {
   isOpen: (id: DialogId) => boolean;
   set: (id: DialogId, open: boolean) => void;
-  states: DialogsOpenStates;
 }
 const context = createContext<DialogsContext>({
   isOpen: () => false,
-  states: {},
   set: () => {
     throw new Error("useDialogs must be used within a DialogsProvider");
   },
@@ -41,7 +40,7 @@ export const Dialog = {
     return (
       <BaseDialog.Root
         {...props}
-        open={ctx.states[props.id] || false}
+        open={ctx.isOpen(props.id)}
         onOpenChange={(open, event, reason) => {
           ctx.set(props.id, open);
           props.onOpenChange?.(open, event, reason);
@@ -52,20 +51,24 @@ export const Dialog = {
 };
 
 const { Provider } = context;
+
+const SEARCH_PARAM_KEY = "d";
+
 export function DialogsProvider({ children }: { children: ReactNode }) {
-  // todo: search params list of open dialogs
-  const [states, setStates] = useState<DialogsOpenStates>({});
+  const searchParams = useSearchParams();
+  const openDialogs = searchParams.getAll(SEARCH_PARAM_KEY);
+
   return (
     <Provider
       value={useMemo(() => {
         return {
-          isOpen: (id: DialogId) => states[id] || false,
-          states,
+          isOpen: (id: DialogId) => openDialogs.includes(id),
           set: (id: DialogId, open: boolean) => {
-            setStates((prev) => ({ ...prev, [id]: open }));
+            if (open) searchParams.append(SEARCH_PARAM_KEY, id);
+            else searchParams.delete(SEARCH_PARAM_KEY, id);
           },
         };
-      }, [states])}
+      }, [searchParams.get(SEARCH_PARAM_KEY)])}
     >
       {children}
     </Provider>
