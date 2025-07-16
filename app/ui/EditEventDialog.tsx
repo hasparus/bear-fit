@@ -36,7 +36,7 @@ export function EditEventDialog() {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
-        <Dialog.Popup className="grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none">
+        <Dialog.Popup className="grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none max-sm:w-fit max-sm:min-h-fit max-sm:m-auto">
           <section className="window max-sm:!m-0 animate-content-show -col-end-1 pointer-events-auto">
             <div className="title-bar">
               <Dialog.Close aria-label="Close" className="close" />
