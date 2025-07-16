@@ -2,7 +2,6 @@ import Clarity from "@microsoft/clarity";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
-import { DayPicker } from "react-day-picker";
 import {
   adjectives,
   animals,
@@ -12,9 +11,10 @@ import {
 
 import { getUserId } from "../getUserId";
 import { CalendarEvent, isoDate } from "../schemas";
-import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import "./react-day-picker.css";
 import { Container } from "./Container";
+import { DateRangePicker, handleCalendarArrowKeys } from "./DateRangePicker";
+import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
 
 export function CreateEventForm({
   onSubmit,
@@ -30,42 +30,14 @@ export function CreateEventForm({
   return (
     <Container>
       <form
-        onKeyDown={(e) => {
-          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-            const parent =
-              e.target instanceof HTMLElement && e.target.parentElement;
-            const inNavigation = parent && parent.tagName === "NAV";
-
-            if (inNavigation) {
-              let button: HTMLButtonElement | null = null;
-
-              if (e.key === "ArrowLeft")
-                button = parent.querySelector(
-                  ".rdp-button_previous",
-                ) as HTMLButtonElement;
-
-              if (e.key === "ArrowRight")
-                button = parent.querySelector(
-                  ".rdp-button_next",
-                ) as HTMLButtonElement;
-
-              if (button) {
-                button.focus();
-                button.click();
-              }
-            }
-          }
-        }}
+        onKeyDown={handleCalendarArrowKeys}
         onSubmit={(event) => {
           event.preventDefault();
           const eventName = event.currentTarget.elements.namedItem(
             "eventName",
           ) as HTMLInputElement;
 
-          const { from, to } = dateRange;
-          if (!from || !to) {
-            throw new Error("full date range is required");
-          }
+          const { from, to } = requireValidDateRange(dateRange);
 
           setIsSubmitting(true);
           onSubmit({
@@ -109,26 +81,17 @@ export function CreateEventForm({
               what times should the guests consider?
             </small>
           </label>
-          <DayPicker
-            showOutsideDays
+          <DateRangePicker
             disabled={{ before: new Date() }}
-            fixedWeeks // avoid layout shift when changing months
-            mode="range"
+            onSelect={setDateRange}
             selected={dateRange}
-            timeZone="UTC"
-            weekStartsOn={tryGetFirstDayOfTheWeek()}
-            onSelect={(range) =>
-              setDateRange(range || { from: undefined, to: undefined })
-            }
           />
         </div>
         <button
           type="submit"
           className="btn btn-default w-full"
+          disabled={!isValidDateRange(dateRange)}
           style={{ borderWidth: "0.5em" }}
-          disabled={
-            !dateRange.from || !dateRange.to || dateRange.from >= dateRange.to
-          }
           onClick={(event) => {
             event.currentTarget.textContent = "Creating...";
           }}
