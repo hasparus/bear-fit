@@ -71,7 +71,11 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
 function unfoldDateRange(dateRange: Required<DateRange>): Date[] {
   const { from, to } = dateRange;
   const dates = [];
-  for (let date = from!; date < to; date.setDate(date.getDate() + 1)) {
+  for (
+    let date = new Date(from!);
+    date < to;
+    date.setDate(date.getDate() + 1)
+  ) {
     dates.push(new Date(date));
   }
   return dates;

@@ -3,7 +3,7 @@ import { useY } from "react-yjs";
 import { CalendarEvent, IsoDate } from "../schemas";
 import { getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
-import { Dialog } from "./Dialog";
+import { Dialog, useDialogs } from "./Dialog";
 import { EditEventForm } from "./EditEventForm";
 import { EditIcon } from "./EditIcon";
 
@@ -17,11 +17,12 @@ export function EditEventDialog() {
   const yDoc = useYDoc();
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
+  const dialogs = useDialogs();
 
   const handleSubmit = async (startDate: IsoDate, endDate: IsoDate) => {
     eventMap.set("startDate", startDate);
     eventMap.set("endDate", endDate);
-    console.log("submit", startDate, endDate, eventMap);
+    dialogs.set("edit-event", false);
   };
 
   if (!event.id || !event.startDate || !event.endDate) {
@@ -38,8 +39,8 @@ export function EditEventDialog() {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
-        <div className="grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end]">
-          <Dialog.Popup className="window max-sm:!m-0 animate-content-show -col-end-1">
+        <Dialog.Popup className="grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end]">
+          <section className="window max-sm:!m-0 animate-content-show -col-end-1">
             <div className="title-bar">
               <Dialog.Close aria-label="Close" className="close" />
               <Dialog.Title className="title">Edit Event</Dialog.Title>
@@ -53,8 +54,8 @@ export function EditEventDialog() {
                 onSubmit={handleSubmit}
               />
             </div>
-          </Dialog.Popup>
-        </div>
+          </section>
+        </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
   );
