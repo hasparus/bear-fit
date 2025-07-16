@@ -11,7 +11,6 @@ import {
 
 import { getUserId } from "../getUserId";
 import { CalendarEvent, isoDate } from "../schemas";
-import "./react-day-picker.css";
 import { Container } from "./Container";
 import { DateRangePicker, handleCalendarArrowKeys } from "./DateRangePicker";
 import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";

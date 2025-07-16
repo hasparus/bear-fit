@@ -50,7 +50,7 @@ export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
           />
           <button
             type="button"
-            className="active:bg-black! absolute bottom-[9px] right-2 flex p-1 cursor-copy items-center justify-center  rounded-md active:text-white group-hover:bg-neutral-200"
+            className="active:bg-black! absolute bottom-[9px] right-2 flex p-1 cursor-copy items-center justify-center rounded-sm active:text-white group-hover:bg-neutral-200"
             onClick={handleCopy}
             title="Copy to clipboard"
           >

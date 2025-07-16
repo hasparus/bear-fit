@@ -35,8 +35,11 @@ import {
 } from "./ContextMenu";
 import { CopyEventUrl } from "./CopyEventUrl";
 import { CopyIcon } from "./CopyIcon";
+import { useDialogs } from "./Dialog";
 import { DownloadIcon } from "./DownloadIcon";
 import { eachDayOfInterval } from "./eachDayOfInterval";
+import { EditEventDialog } from "./EditEventDialog";
+import { EditIcon } from "./EditIcon";
 import { EventHistory } from "./EventHistory";
 import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
@@ -594,6 +597,7 @@ function EventDetailsFooter({
     >
       {nerdMode && (
         <>
+          {isCreator && <EditEventDialog />}
           <EventHistory
             eventIsWide={eventIsWide}
             eventId={eventId}
@@ -623,7 +627,7 @@ function useRememberEvent(event: Partial<CalendarEvent>) {
 function MoreButton() {
   return (
     <button
-      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white"
+      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
       onClick={(event) => {
         event.currentTarget.dispatchEvent(
           new MouseEvent("contextmenu", {
@@ -663,6 +667,7 @@ function EventContextMenu({
   yDoc: Doc;
 }) {
   const importEventJson = useImportEventJson();
+  const dialogs = useDialogs();
 
   return (
     <>
@@ -683,6 +688,10 @@ function EventContextMenu({
         </ContextMenuItem>
         {isCreator && (
           <>
+            <ContextMenuItem onClick={() => dialogs.set("edit-event", true)}>
+              <EditIcon className="size-4 mr-1.5" />
+              Edit event dates
+            </ContextMenuItem>
             <ContextMenuItem
               onClick={() => {
                 importEventJson.openFileDialog();

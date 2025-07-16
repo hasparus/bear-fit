@@ -8,9 +8,14 @@ import {
   useState,
 } from "react";
 
-type DialogId = string & { __brand?: "DialogName" };
-type DialogsOpenStates = Record<DialogId, boolean>;
-interface DialogsContext {
+export interface DialogIds {
+  // use declaration merging to add dialog ids here like
+  // "edit-event": true;
+}
+
+export type DialogId = keyof DialogIds;
+export type DialogsOpenStates = Partial<Record<DialogId, boolean>>;
+export interface DialogsContext {
   set: (id: DialogId, open: boolean) => void;
   states: DialogsOpenStates;
 }
@@ -34,7 +39,7 @@ export const Dialog = {
     return (
       <BaseDialog.Root
         {...props}
-        open={ctx.states[props.id]}
+        open={ctx.states[props.id] || false}
         onOpenChange={(open, event, reason) => {
           ctx.set(props.id, open);
           props.onOpenChange?.(open, event, reason);
@@ -46,6 +51,7 @@ export const Dialog = {
 
 const { Provider } = context;
 export function DialogsProvider({ children }: { children: ReactNode }) {
+  // todo: search params list of open dialogs
   const [states, setStates] = useState<DialogsOpenStates>({});
   return (
     <Provider
@@ -61,4 +67,8 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
       {children}
     </Provider>
   );
+}
+
+export function useDialogs() {
+  return use(context);
 }
