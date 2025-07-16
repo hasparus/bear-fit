@@ -53,6 +53,7 @@ import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 import { useUserDispatch, useUserState } from "./UserStateContext";
+import { ClockIcon } from "./ClockIcon";
 
 const userId = getUserId();
 
@@ -673,6 +674,12 @@ function EventContextMenu({
     <>
       {importEventJson.hiddenInputElement}
       <ContextMenuContent>
+        <ContextMenuItem onClick={() => {
+          dialogs.set("event-history", true);
+        }}>
+          <ClockIcon className="size-4 mr-1.5" />
+          Event history
+        </ContextMenuItem>
         <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
           <DownloadIcon className="size-4 mr-1.5" />
           Export to JSON file

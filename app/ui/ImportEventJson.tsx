@@ -34,11 +34,17 @@ export function ImportEventJson({
         <>
           <label
             htmlFor="import-json"
+            tabIndex={0}
             title="Import from JSON"
             className={cn(
               "relative flex p-1 bg-neu-tral-100 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white",
               className,
             )}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                fileInputRef.current?.click();
+              }
+            }}
             {...rest}
           >
             <UploadIcon className="size-5" />

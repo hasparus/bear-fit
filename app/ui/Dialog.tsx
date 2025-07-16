@@ -16,10 +16,12 @@ export interface DialogIds {
 export type DialogId = keyof DialogIds;
 export type DialogsOpenStates = Partial<Record<DialogId, boolean>>;
 export interface DialogsContext {
+  isOpen: (id: DialogId) => boolean;
   set: (id: DialogId, open: boolean) => void;
   states: DialogsOpenStates;
 }
 const context = createContext<DialogsContext>({
+  isOpen: () => false,
   states: {},
   set: () => {
     throw new Error("useDialogs must be used within a DialogsProvider");
@@ -57,6 +59,7 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
     <Provider
       value={useMemo(() => {
         return {
+          isOpen: (id: DialogId) => states[id] || false,
           states,
           set: (id: DialogId, open: boolean) => {
             setStates((prev) => ({ ...prev, [id]: open }));
