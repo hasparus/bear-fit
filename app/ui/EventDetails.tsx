@@ -24,6 +24,7 @@ import { getEventMap, yDocToJson } from "../shared-data";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { AvailabilityGridCell } from "./AvailabilityGridCell";
+import { ClockIcon } from "./ClockIcon";
 import { cn } from "./cn";
 import { Container } from "./Container";
 import {
@@ -53,7 +54,6 @@ import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
 import { UserAvailabilitySummary } from "./UserAvailabilitySummary";
 import { useUserDispatch, useUserState } from "./UserStateContext";
-import { ClockIcon } from "./ClockIcon";
 
 const userId = getUserId();
 
@@ -596,20 +596,21 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
-      {nerdMode && (
-        <>
-          {isCreator && <EditEventDialog />}
-          <EventHistory
-            eventIsWide={eventIsWide}
-            eventId={eventId}
-            onRestoreVersion={(doc) => {
-              overwriteYDocWithJson(yDoc, yDocToJson(doc));
-            }}
-          />
-          {isCreator && <ImportEventJson />}
-          <ExportEventJson yDoc={yDoc} />
-        </>
-      )}
+      <span
+        className="contents"
+        style={{ visibility: nerdMode ? "visible" : "hidden" }}
+      >
+        {isCreator && <EditEventDialog />}
+        <EventHistory
+          eventIsWide={eventIsWide}
+          eventId={eventId}
+          onRestoreVersion={(doc) => {
+            overwriteYDocWithJson(yDoc, yDocToJson(doc));
+          }}
+        />
+        {isCreator && <ImportEventJson />}
+        <ExportEventJson yDoc={yDoc} />
+      </span>
       <MoreButton />
     </footer>
   );
@@ -674,9 +675,11 @@ function EventContextMenu({
     <>
       {importEventJson.hiddenInputElement}
       <ContextMenuContent>
-        <ContextMenuItem onClick={() => {
-          dialogs.set("event-history", true);
-        }}>
+        <ContextMenuItem
+          onClick={() => {
+            dialogs.set("event-history", true);
+          }}
+        >
           <ClockIcon className="size-4 mr-1.5" />
           Event history
         </ContextMenuItem>
