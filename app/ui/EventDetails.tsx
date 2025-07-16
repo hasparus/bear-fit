@@ -683,10 +683,26 @@ function EventContextMenu({
           <ClockIcon className="size-4 mr-1.5" />
           Event history
         </ContextMenuItem>
+        {isCreator && (
+          <ContextMenuItem onClick={() => dialogs.set("edit-event", true)}>
+            <EditIcon className="size-4 mr-1.5" />
+            Edit event dates
+          </ContextMenuItem>
+        )}
         <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
           <DownloadIcon className="size-4 mr-1.5" />
           Export to JSON file
         </ContextMenuItem>
+        {isCreator && (
+          <ContextMenuItem
+            onClick={() => {
+              importEventJson.openFileDialog();
+            }}
+          >
+            <UploadIcon className="size-4 mr-1.5" />
+            Import from JSON file
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           onClick={() => {
             const json = yDocToJson(yDoc);
@@ -697,35 +713,21 @@ function EventContextMenu({
           Copy event JSON
         </ContextMenuItem>
         {isCreator && (
-          <>
-            <ContextMenuItem onClick={() => dialogs.set("edit-event", true)}>
-              <EditIcon className="size-4 mr-1.5" />
-              Edit event dates
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => {
-                importEventJson.openFileDialog();
-              }}
-            >
-              <UploadIcon className="size-4 mr-1.5" />
-              Import from JSON file
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => {
-                navigator.clipboard
-                  .readText()
-                  .then((text) => {
-                    overwriteYDocWithJson(yDoc, JSON.parse(text));
-                  })
-                  .catch((error) => {
-                    console.error("Error importing JSON:", error);
-                  });
-              }}
-            >
-              <ClipboardIcon className="size-4 mr-1.5" />
-              Import from clipboard
-            </ContextMenuItem>
-          </>
+          <ContextMenuItem
+            onClick={() => {
+              navigator.clipboard
+                .readText()
+                .then((text) => {
+                  overwriteYDocWithJson(yDoc, JSON.parse(text));
+                })
+                .catch((error) => {
+                  console.error("Error importing JSON:", error);
+                });
+            }}
+          >
+            <ClipboardIcon className="size-4 mr-1.5" />
+            Import from clipboard
+          </ContextMenuItem>
         )}
         <ContextMenuNerdModeCheckbox />
       </ContextMenuContent>
