@@ -73,7 +73,7 @@ export function EventHistory({
               "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
           )}
         >
-          <Dialog.Content className="window max-sm:!m-0 animate-content-show -col-end-1">
+          <Dialog.Content className="window max-sm:!m-0 max-sm:!w-full max-sm:!h-full max-sm:!rounded-none animate-content-show -col-end-1">
             <EventHistoryContext.Provider value={true}>
               <div className="title-bar">
                 <Dialog.Close
@@ -199,16 +199,16 @@ function EventHistoryContent({
   return (
     <div
       id="event-history-content"
-      className="p-1 sm:p-2 flex flex-col gap-4 max-h-[calc(100dvh-32px)]"
+      className="p-3 sm:p-4 flex flex-col gap-4 max-h-[calc(100dvh-60px)] overflow-y-auto"
       {...rest}
     >
       {error ? (
         <div className="text-red-500">Error: {error.message}</div>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 h-5">
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center min-h-[44px]">
+              <span className="text-sm text-gray-600 h-5 flex items-center">
                 {updates && updates[index].clock}
               </span>
               {nerdMode && (
@@ -224,10 +224,10 @@ function EventHistoryContent({
               )}
             </div>
 
-            {/* todo: style the input */}
+            {/* Range slider with touch-friendly styling */}
             <input
               type="range"
-              className="w-full"
+              className="w-full h-8 appearance-none bg-gray-200 rounded-lg outline-none touch-manipulation [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-black [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-black [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
               disabled={!updates}
               max={updates ? updates.length - 1 : 1}
               min={5}
@@ -237,29 +237,29 @@ function EventHistoryContent({
           </div>
 
           {showData ? (
-            <>
+            <div className="overflow-auto max-h-[50vh] bg-gray-50 p-3 rounded-md">
               {historicalDoc && (
-                <pre className="text-xs">
+                <pre className="text-xs whitespace-pre-wrap break-all font-mono">
                   {JSON.stringify(yDocToJson(historicalDoc), null, 2)}
                 </pre>
               )}
-            </>
+            </div>
           ) : updates ? (
             <YDocContext.Provider value={historicalDoc}>
               <EventDetails
-                className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
+                className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full max-sm:!p-2 overflow-y-auto [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
                 disabled
               />
             </YDocContext.Provider>
           ) : (
             <EventDetails
-              className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
+              className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full max-sm:!p-2 overflow-y-auto [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
               disabled
             />
           )}
 
           <button
-            className="btn btn-default h-[45px] shrink-0"
+            className="btn btn-default h-[48px] min-h-[48px] shrink-0 touch-manipulation px-4 py-3 text-base font-medium"
             disabled={!updates || index === latestVersionRef.current}
             onClick={handleRestore}
           >
