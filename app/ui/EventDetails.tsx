@@ -24,6 +24,7 @@ import { getEventMap, yDocToJson } from "../shared-data";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { AvailabilityGridCell } from "./AvailabilityGridCell";
+import { ClockIcon } from "./ClockIcon";
 import { cn } from "./cn";
 import { Container } from "./Container";
 import {
@@ -35,8 +36,11 @@ import {
 } from "./ContextMenu";
 import { CopyEventUrl } from "./CopyEventUrl";
 import { CopyIcon } from "./CopyIcon";
+import { useDialogs } from "./Dialog";
 import { DownloadIcon } from "./DownloadIcon";
 import { eachDayOfInterval } from "./eachDayOfInterval";
+import { EditEventDialog } from "./EditEventDialog";
+import { EditIcon } from "./EditIcon";
 import { EventHistory } from "./EventHistory";
 import { exportEventJson, ExportEventJson } from "./ExportEventJson";
 import { getPaddingDays } from "./getPaddingDays";
@@ -592,19 +596,21 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
-      {nerdMode && (
-        <>
-          <EventHistory
-            eventIsWide={eventIsWide}
-            eventId={eventId}
-            onRestoreVersion={(doc) => {
-              overwriteYDocWithJson(yDoc, yDocToJson(doc));
-            }}
-          />
-          {isCreator && <ImportEventJson />}
-          <ExportEventJson yDoc={yDoc} />
-        </>
-      )}
+      <span
+        className="contents"
+        style={{ visibility: nerdMode ? "visible" : "hidden" }}
+      >
+        {isCreator && <EditEventDialog />}
+        <EventHistory
+          eventIsWide={eventIsWide}
+          eventId={eventId}
+          onRestoreVersion={(doc) => {
+            overwriteYDocWithJson(yDoc, yDocToJson(doc));
+          }}
+        />
+        {isCreator && <ImportEventJson />}
+        <ExportEventJson yDoc={yDoc} />
+      </span>
       <MoreButton />
     </footer>
   );
@@ -623,7 +629,7 @@ function useRememberEvent(event: Partial<CalendarEvent>) {
 function MoreButton() {
   return (
     <button
-      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white"
+      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
       onClick={(event) => {
         event.currentTarget.dispatchEvent(
           new MouseEvent("contextmenu", {
@@ -663,15 +669,40 @@ function EventContextMenu({
   yDoc: Doc;
 }) {
   const importEventJson = useImportEventJson();
+  const dialogs = useDialogs();
 
   return (
     <>
       {importEventJson.hiddenInputElement}
       <ContextMenuContent>
+        <ContextMenuItem
+          onClick={() => {
+            dialogs.set("event-history", true);
+          }}
+        >
+          <ClockIcon className="size-4 mr-1.5" />
+          Event history
+        </ContextMenuItem>
+        {isCreator && (
+          <ContextMenuItem onClick={() => dialogs.set("edit-event", true)}>
+            <EditIcon className="size-4 mr-1.5" />
+            Edit event dates
+          </ContextMenuItem>
+        )}
         <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
           <DownloadIcon className="size-4 mr-1.5" />
           Export to JSON file
         </ContextMenuItem>
+        {isCreator && (
+          <ContextMenuItem
+            onClick={() => {
+              importEventJson.openFileDialog();
+            }}
+          >
+            <UploadIcon className="size-4 mr-1.5" />
+            Import from JSON file
+          </ContextMenuItem>
+        )}
         <ContextMenuItem
           onClick={() => {
             const json = yDocToJson(yDoc);
@@ -682,31 +713,21 @@ function EventContextMenu({
           Copy event JSON
         </ContextMenuItem>
         {isCreator && (
-          <>
-            <ContextMenuItem
-              onClick={() => {
-                importEventJson.openFileDialog();
-              }}
-            >
-              <UploadIcon className="size-4 mr-1.5" />
-              Import from JSON file
-            </ContextMenuItem>
-            <ContextMenuItem
-              onClick={() => {
-                navigator.clipboard
-                  .readText()
-                  .then((text) => {
-                    overwriteYDocWithJson(yDoc, JSON.parse(text));
-                  })
-                  .catch((error) => {
-                    console.error("Error importing JSON:", error);
-                  });
-              }}
-            >
-              <ClipboardIcon className="size-4 mr-1.5" />
-              Import from clipboard
-            </ContextMenuItem>
-          </>
+          <ContextMenuItem
+            onClick={() => {
+              navigator.clipboard
+                .readText()
+                .then((text) => {
+                  overwriteYDocWithJson(yDoc, JSON.parse(text));
+                })
+                .catch((error) => {
+                  console.error("Error importing JSON:", error);
+                });
+            }}
+          >
+            <ClipboardIcon className="size-4 mr-1.5" />
+            Import from clipboard
+          </ContextMenuItem>
         )}
         <ContextMenuNerdModeCheckbox />
       </ContextMenuContent>

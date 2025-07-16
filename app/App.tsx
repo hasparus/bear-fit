@@ -3,21 +3,21 @@ import useYProvider from "y-partykit/react";
 import { Doc } from "yjs";
 
 import { postEvent } from "./api/postEvent";
-import "./styles.css";
 import { serverUrl } from "./api/serverUrl";
 import { AppFooter } from "./AppFooter";
 import { initializeEventMap } from "./shared-data";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
+import { DialogsProvider } from "./ui/Dialog";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
+import "./styles.css";
 
 export function App() {
   const params = useSearchParams();
-  const eventId = params.get("id");
 
   const yDoc = useRef<Doc>(undefined as unknown as Doc);
   if (!yDoc.current) {
@@ -26,32 +26,46 @@ export function App() {
 
   return (
     <PreferencesProvider>
-      <div className="min-h-[89vh] flex items-center">
-        {eventId ? (
-          <Suspense fallback={<Loading />}>
-            <YProvider room={eventId} yDoc={yDoc.current}>
-              <EventDetails />
-            </YProvider>
-          </Suspense>
-        ) : (
-          <CreateEventForm
-            onSubmit={(calendarEvent) => {
-              initializeEventMap(yDoc.current!, calendarEvent);
-
-              return postEvent(calendarEvent)
-                .catch((error) => {
-                  console.error("creating event failed", error);
-                })
-                .then(() => {
-                  params.set("id", calendarEvent.id);
-                });
-            }}
-          />
-        )}
-      </div>
-      <AppFooter className="!mt-8" currentEventId={eventId} />
-      <CursorPartyScript />
+      <DialogsProvider>
+        <div className="min-h-[89vh] flex items-center">
+          <Routes params={params} yDoc={yDoc.current} />
+        </div>
+        <AppFooter className="!mt-8" currentEventId={params.get("id")} />
+        <CursorPartyScript />
+      </DialogsProvider>
     </PreferencesProvider>
+  );
+}
+
+function Routes({
+  params,
+  yDoc,
+}: {
+  params: ReturnType<typeof useSearchParams>;
+  yDoc: Doc;
+}) {
+  const eventId = params.get("id");
+
+  return eventId ? (
+    <Suspense fallback={<Loading />}>
+      <YProvider room={eventId} yDoc={yDoc}>
+        <EventDetails />
+      </YProvider>
+    </Suspense>
+  ) : (
+    <CreateEventForm
+      onSubmit={(calendarEvent) => {
+        initializeEventMap(yDoc, calendarEvent);
+
+        return postEvent(calendarEvent)
+          .catch((error) => {
+            console.error("creating event failed", error);
+          })
+          .then(() => {
+            params.set("id", calendarEvent.id);
+          });
+      }}
+    />
   );
 }
 

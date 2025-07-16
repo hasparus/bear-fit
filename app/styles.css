@@ -79,6 +79,7 @@
 :root {
   --accent: var(--color-accent);
   --container-width: 340px;
+  --max-width-for-real: min(1920px, 100vw);
 }
 
 html,
@@ -94,6 +95,8 @@ body,
   min-height: fit-content;
   padding-top: 2rem;
   min-height: 100vh;
+  max-width: var(--max-width-for-real);
+  margin: 0 auto;
 }
 
 label,

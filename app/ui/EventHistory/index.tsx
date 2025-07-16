@@ -1,4 +1,3 @@
-import { Dialog } from "radix-ui";
 import {
   createContext,
   useContext,
@@ -15,9 +14,16 @@ import { YDocContext } from "../../useYDoc";
 import { CheckboxField } from "../CheckboxField";
 import { ClockIcon } from "../ClockIcon";
 import { cn } from "../cn";
+import { Dialog, useDialogs } from "../Dialog";
 import { EventDetails } from "../EventDetails";
 import { useUserState } from "../UserStateContext";
 import { getUpdatesFromUint8Array } from "./getUpdatesFromUint8Array";
+
+declare module "../Dialog" {
+  export interface DialogIds {
+    "event-history": true;
+  }
+}
 
 const EventHistoryContext = createContext<boolean>(false);
 
@@ -33,47 +39,29 @@ export function EventHistory({
   onRestoreVersion,
 }: EventHistoryProps) {
   const isHistoricalAlready = useContext(EventHistoryContext);
+  const dialogs = useDialogs();
 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-
-  const [open, setOpen] = useState(false);
-  const onOpenChange = (open: boolean) => {
-    const url = new URL(window.location.href);
-    if (open) {
-      url.searchParams.set("history", "1");
-    } else {
-      url.searchParams.delete("history");
-    }
-    setOpen(open);
-    window.history.pushState({}, "", url.toString());
-  };
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    setOpen(url.searchParams.get("history") === "1");
-  }, []);
 
   if (isHistoricalAlready) {
     return null;
   }
 
   return (
-    <Dialog.Root onOpenChange={onOpenChange} open={open}>
-      <Dialog.Trigger
-        id="event-history"
-        className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-md active:bg-black active:text-white"
-      >
+    <Dialog.Root id="event-history">
+      <Dialog.Trigger className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white">
         <ClockIcon className="size-5" />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
-        <div
+        <Dialog.Backdrop className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
+        <Dialog.Popup
           className={cn(
-            "grid fixed max-h-screen inset-0 sm:[place-items:center_end]",
+            "grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none",
             !eventIsWide &&
               "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
           )}
         >
-          <Dialog.Content className="window max-sm:!m-0 animate-content-show -col-end-1">
+          <section className="window max-sm:!m-0 animate-content-show -col-end-1 pointer-events-auto">
             <EventHistoryContext.Provider value={true}>
               <div className="title-bar">
                 <Dialog.Close
@@ -90,11 +78,11 @@ export function EventHistory({
                 closeButtonRef={closeButtonRef}
                 eventId={eventId}
                 onRestoreVersion={onRestoreVersion}
-                open={open}
+                open={dialogs.isOpen("event-history")}
               />
             </EventHistoryContext.Provider>
-          </Dialog.Content>
-        </div>
+          </section>
+        </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
   );

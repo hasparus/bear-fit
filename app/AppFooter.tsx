@@ -21,7 +21,7 @@ export function AppFooter({
   return (
     <footer
       className={cn(
-        "px-2 pt-1 window sm:w-[calc(100vw-40px)] max-sm:!mx-0 max-sm:!border-x-0 ![box-shadow:2px_1px] !mb-[-1px] pb-2",
+        "px-2 pt-1 window sm:w-[calc(var(--max-width-for-real)-40px)] max-sm:!mx-0 max-sm:!border-x-0 ![box-shadow:2px_1px] !mb-[-1px] pb-2",
         className,
       )}
     >

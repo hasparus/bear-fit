@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 
-// async function createEvent(event: CalendarEvent) {
-//   const url = new URL(window.location.href);
-//   url.pathname = `parties/main/${event.id}`;
-//   const res = await fetch(url, { method: "POST", body: JSON.stringify(event) });
-//   return res.json();
-// }
 export function useSearchParams() {
-  const [searchParams, setSearchParams] = useState(
+  const [searchParams, setSearchParams] = useState<URLSearchParams>(
     new URLSearchParams(window.location.search),
   );
 
@@ -20,19 +14,30 @@ export function useSearchParams() {
     return () => window.removeEventListener("popstate", listener);
   }, []);
 
-  const setParam = (key: string, value: string) => {
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set(key, value);
-    window.history.pushState({}, "", `?${newSearchParams.toString()}`);
-    setSearchParams(newSearchParams);
-  };
-
   return {
+    append(key: string, value: string) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.append(key, value);
+      window.history.pushState({}, "", `?${newSearchParams.toString()}`);
+      setSearchParams(newSearchParams);
+    },
+    delete(key: string, value: string) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete(key, value);
+      window.history.pushState({}, "", `?${newSearchParams.toString()}`);
+      setSearchParams(newSearchParams);
+    },
     get(key: string) {
       return searchParams.get(key);
     },
+    getAll(key: string) {
+      return searchParams.getAll(key);
+    },
     set(key: string, value: string) {
-      setParam(key, value);
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set(key, value);
+      window.history.pushState({}, "", `?${newSearchParams.toString()}`);
+      setSearchParams(newSearchParams);
     },
   };
 }
