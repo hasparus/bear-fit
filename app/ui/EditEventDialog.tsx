@@ -31,10 +31,7 @@ export function EditEventDialog() {
 
   return (
     <Dialog.Root id="edit-event">
-      <Dialog.Trigger
-        id="event-history"
-        className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
-      >
+      <Dialog.Trigger className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white">
         <EditIcon className="size-5" />
       </Dialog.Trigger>
       <Dialog.Portal>
