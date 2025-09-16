@@ -334,7 +334,13 @@ export function EventDetails({
               <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
             </div>
             <div className="w-px bg-neutral-200 max-lg:hidden" />
-            <div className="mb-6 mt-2 min-h-[72px]" role="grid">
+            <div
+              className="mb-6 mt-2 min-h-[72px]"
+              role="grid"
+              onPointerLeave={() => {
+                setHoveredCell(undefined);
+              }}
+            >
               {event.startDate &&
                 Object.entries(groupedDays).map(([monthKey, monthDays]) => (
                   <React.Fragment key={monthKey}>
@@ -345,7 +351,7 @@ export function EventDetails({
                     </div>
                     <div className="grid grid-cols-7 gap-1 relative">
                       <GridCellTooltip
-                        hoveredCell={hoveredCell}
+                        hoveredCellRef={hoveredCellRef}
                         names={names}
                         previousHoveredCell={previousHoveredCell}
                       />
@@ -490,63 +496,62 @@ export function EventDetails({
   );
 }
 
+const TOOLTIP_PADDING_X = 16;
+const TOOLTIP_OFFSET_Y = 8;
+
 function GridCellTooltip({
-  hoveredCell,
+  hoveredCellRef,
   names,
   previousHoveredCell,
 }: {
-  hoveredCell: HoveredCellData | undefined;
+  hoveredCellRef: RefObject<HoveredCellData | undefined>;
   names: Record<UserId, string>;
   previousHoveredCell: RefObject<HoveredCellData | undefined>;
 }) {
   const tooltipRef = useRef<HTMLSpanElement | null>(null);
+  const hoveredCell = hoveredCellRef.current;
 
   const users =
     hoveredCell?.availableUsers || previousHoveredCell.current?.availableUsers;
 
-  // Track mouse position
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-
   // Effect to update the tooltip position based on mouse position
   useEffect(() => {
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const moveTooltip = (e: MouseEvent) => {
+      if (tooltipRef.current) {
+        const grid = tooltipRef.current.closest(".grid");
+
+        if (grid) {
+          const gridRect = grid.getBoundingClientRect();
+
+          let x = e.clientX - gridRect.left;
+          const y = e.clientY - gridRect.top - TOOLTIP_OFFSET_Y;
+
+          x = Math.min(
+            Math.max(x, TOOLTIP_PADDING_X),
+            gridRect.width - TOOLTIP_PADDING_X,
+          );
+
+          tooltipRef.current.style.transform = `translate3d(calc(${x}px - 50%), ${y}px, 0)`;
+        }
+      }
     };
 
-    window.addEventListener("mousemove", updateMousePosition);
+    window.addEventListener("mousemove", moveTooltip);
 
     return () => {
-      window.removeEventListener("mousemove", updateMousePosition);
+      window.removeEventListener("mousemove", moveTooltip);
     };
   }, []);
-
-  // Effect to position the tooltip
-  useEffect(() => {
-    if (tooltipRef.current && hoveredCell) {
-      const grid = tooltipRef.current.closest(".grid");
-
-      if (grid) {
-        const gridRect = grid.getBoundingClientRect();
-
-        let x = mousePosition.x - gridRect.left;
-        const y = mousePosition.y - gridRect.top;
-
-        const paddingX = 16;
-
-        x = Math.min(Math.max(x, paddingX), gridRect.width - paddingX);
-
-        tooltipRef.current.style.transform = `translate3d(calc(${x}px - 50%), ${y - 8}px, 0)`;
-      }
-    }
-  }, [hoveredCell, mousePosition, tooltipRef]);
 
   // TODO: We can't use view transitions together with system.css, because the `filter: invert(0.9)`
   // isn't applied to transition layer, and the colors blink jarringly. If we migrated out of system.css,
   // to our own stylesheet with proper dark mode support, we could add `<unstable_ViewTransition>` here.
   return (
     <TooltipContent
+      aria-live="polite"
       className="whitespace-pre text-left left-0 z-10 translate-none motion-reduce:!transition-none"
       ref={tooltipRef}
+      role="tooltip"
       style={{
         opacity: hoveredCell && hoveredCell.availableUsers.length > 0 ? 1 : 0,
         transform: "translate3d(-9999px, -9999px, 0)",
