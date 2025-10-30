@@ -23,8 +23,18 @@ export type ClientMessage = typeof ClientMessage.infer;
 
 export type ServerMessage = PublicRoomInfo | Rooms;
 
-const PUBLIC_KEY_B64 =
-  process.env.PUBLIC_KEY_B64 ?? "yALtodY8Y2J46weRll9qZE4Xw0nIBRWN5aTcXbYxkXU=";
+const PUBLIC_KEY_B64 = process.env.PUBLIC_KEY_B64;
+
+if (!PUBLIC_KEY_B64) {
+  throw new Error(
+    "PUBLIC_KEY_B64 environment variable must be set to an Ed25519 public key.",
+  );
+} else if (
+  process.env.NODE_ENV === "production" &&
+  PUBLIC_KEY_B64.startsWith("yAL")
+) {
+  throw new Error("Deployed with test pubkey");
+}
 
 const PUBLIC_KEY = await crypto.subtle.importKey(
   "raw",
@@ -95,6 +105,7 @@ export default class OccupancyServer implements Party.Server {
       }
 
       if (parsed.count === 0) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete this.rooms[parsed.room];
       } else {
         this.rooms[parsed.room] = parsed.count;

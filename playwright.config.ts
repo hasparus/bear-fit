@@ -1,4 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
 
 export default defineConfig({
   forbidOnly: !!process.env.CI,
@@ -34,5 +36,23 @@ export default defineConfig({
     stdout: "pipe",
     timeout: 60000,
     url: "http://localhost:1999",
+    env: {
+      PUBLIC_KEY_B64: (() => {
+        const pubkeyPath = path.join(
+          process.cwd(),
+          ".ssh",
+          "test",
+          "id_ed25519.pub",
+        );
+        try {
+          return fs.readFileSync(pubkeyPath, "utf8").trim();
+        } catch (error) {
+          throw new Error(
+            `Failed to read ${pubkeyPath}. Ensure it exists before running Playwright tests.`,
+            { cause: error },
+          );
+        }
+      })(),
+    },
   },
 });
