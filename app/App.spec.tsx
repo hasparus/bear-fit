@@ -525,3 +525,88 @@ test("toggles availability with keyboard navigation", async ({ page }) => {
   await expect(summaryCount).toHaveText("0 dates");
   await expect(daySeven).toBeFocused();
 });
+
+test("gates Nerd Mode tools and persists preference across reloads", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+
+  const eventName = `nerd mode gating ${Math.random()
+    .toString(36)
+    .slice(2)}`;
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.type(eventName);
+
+  await page.getByRole("button", { name: "next month" }).click();
+
+  const today = new Date();
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString("en-US", {
+    month: "long",
+  });
+
+  const START_DAY = 5;
+  const END_DAY = 9;
+
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
+    .click();
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
+    .click();
+
+  await page.getByText("Create Event").click();
+
+  await expect(page).toHaveURL(/\?id=/);
+  await page.getByText("Event dates").waitFor({ state: "visible" });
+
+  await page.getByLabel("Your name").fill("Alice");
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+  const nerdToggle = page.getByLabel("Nerd Mode");
+  const nerdToggleLabel = page.locator('label[for="nerd-mode"]');
+  await expect(nerdToggle).not.toBeChecked();
+
+  const exportButton = page.locator('button[title="Export to JSON"]');
+  const importControl = page.locator('label[title="Import from JSON"]');
+
+  await expect(
+    page.getByRole("button", { name: "Export to JSON" }),
+  ).toHaveCount(0);
+  await expect(exportButton).toBeHidden();
+  await expect(importControl).toBeHidden();
+
+  await nerdToggleLabel.click();
+
+  await expect(nerdToggle).toBeChecked();
+  await expect(exportButton).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export to JSON" })).toBeVisible();
+  await expect(importControl).toBeVisible();
+
+  const eventUrl = await page.getByLabel("Event URL").first().inputValue();
+
+  await page.reload();
+  await page.getByText("Event dates").waitFor({ state: "visible" });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+
+  await expect(page.getByLabel("Nerd Mode")).toBeChecked();
+  await expect(page.locator('button[title="Export to JSON"]')).toBeVisible();
+
+  const secondPage = await page.context().newPage();
+  await secondPage.goto(eventUrl);
+  await secondPage.getByText("Event dates").waitFor({ state: "visible" });
+  await secondPage.evaluate(() =>
+    window.scrollTo(0, document.body.scrollHeight),
+  );
+
+  await expect(secondPage.getByLabel("Nerd Mode")).toBeChecked();
+  await expect(
+    secondPage.locator('button[title="Export to JSON"]'),
+  ).toBeVisible();
+
+  await secondPage.close();
+});
