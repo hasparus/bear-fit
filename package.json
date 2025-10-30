@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "test:ui": "VERBOSE=true playwright test --ui",
-    "test:coverage-report": "nyc report --reporter=html --report-dir=test/coverage/html --temp-dir=test/coverage"
+    "test:coverage-report": "nyc report --reporter=html --reporter=lcov --report-dir=test/coverage/html --temp-dir=test/coverage",
+    "preinstall": "pnpx only-allow pnpm"
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.1",
@@ -55,6 +56,7 @@
     "eslint": "^9.23.0",
     "eslint-plugin-perfectionist": "^4.10.1",
     "nyc": "^17.1.0",
+    "only-allow": "^1.2.1",
     "partykit": "^0.0.111",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
