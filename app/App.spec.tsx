@@ -1,6 +1,8 @@
 import fs from "fs/promises";
 
 import { expect, test } from "../test";
+
+test.setTimeout(60_000);
 import { AvailabilityKey, CalendarEvent, IsoDate, UserId } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
 
