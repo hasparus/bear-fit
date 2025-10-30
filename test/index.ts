@@ -1,19 +1,41 @@
-// const { chromium } = require('playwright');
-// const v8toIstanbul = require('v8-to-istanbul');
+import { test as base } from "@playwright/test";
+import fs from "node:fs/promises";
+import path from "node:path";
+import v8toIstanbul from "v8-to-istanbul";
 
-// (async () => {
-//   const browser = await chromium.launch();
-//   const page = await browser.newPage();
-//   await page.coverage.startJSCoverage();
-//   await page.goto('https://chromium.org');
-//   const coverage = await page.coverage.stopJSCoverage();
-//   for (const entry of coverage) {
-//     const converter = v8toIstanbul('', 0, { source: entry.source });
-//     await converter.load();
-//     converter.applyCoverage(entry.functions);
-//     console.log(JSON.stringify(converter.toIstanbul()));
-//   }
-//   await browser.close();
-// })();
+interface CoverageFixtures {
+  autoTestFixture: void;
+}
 
-// const test = TODO
+export const test = base.extend<CoverageFixtures>({
+  autoTestFixture: [
+    async ({ page }, use) => {
+      // Start coverage before the test
+      await page.coverage.startJSCoverage();
+
+      await use();
+
+      // Stop coverage and save after the test
+      const coverage = await page.coverage.stopJSCoverage();
+
+      const coverageDir = path.join(process.cwd(), "test/coverage");
+      await fs.mkdir(coverageDir, { recursive: true });
+
+      await Promise.all(
+        coverage.map(async (entry) => {
+          const converter = v8toIstanbul("", 0, { source: entry.source });
+          await converter.load();
+          converter.applyCoverage(entry.functions);
+          await fs.writeFile(
+            path.join(coverageDir, path.basename(entry.url) + ".json"),
+            JSON.stringify(converter.toIstanbul()),
+            "utf-8",
+          );
+        }),
+      );
+    },
+    { auto: true },
+  ],
+});
+
+export const expect = test.expect;
