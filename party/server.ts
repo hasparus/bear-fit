@@ -112,7 +112,7 @@ export default class EditorServer implements Party.Server {
       if (url.pathname === `/parties/main/${this.room.id}/history`) {
         const updates = await getLevelUpdates(this.room.storage, this.room.id);
 
-        return new Response(encodeUpdatesToOneUint8Array(updates), {
+        return new Response(encodeUpdatesToOneUint8Array(updates) as BodyInit, {
           headers: {
             ...headers,
             "Content-Type": "application/octet-stream",
