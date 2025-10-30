@@ -145,6 +145,71 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   expect(copiedJson).toBe(downloadedJson);
 });
 
+test("creates an event with a generated name using calendar keyboard navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+
+  const today = new Date();
+  const currentMonthName = today.toLocaleDateString("en-US", {
+    month: "long",
+  });
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString("en-US", {
+    month: "long",
+  });
+
+  await expect(page.getByText(currentMonthName)).toBeVisible();
+
+  const nextMonthButton = page.getByRole("button", { name: "next month" });
+  await nextMonthButton.focus();
+  await page.keyboard.press("ArrowRight");
+
+  await expect(page.getByText(nextMonthName)).toBeVisible();
+
+  const START_DAY = 6;
+  const END_DAY = 11;
+
+  const startDayButton = page.getByRole("button", {
+    name: `${nextMonthName} ${START_DAY}th`,
+  });
+  await expect(startDayButton).toBeVisible();
+  await startDayButton.focus();
+  await page.keyboard.press("Enter");
+
+  const endDayButton = page.getByRole("button", {
+    name: `${nextMonthName} ${END_DAY}th`,
+  });
+  await expect(endDayButton).toBeVisible();
+  await endDayButton.focus();
+  await page.keyboard.press("Enter");
+
+  const createEventButton = page.getByRole("button", { name: "Create Event" });
+  await expect(createEventButton).toBeEnabled();
+  await createEventButton.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(page).toHaveURL(/\?id=/);
+
+  const heading = page.getByRole("heading").first();
+  await expect(heading).toBeVisible();
+
+  const generatedName = (await heading.textContent())?.trim() ?? "";
+  expect(generatedName.length).toBeGreaterThan(0);
+  expect(generatedName).not.toBe("Create a Calendar");
+
+  const words = generatedName.split(" ").filter(Boolean);
+  expect(words.length).toBe(3);
+  for (const word of words) {
+    expect(word).toMatch(/^[A-Z][a-z]+$/);
+  }
+
+  const eventUrl = await page.getByLabel("Event URL").first().inputValue();
+  expect(eventUrl).toContain("?id=");
+});
+
 test("edits event dates and preserves user availability", async ({
   browser,
   page: alice,
