@@ -28,25 +28,25 @@ export const test = base.extend<CoverageFixtures>({
           // Map to the actual file location in public/dist/
           const filepath = path.join(process.cwd(), "public", "dist", filename);
 
+          const isExternalScript = await fs
+            .access(filepath)
+            .then(() => false)
+            .catch(() => true);
+
+          if (isExternalScript) {
+            return; // skip coverage for third-party scripts that are not bundled locally
+          }
+
           const converter = v8toIstanbul(filepath, 0, {
             source: entry.source!,
           });
-          try {
-            await converter.load();
-            converter.applyCoverage(entry.functions);
-            await fs.writeFile(
-              path.join(coverageDir, filename + ".json"),
-              JSON.stringify(converter.toIstanbul()),
-              "utf-8",
-            );
-          } catch (err) {
-            const e = err instanceof Error ? err : new Error(String(err));
-            if (e.message.includes("/dist/cursors.js.map")) {
-              // we don't have source maps for cursors as it's loaded from a script tag
-            } else {
-              throw err;
-            }
-          }
+          await converter.load();
+          converter.applyCoverage(entry.functions);
+          await fs.writeFile(
+            path.join(coverageDir, filename + ".json"),
+            JSON.stringify(converter.toIstanbul()),
+            "utf-8",
+          );
         }),
       );
     },
