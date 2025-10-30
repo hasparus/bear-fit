@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
-    "test:ui": "VERBOSE=true playwright test --ui"
+    "test:ui": "VERBOSE=true playwright test --ui",
+    "test:coverage-report": "nyc report --reporter=html --report-dir=test/coverage/html --temp-dir=test/coverage"
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-beta.1",
@@ -53,10 +54,12 @@
     "bun-types": "^1.2.9",
     "eslint": "^9.23.0",
     "eslint-plugin-perfectionist": "^4.10.1",
+    "nyc": "^17.1.0",
     "partykit": "^0.0.111",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
+    "v8-to-istanbul": "^9.3.0",
     "vitest": "^3.0.9"
   },
   "pnpm": {

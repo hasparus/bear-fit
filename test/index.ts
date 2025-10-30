@@ -23,14 +23,30 @@ export const test = base.extend<CoverageFixtures>({
 
       await Promise.all(
         coverage.map(async (entry) => {
-          const converter = v8toIstanbul("", 0, { source: entry.source });
-          await converter.load();
-          converter.applyCoverage(entry.functions);
-          await fs.writeFile(
-            path.join(coverageDir, path.basename(entry.url) + ".json"),
-            JSON.stringify(converter.toIstanbul()),
-            "utf-8",
-          );
+          // Extract the filename from the URL (e.g., "client.js" from "http://127.0.0.1:1999/dist/client.js")
+          const filename = path.basename(entry.url);
+          // Map to the actual file location in public/dist/
+          const filepath = path.join(process.cwd(), "public", "dist", filename);
+
+          const converter = v8toIstanbul(filepath, 0, {
+            source: entry.source!,
+          });
+          try {
+            await converter.load();
+            converter.applyCoverage(entry.functions);
+            await fs.writeFile(
+              path.join(coverageDir, filename + ".json"),
+              JSON.stringify(converter.toIstanbul()),
+              "utf-8",
+            );
+          } catch (err) {
+            const e = err instanceof Error ? err : new Error(String(err));
+            if (e.message.includes("/dist/cursors.js.map")) {
+              // we don't have source maps for cursors as it's loaded from a script tag
+            } else {
+              throw err;
+            }
+          }
         }),
       );
     },

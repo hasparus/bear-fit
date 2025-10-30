@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
 import fs from "fs/promises";
 
+import { expect, test } from "../test";
 import { AvailabilityKey, CalendarEvent, IsoDate, UserId } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
 
@@ -378,4 +378,148 @@ test("edits event dates and preserves user availability", async ({
   await expect(
     bob.getByRole("button", { name: `${nextMonthName} ${NEW_END_DAY}` }),
   ).toBeVisible();
+});
+
+test("allows dragging to paint and clear availability", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+
+  const eventName = `drag availability ${Math.random().toString(36).slice(2)}`;
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.type(eventName);
+
+  await page.getByRole("button", { name: "next month" }).click();
+
+  const today = new Date();
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString("en-US", {
+    month: "long",
+  });
+
+  const START_DAY = 5;
+  const END_DAY = 12;
+
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
+    .click();
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
+    .click();
+
+  await page.getByText("Create Event").click();
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.type("Alice");
+
+  const summaryRow = page.locator("dl > div").filter({ hasText: "Alice" });
+  await expect(summaryRow).toContainText("Alice");
+  const summaryCount = summaryRow.locator("dd");
+  await expect(summaryCount).toHaveText("0 dates");
+
+  const cells = [6, 7, 8].map((day) =>
+    page.getByRole("button", { name: `${nextMonthName} ${day}` }).first(),
+  );
+
+  for (const cell of cells) {
+    await expect(cell).toBeVisible();
+  }
+
+  const positions = await Promise.all(
+    cells.map(async (cell) => {
+      const box = await cell.boundingBox();
+      if (!box) {
+        throw new Error("Failed to measure calendar cell");
+      }
+
+      return {
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+      };
+    }),
+  );
+
+  await page.mouse.move(positions[0].x, positions[0].y);
+  await page.mouse.down();
+  for (const position of positions.slice(1)) {
+    await page.mouse.move(position.x, position.y, { steps: 5 });
+  }
+  await page.mouse.up();
+
+  await expect(summaryCount).toHaveText("3 dates");
+
+  await page.mouse.move(positions[2].x, positions[2].y);
+  await page.mouse.down();
+  for (const position of positions.slice(0, 2).reverse()) {
+    await page.mouse.move(position.x, position.y, { steps: 5 });
+  }
+  await page.mouse.up();
+
+  await expect(summaryCount).toHaveText("0 dates");
+});
+
+test("toggles availability with keyboard navigation", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+
+  const eventName = `keyboard availability ${Math.random()
+    .toString(36)
+    .slice(2)}`;
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.type(eventName);
+
+  await page.getByRole("button", { name: "next month" }).click();
+
+  const today = new Date();
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString("en-US", {
+    month: "long",
+  });
+
+  const START_DAY = 4;
+  const END_DAY = 12;
+
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
+    .click();
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
+    .click();
+
+  await page.getByText("Create Event").click();
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.type("Alice");
+
+  const summaryRow = page.locator("dl > div").filter({ hasText: "Alice" });
+  const summaryCount = summaryRow.locator("dd");
+  await expect(summaryCount).toHaveText("0 dates");
+
+  const daySix = page
+    .getByRole("button", { name: `${nextMonthName} 6` })
+    .first();
+  const daySeven = page
+    .getByRole("button", { name: `${nextMonthName} 7` })
+    .first();
+
+  await daySix.focus();
+  await expect(daySix).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  await expect(summaryCount).toHaveText("1 date");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(daySeven).toBeFocused();
+
+  await page.keyboard.press(" ");
+  await expect(summaryCount).toHaveText("2 dates");
+
+  await page.keyboard.press("ArrowLeft");
+  await expect(daySix).toBeFocused();
+
+  await page.keyboard.press("Enter");
+  await expect(summaryCount).toHaveText("1 date");
 });
