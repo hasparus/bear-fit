@@ -39,17 +39,20 @@ jobs:
       - name: Run Playwright tests
         run: pnpm playwright test
 
+      - name: Find current PR
+        uses: jwalton/gh-find-current-pr@v1
+        id: findPr
+
       - name: Generate coverage report
         run: pnpm test:coverage-report
 
       - name: Report code coverage
-        uses: zgosalvez/github-actions-report-lcov@v4
+        uses: ArtiomTr/jest-coverage-report-action@v2
         with:
-          coverage-files: test/coverage/html/lcov.info
-          minimum-coverage: 70
-          artifact-name: code-coverage-report
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          update-comment: true
+          coverage-file: test/coverage/html/lcov.info
+          base-coverage-file: test/coverage/html/lcov.info
+          skip-step: all
+          prnumber: ${{ steps.findPr.outputs.number }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
