@@ -635,6 +635,7 @@ function MoreButton() {
   return (
     <button
       className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
+      aria-label="More actions"
       onClick={(event) => {
         event.currentTarget.dispatchEvent(
           new MouseEvent("contextmenu", {
