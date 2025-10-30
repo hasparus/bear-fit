@@ -6,6 +6,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      pull-requests: write
 
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +38,18 @@ jobs:
 
       - name: Run Playwright tests
         run: pnpm playwright test
+
+      - name: Generate coverage report
+        run: pnpm test:coverage-report
+
+      - name: Report code coverage
+        uses: zgosalvez/github-actions-report-lcov@v4
+        with:
+          coverage-files: test/coverage/html/lcov.info
+          minimum-coverage: 70
+          artifact-name: code-coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          update-comment: true
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
