@@ -410,13 +410,9 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
 
   await page.getByText("Create Event").click();
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type("Alice");
+  await page.getByLabel("Your name").fill("Alice");
 
-  const summaryRow = page.locator("dl > div").filter({ hasText: "Alice" });
-  await expect(summaryRow).toContainText("Alice");
-  const summaryCount = summaryRow.locator("dd");
-  await expect(summaryCount).toHaveText("0 dates");
+  const summaryCount = page.getByRole("definition").first();
 
   const cells = [6, 7, 8].map((day) =>
     page.getByRole("button", { name: `${nextMonthName} ${day}` }).first(),
@@ -448,6 +444,7 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
   await page.mouse.up();
 
   await expect(summaryCount).toHaveText("3 dates");
+  await expect(cells[2]).toBeFocused();
 
   await page.mouse.move(positions[2].x, positions[2].y);
   await page.mouse.down();
@@ -457,6 +454,7 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
   await page.mouse.up();
 
   await expect(summaryCount).toHaveText("0 dates");
+  await expect(cells[0]).toBeFocused();
 });
 
 test("toggles availability with keyboard navigation", async ({ page }) => {
@@ -491,12 +489,9 @@ test("toggles availability with keyboard navigation", async ({ page }) => {
 
   await page.getByText("Create Event").click();
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type("Alice");
+  await page.getByLabel("Your name").fill("Alice");
 
-  const summaryRow = page.locator("dl > div").filter({ hasText: "Alice" });
-  const summaryCount = summaryRow.locator("dd");
-  await expect(summaryCount).toHaveText("0 dates");
+  const summaryCount = page.getByRole("definition").first();
 
   const daySix = page
     .getByRole("button", { name: `${nextMonthName} 6` })
@@ -522,4 +517,11 @@ test("toggles availability with keyboard navigation", async ({ page }) => {
 
   await page.keyboard.press("Enter");
   await expect(summaryCount).toHaveText("1 date");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(daySeven).toBeFocused();
+
+  await page.keyboard.press(" ");
+  await expect(summaryCount).toHaveText("0 dates");
+  await expect(daySeven).toBeFocused();
 });
