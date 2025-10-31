@@ -40,18 +40,19 @@
 
 ## Commit & Pull Request Guidelines
 
-- Mirror the existing imperative commit voice (`Improve grid cell tooltip`) and
-  group related edits together.
-- PRs need a concise summary, testing notes (`pnpm test`), and relevant PartyKit
-  preview URLs from `pnpm release` when you deploy.
+- Mirror the existing imperative commit voice (`Improve grid cell tooltip`).
 - Add UI screenshots or clips when layout shifts, link related issues, and list
   any follow-up work so reviewers can track it.
+
+---
 
 # Current Focus
 
 We're migrating from Partykit to PartyServer.
 
 But first, we need a full end-to-end coverage.
+
+---
 
 # Beads
 
@@ -119,14 +120,7 @@ bd close bd-42 --reason "Completed" --json
 4. **Discover new work?** Create linked issue:
    - `bd create "Found bug" -p 1 --deps discovered-from:<parent-id>`
 5. **Complete**: `bd close <id> --reason "Done"`
-
-### Auto-Sync
-
-bd automatically syncs with git:
-
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
+   - Remember to close tasks, this is important.
 
 ### MCP Server
 
