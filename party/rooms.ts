@@ -23,9 +23,22 @@ export type ClientMessage = typeof ClientMessage.infer;
 
 export type ServerMessage = PublicRoomInfo | Rooms;
 
+const PUBLIC_KEY_B64 = process.env.PUBLIC_KEY_B64;
+
+if (!PUBLIC_KEY_B64) {
+  throw new Error(
+    "PUBLIC_KEY_B64 environment variable must be set to an Ed25519 public key.",
+  );
+} else if (
+  process.env.NODE_ENV === "production" &&
+  PUBLIC_KEY_B64.startsWith("yAL")
+) {
+  throw new Error("Deployed with test pubkey");
+}
+
 const PUBLIC_KEY = await crypto.subtle.importKey(
   "raw",
-  base64ToArrayBuffer("rJOn8TUSGzJx2bIgotE9NJiHz8Dx2wN3VwnrK+qGIpk="),
+  base64ToArrayBuffer(PUBLIC_KEY_B64),
   "Ed25519",
   false,
   ["verify"],
@@ -55,26 +68,24 @@ export default class OccupancyServer implements Party.Server {
   async onMessage(message: string, connection: Party.Connection) {
     const action = ClientMessage.assert(JSON.parse(message));
 
-    // TODO: Test this manually
     if (action.type === "auth") {
-      // if this doesn't work, try
-      // crypto.subtle.verify('NODE-ED25519', ...);, and import the key with await crypto.subtle.importKey(..., { name: 'NODE-ED25519', namedCurve: 'NODE-ED25519' }, ..., ['verify'])
-      const encoded = textEncoder.encode(HARDCODED_AUTH_MESSAGE_NOT_SMART);
-      const signature = base64ToArrayBuffer(action.payload.signature);
-      const verified = await crypto.subtle.verify(
-        { name: "Ed25519" },
-        await PUBLIC_KEY,
-        signature,
-        encoded,
-      );
-
-      if (verified) {
-        connection.send(JSON.stringify(this.rooms));
-        this.authorizedConnections.add({
-          id: connection.id,
-          expiresAt: Date.now() + AUTHORIZATION_EXPIRATION_TIME,
-        });
+      try {
+        const encoded = textEncoder.encode(HARDCODED_AUTH_MESSAGE_NOT_SMART);
+        const signature = base64ToArrayBuffer(action.payload.signature);
+        const verified = await crypto.subtle.verify(
+          { name: "Ed25519" },
+          await PUBLIC_KEY,
+          signature,
+          encoded,
+        );
+        if (verified) {
+          this.authorizeConnection(connection);
+        }
+      } catch (error) {
+        console.error("dashboard auth verification failed", error);
       }
+
+      return;
     } else {
       throw new Error("invalid message");
     }
@@ -93,7 +104,12 @@ export default class OccupancyServer implements Party.Server {
         return Response.json({ error: parsed.summary }, { status: 400 });
       }
 
-      this.rooms[parsed.room] = parsed.count;
+      if (parsed.count === 0) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete this.rooms[parsed.room];
+      } else {
+        this.rooms[parsed.room] = parsed.count;
+      }
 
       void this.saveToStorage();
 
@@ -132,6 +148,14 @@ export default class OccupancyServer implements Party.Server {
 
   private async saveToStorage() {
     await this.room.storage.put("rooms", JSON.stringify(this.rooms));
+  }
+
+  private authorizeConnection(connection: Party.Connection) {
+    connection.send(JSON.stringify(this.rooms));
+    this.authorizedConnections.add({
+      id: connection.id,
+      expiresAt: Date.now() + AUTHORIZATION_EXPIRATION_TIME,
+    });
   }
 }
 
