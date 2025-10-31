@@ -29,12 +29,14 @@ const EventHistoryContext = createContext<boolean>(false);
 
 export interface EventHistoryProps {
   eventIsWide: boolean;
+  canRestore: boolean;
   eventId: string | undefined;
-  onRestoreVersion: (doc: Y.Doc) => void;
+  onRestoreVersion?: (doc: Y.Doc) => void;
 }
 
 export function EventHistory({
   eventIsWide,
+  canRestore,
   eventId,
   onRestoreVersion,
 }: EventHistoryProps) {
@@ -49,7 +51,10 @@ export function EventHistory({
 
   return (
     <Dialog.Root id="event-history">
-      <Dialog.Trigger className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white">
+      <Dialog.Trigger
+        aria-label="Open version history"
+        className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
+      >
         <ClockIcon className="size-5" />
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -75,6 +80,7 @@ export function EventHistory({
                 </Dialog.Description>
               </div>
               <EventHistoryContent
+                canRestore={canRestore}
                 closeButtonRef={closeButtonRef}
                 eventId={eventId}
                 onRestoreVersion={onRestoreVersion}
@@ -89,6 +95,7 @@ export function EventHistory({
 }
 
 interface EventHistoryContentProps extends React.HTMLAttributes<HTMLElement> {
+  canRestore: boolean;
   closeButtonRef: React.RefObject<HTMLButtonElement | null>;
   eventId: string | undefined;
   onRestoreVersion?: (doc: Y.Doc) => void;
@@ -96,6 +103,7 @@ interface EventHistoryContentProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 function EventHistoryContent({
+  canRestore,
   closeButtonRef,
   eventId,
   onRestoreVersion,
@@ -164,7 +172,7 @@ function EventHistoryContent({
   }, [index, updates]);
 
   const handleRestore = () => {
-    if (!historicalDoc || !onRestoreVersion) return;
+    if (!historicalDoc || !onRestoreVersion || !canRestore) return;
 
     onRestoreVersion(historicalDoc);
     closeButtonRef.current?.click();
@@ -246,13 +254,15 @@ function EventHistoryContent({
             />
           )}
 
-          <button
-            className="btn btn-default h-[45px] shrink-0"
-            disabled={!updates || index === latestVersionRef.current}
-            onClick={handleRestore}
-          >
-            Restore This Version
-          </button>
+          {canRestore && (
+            <button
+              className="btn btn-default h-[45px] shrink-0"
+              disabled={!updates || index === latestVersionRef.current}
+              onClick={handleRestore}
+            >
+              Restore This Version
+            </button>
+          )}
         </>
       )}
     </div>
