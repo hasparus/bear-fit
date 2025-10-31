@@ -1,0 +1,17 @@
+name = "bear-fit"
+main = "party/worker.ts"
+compatibility_date = "2024-10-01"
+
+assets = { directory = "./public" }
+
+[[durable_objects.bindings]]
+name = "EditorPartyServer"
+class_name = "EditorPartyServer"
+
+[[durable_objects.bindings]]
+name = "OccupancyPartyServer"
+class_name = "OccupancyPartyServer"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["EditorPartyServer", "OccupancyPartyServer"]
