@@ -51,7 +51,10 @@ export function EventHistory({
 
   return (
     <Dialog.Root id="event-history">
-      <Dialog.Trigger className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white">
+      <Dialog.Trigger
+        aria-label="Open version history"
+        className="p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
+      >
         <ClockIcon className="size-5" />
       </Dialog.Trigger>
       <Dialog.Portal>

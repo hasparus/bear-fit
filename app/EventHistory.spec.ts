@@ -118,12 +118,7 @@ async function availabilityFill(page: Page, date: Date) {
 }
 
 async function openEventHistory(page: Page) {
-  const trigger = page
-    .locator("button")
-    .filter({
-      has: page.locator(`svg path[d="${CLOCK_ICON_PATH}"]`),
-    })
-    .first();
+  const trigger = page.getByRole("button", { name: "Open version history" });
 
   await expect(trigger).toBeVisible();
   await trigger.click();
