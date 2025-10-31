@@ -608,10 +608,15 @@ function EventDetailsFooter({
         {isCreator && <EditEventDialog />}
         <EventHistory
           eventIsWide={eventIsWide}
+          canRestore={isCreator}
           eventId={eventId}
-          onRestoreVersion={(doc) => {
-            overwriteYDocWithJson(yDoc, yDocToJson(doc));
-          }}
+          onRestoreVersion={
+            isCreator
+              ? (doc) => {
+                  overwriteYDocWithJson(yDoc, yDocToJson(doc));
+                }
+              : undefined
+          }
         />
         {isCreator && <ImportEventJson />}
         <ExportEventJson yDoc={yDoc} />
@@ -634,8 +639,8 @@ function useRememberEvent(event: Partial<CalendarEvent>) {
 function MoreButton() {
   return (
     <button
-      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
       aria-label="More actions"
+      className="flex p-1 hover:bg-neutral-100 cursor-pointer items-center justify-center rounded-sm active:bg-black active:text-white"
       onClick={(event) => {
         event.currentTarget.dispatchEvent(
           new MouseEvent("contextmenu", {
