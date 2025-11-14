@@ -5,12 +5,15 @@ compatibility_date = "2024-10-01"
 assets = { directory = "./public" }
 
 [[durable_objects.bindings]]
-name = "EditorPartyServer"
+name = "main"
 class_name = "EditorPartyServer"
 
 [[durable_objects.bindings]]
-name = "OccupancyPartyServer"
+name = "rooms"
 class_name = "OccupancyPartyServer"
+
+[vars]
+PUBLIC_KEY_B64 = "${PUBLIC_KEY_B64}"
 
 [[migrations]]
 tag = "v1"
