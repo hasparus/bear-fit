@@ -1,4 +1,8 @@
-import { getServerByName, type Connection, type ConnectionContext } from "partyserver";
+import {
+  type Connection,
+  type ConnectionContext,
+  getServerByName,
+} from "partyserver";
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";
 
@@ -6,19 +10,19 @@ import { CalendarEvent } from "../app/schemas";
 import {
   hasCalendarEvent,
   initializeEventMap,
-  yDocToJson
+  yDocToJson,
 } from "../app/shared-data";
-import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 import { OccupancyPartyServer } from "./occupancy.partyserver";
+import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
-type EditorEnv = {
+interface EditorEnv {
   rooms: DurableObjectNamespace<OccupancyPartyServer>;
-};
+}
 
-type UpdateRow = {
+interface UpdateRow {
   clock: number;
   update: ArrayBufferLike;
-};
+}
 
 const TABLE_DOCUMENTS = "documents";
 const TABLE_UPDATES = "document_updates";
@@ -28,9 +32,9 @@ const HISTORY_SEPARATOR = TEXT_ENCODER.encode("\n\n");
 
 export class EditorPartyServer extends YServer<EditorEnv> {
   static callbackOptions = {
-    debounceWait: 750,
     debounceMaxWait: 5_000,
-    timeout: 5_000
+    debounceWait: 750,
+    timeout: 5_000,
   };
 
   constructor(...args: ConstructorParameters<typeof YServer<EditorEnv>>) {
@@ -61,8 +65,8 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     const [row] = [
       ...this.ctx.storage.sql.exec(
         `SELECT state FROM ${TABLE_DOCUMENTS} WHERE id = ? LIMIT 1`,
-        this.name
-      )
+        this.name,
+      ),
     ];
 
     if (row && row.state instanceof ArrayBuffer) {
@@ -75,11 +79,14 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     this.ctx.storage.sql.exec(
       `INSERT OR REPLACE INTO ${TABLE_DOCUMENTS} (id, state) VALUES (?, ?)`,
       this.name,
-      update
+      update,
     );
   }
 
-  async onConnect(connection: Connection, ctx: ConnectionContext): Promise<void> {
+  async onConnect(
+    connection: Connection,
+    ctx: ConnectionContext,
+  ): Promise<void> {
     await super.onConnect(connection, ctx);
     void this.updateOccupancyCount();
   }
@@ -88,7 +95,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     connection: Connection,
     code: number,
     reason: string,
-    wasClean: boolean
+    wasClean: boolean,
   ): Promise<void> {
     await super.onClose(connection, code, reason, wasClean);
     void this.updateOccupancyCount();
@@ -96,14 +103,16 @@ export class EditorPartyServer extends YServer<EditorEnv> {
 
   async onRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const headers =
-      process.env.NODE_ENV !== "production" ? CORS : undefined;
+    const headers = process.env.NODE_ENV !== "production" ? CORS : undefined;
 
     if (request.method === "OPTIONS") {
       return new Response("ok", { headers });
     }
 
-    if (request.method === "POST" && url.pathname.startsWith("/parties/main/")) {
+    if (
+      request.method === "POST" &&
+      url.pathname.startsWith("/parties/main/")
+    ) {
       try {
         const payload = await request.json();
         const event = CalendarEvent.assert(payload);
@@ -111,7 +120,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         if (hasCalendarEvent(this.document)) {
           return Response.json(
             { error: "event already created" },
-            { headers, status: 403 }
+            { headers, status: 403 },
           );
         }
 
@@ -123,7 +132,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         console.error("failed to create event", error);
         return Response.json(
           { error: "invalid event" },
-          { headers, status: 400 }
+          { headers, status: 400 },
         );
       }
     }
@@ -136,8 +145,8 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         return new Response(body, {
           headers: {
             ...headers,
-            "Content-Type": "application/octet-stream"
-          }
+            "Content-Type": "application/octet-stream",
+          },
         });
       }
 
@@ -158,7 +167,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       `CREATE TABLE IF NOT EXISTS ${TABLE_DOCUMENTS} (
         id TEXT PRIMARY KEY,
         state BLOB NOT NULL
-      )`
+      )`,
     );
 
     this.ctx.storage.sql.exec(
@@ -167,7 +176,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         clock INTEGER NOT NULL,
         update BLOB NOT NULL,
         PRIMARY KEY (doc_id, clock)
-      )`
+      )`,
     );
   }
 
@@ -175,8 +184,8 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     const [row] = [
       ...this.ctx.storage.sql.exec(
         `SELECT clock FROM ${TABLE_UPDATES} WHERE doc_id = ? ORDER BY clock DESC LIMIT 1`,
-        this.name
-      )
+        this.name,
+      ),
     ];
 
     return row ? Number(row.clock) : 0;
@@ -186,8 +195,8 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     return [
       ...this.ctx.storage.sql.exec(
         `SELECT clock, update FROM ${TABLE_UPDATES} WHERE doc_id = ? ORDER BY clock ASC`,
-        this.name
-      )
+        this.name,
+      ),
     ].map((row) => {
       const raw = row.update as unknown;
       let update: ArrayBufferLike;
@@ -201,7 +210,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       }
       return {
         clock: Number(row.clock),
-        update
+        update,
       } satisfies UpdateRow;
     });
   }
@@ -213,7 +222,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         `INSERT OR REPLACE INTO ${TABLE_UPDATES} (doc_id, clock, update) VALUES (?, ?, ?)`,
         this.name,
         this.#lastClock,
-        update
+        update,
       );
     } catch (error) {
       console.error("failed to persist update", error);
@@ -249,13 +258,13 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     try {
       const stub = await getServerByName(
         this.env.rooms,
-        OCCUPANCY_SERVER_SINGLETON_ROOM_ID
+        OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
       );
       const count = Array.from(this.getConnections()).length;
       await stub.fetch("https://occupancy.internal/update", {
-        method: "POST",
+        body: JSON.stringify({ count, room: this.name }),
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count, room: this.name })
+        method: "POST",
       });
     } catch (error) {
       console.error("failed to notify occupancy server", error);

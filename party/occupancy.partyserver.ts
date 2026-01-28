@@ -1,20 +1,20 @@
-import { type Connection, Server } from "partyserver";
 import { type } from "arktype";
+import { type Connection, Server } from "partyserver";
 
 import {
   AUTHORIZATION_EXPIRATION_TIME,
+  base64ToArrayBuffer,
   ClientMessage,
   HARDCODED_AUTH_MESSAGE_NOT_SMART,
-  type Rooms,
-  UpdateFromRoom,
-  base64ToArrayBuffer,
   makePublicRoomInfo,
-  textEncoder
+  type Rooms,
+  textEncoder,
+  UpdateFromRoom,
 } from "./rooms";
 
-type OccupancyEnv = {
+interface OccupancyEnv {
   PUBLIC_KEY_B64: string;
-};
+}
 
 export class OccupancyPartyServer extends Server<OccupancyEnv> {
   constructor(...args: ConstructorParameters<typeof Server<OccupancyEnv>>) {
@@ -42,13 +42,16 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
     connection: Connection,
     code: number,
     reason: string,
-    wasClean: boolean
+    wasClean: boolean,
   ): Promise<void> {
     await super.onClose(connection, code, reason, wasClean);
     this.authorizedConnections.delete(connection.id);
   }
 
-  async onMessage(connection: Connection, message: string | ArrayBuffer): Promise<void> {
+  async onMessage(
+    connection: Connection,
+    message: ArrayBuffer | string,
+  ): Promise<void> {
     if (typeof message !== "string") {
       throw new Error("invalid message");
     }
@@ -120,7 +123,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
   private async importPublicKey(value: string | undefined): Promise<CryptoKey> {
     if (!value) {
       throw new Error(
-        "PUBLIC_KEY_B64 environment variable must be set to an Ed25519 public key."
+        "PUBLIC_KEY_B64 environment variable must be set to an Ed25519 public key.",
       );
     }
 
@@ -129,7 +132,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
       base64ToArrayBuffer(value),
       "Ed25519",
       false,
-      ["verify"]
+      ["verify"],
     );
   }
 
@@ -138,7 +141,12 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
       const encoded = textEncoder.encode(HARDCODED_AUTH_MESSAGE_NOT_SMART);
       const signature = base64ToArrayBuffer(signatureB64);
       const publicKey = await this.publicKeyPromise;
-      return crypto.subtle.verify({ name: "Ed25519" }, publicKey, signature, encoded);
+      return crypto.subtle.verify(
+        { name: "Ed25519" },
+        publicKey,
+        signature,
+        encoded,
+      );
     } catch (error) {
       console.error("failed to verify signature", error);
       return false;
@@ -149,7 +157,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
     connection.send(JSON.stringify(this.rooms));
     this.authorizedConnections.set(
       connection.id,
-      Date.now() + AUTHORIZATION_EXPIRATION_TIME
+      Date.now() + AUTHORIZATION_EXPIRATION_TIME,
     );
   }
 
@@ -168,7 +176,10 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
         try {
           target.send(payload);
         } catch (error) {
-          console.error("failed to send update to authorized connection", error);
+          console.error(
+            "failed to send update to authorized connection",
+            error,
+          );
         }
       }
     }
