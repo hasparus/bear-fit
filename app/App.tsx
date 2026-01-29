@@ -5,6 +5,7 @@ import { Doc } from "yjs";
 import { postEvent } from "./api/postEvent";
 import { serverUrl } from "./api/serverUrl";
 import { AppFooter } from "./AppFooter";
+import { AppHeader } from "./AppHeader";
 import { initializeEventMap } from "./shared-data";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
@@ -27,7 +28,8 @@ export function App() {
   return (
     <PreferencesProvider>
       <DialogsProvider>
-        <div className="min-h-[89vh] flex items-center">
+        <AppHeader />
+        <div className="min-h-[89vh] flex items-center mt-2">
           <Routes params={params} yDoc={yDoc.current} />
         </div>
         <AppFooter className="!mt-8" currentEventId={params.get("id")} />
