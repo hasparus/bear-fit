@@ -93,7 +93,6 @@ body,
   flex-direction: column;
   align-items: center;
   min-height: fit-content;
-  padding-top: 2rem;
   min-height: 100vh;
   max-width: var(--max-width-for-real);
   margin: 0 auto;
