@@ -1,5 +1,5 @@
 import { Suspense, useRef } from "react";
-import useYProvider from "y-partykit/react";
+import useYProvider from "y-partyserver/react";
 import { Doc } from "yjs";
 
 import { postEvent } from "./api/postEvent";
