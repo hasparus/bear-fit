@@ -58,7 +58,7 @@ export function CreateEventForm({
           });
         }}
       >
-        <h1 className="mb-4 text-2xl font-bold">Create a Calendar</h1>
+        <h1 className="mb-4 font-bold leading-[1.3333]">Create a Calendar</h1>
         <div className="mb-4">
           <label className="mb-2 block" htmlFor="eventName">
             <span>Name your event</span>
@@ -70,7 +70,7 @@ export function CreateEventForm({
             id="eventName"
             type="text"
             autoComplete="off"
-            className="w-full border p-2"
+            className="w-full border pt-2 pr-2 pb-2 pl-[5px]"
           />
         </div>
         <div className="mb-4">

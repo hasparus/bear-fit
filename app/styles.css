@@ -1,4 +1,4 @@
-@layer theme, base, retro, components, utilities;
+@layer theme, base, app, retro, components, utilities;
 
 @import "tailwindcss";
 @import "./retro.css";
@@ -79,59 +79,61 @@
   }
 }
 
-:root {
-  --accent: var(--color-accent);
-  --container-width: 340px;
-  --max-width-for-real: min(1920px, 100vw);
-}
-
-html,
-body,
-#app {
-  min-height: 100vh;
-}
-
-#app {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: fit-content;
-  min-height: 100vh;
-  max-width: var(--max-width-for-real);
-  margin: 0 auto;
-}
-
-label,
-.label {
-  font-family: Inconsolata, Menlo, Chicago, Geneva;
-  font-size: 14px;
-}
-
-*:focus-visible {
-  outline: 3px solid black;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    filter: invert(0.9);
-  }
-  html {
-    background: black;
-  }
+@layer app {
   :root {
-    --color-accent: #049;
-    --accent: #049;
+    --accent: var(--color-accent);
+    --container-width: 340px;
+    --max-width-for-real: min(1920px, 100vw);
   }
-}
 
-::view-transition-group(*) {
-  animation-duration: 0.3s;
-}
+  html,
+  body,
+  #app {
+    min-height: 100vh;
+  }
 
-.btn {
-  @apply hover:bg-neutral-100;
-}
+  #app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: fit-content;
+    min-height: 100vh;
+    max-width: var(--max-width-for-real);
+    margin: 0 auto;
+  }
 
-[data-radix-popper-content-wrapper] {
-  position: absolute !important;
+  label,
+  .label {
+    font-family: Inconsolata, Menlo, Chicago, Geneva;
+    font-size: 14px;
+  }
+
+  *:focus-visible {
+    outline: 3px solid black;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      filter: invert(0.9);
+    }
+    html {
+      background: black;
+    }
+    :root {
+      --color-accent: #049;
+      --accent: #049;
+    }
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 0.3s;
+  }
+
+  .btn {
+    @apply hover:bg-neutral-100;
+  }
+
+  [data-radix-popper-content-wrapper] {
+    position: absolute !important;
+  }
 }
