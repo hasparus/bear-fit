@@ -1,5 +1,7 @@
 name: e2e
 on:
+  push:
+    branches: [main]
   pull_request:
 jobs:
   playwright:
@@ -33,15 +35,15 @@ jobs:
         run: pnpm playwright test
 
       - name: Generate coverage report
-        if: always()
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         run: pnpm test:coverage-report
 
       - name: Install lcov
-        if: always()
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         run: sudo apt-get install -y lcov
 
       - name: Report code coverage
-        if: always()
+        if: always() && github.event.pull_request.head.repo.full_name == github.repository
         uses: zgosalvez/github-actions-report-lcov@v4
         with:
           coverage-files: test/coverage/html/lcov.info
