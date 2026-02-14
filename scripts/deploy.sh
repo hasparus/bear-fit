@@ -1,6 +1,8 @@
 set -e
 
 BRANCH_NAME=${BRANCH_NAME:-$(git rev-parse --abbrev-ref HEAD)}
+# Sanitize branch name for partykit preview (must match /^[a-z0-9_-]+$/)
+BRANCH_NAME=$(echo "$BRANCH_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
 COMMIT_HASH=${COMMIT_HASH:-$(git rev-parse --short HEAD)}
 
 DEPLOY_DATE=$(date -u +"%Y-%m-%d")
@@ -21,4 +23,3 @@ if [ ! -z "$GITHUB_ENV" ]; then
   echo "DEPLOYMENT_URL=$HOST" >> $GITHUB_ENV
   echo "$HOST $APP_VERSION deployed successfully!"
 fi
-
