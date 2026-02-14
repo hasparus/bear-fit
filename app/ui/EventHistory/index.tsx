@@ -66,7 +66,7 @@ export function EventHistory({
               "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
           )}
         >
-          <section className="window max-sm:!m-0 animate-content-show -col-end-1 pointer-events-auto">
+          <section className="window max-sm:m-0 animate-content-show -col-end-1 pointer-events-auto">
             <EventHistoryContext.Provider value={true}>
               <div className="title-bar">
                 <Dialog.Close
@@ -243,13 +243,13 @@ function EventHistoryContent({
           ) : updates ? (
             <YDocContext.Provider value={historicalDoc}>
               <EventDetails
-                className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
+                className="shadow-none shrink max-sm:m-0 max-sm:w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 border-x-0 rounded-none"
                 disabled
               />
             </YDocContext.Provider>
           ) : (
             <EventDetails
-              className="!shadow-none shrink max-sm:!m-0 max-sm:!w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 !border-x-0 !rounded-none"
+              className="shadow-none shrink max-sm:m-0 max-sm:w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 border-x-0 rounded-none"
               disabled
             />
           )}

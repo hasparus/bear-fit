@@ -282,7 +282,7 @@
 }
 
 .rdp-selected .rdp-day_button {
-  border-image: url("https://unpkg.com/@sakun/system.css@0.1.11/dist/button-default.svg")
+  border-image: url("/assets/button-default.svg")
     40 stretch;
   border-width: 0.25em;
 }
@@ -329,7 +329,7 @@
 }
 
 .rdp-range_middle .rdp-day_button {
-  border-image: url("https://unpkg.com/@sakun/system.css@0.1.11/dist/button-default.svg")
+  border-image: url("/assets/button-default.svg")
     40 stretch;
   border-width: 0.25em;
   border-left: unset;

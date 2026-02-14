@@ -22,7 +22,7 @@ export function AppFooter({
     <footer
       id="footer"
       className={cn(
-        "px-2 pt-1 window sm:w-[calc(var(--max-width-for-real)-40px)] max-sm:!mx-0 max-sm:!border-x-0 ![box-shadow:2px_1px] !mb-[-1px] pb-2",
+        "px-2 pt-1 window sm:w-[calc(var(--max-width-for-real)-40px)] max-sm:mx-0 max-sm:border-x-0 [box-shadow:2px_1px] mb-[-1px] pb-2",
         className,
       )}
     >
@@ -30,7 +30,7 @@ export function AppFooter({
         <h2 className="title">bear fit</h2>
       </div>
 
-      <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:!text-accent">
+      <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:text-accent">
         {events.length > 0 && (
           <section className="mb-6">
             <h3 className="font-sans mt-4">Your recent events</h3>
@@ -38,7 +38,7 @@ export function AppFooter({
               {events.map((event) => (
                 <li key={event.id}>
                   <a
-                    className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 !text-neutral-500 hover:!text-neutral-800 !no-underline"
+                    className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 no-underline"
                     href={`?id=${event.id}`}
                     onClick={(e) => {
                       if (event.id === currentEventId) {
