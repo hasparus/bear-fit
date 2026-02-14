@@ -32,7 +32,7 @@ export function App() {
         <div className="min-h-[89vh] flex items-center mt-2">
           <Routes params={params} yDoc={yDoc.current} />
         </div>
-        <AppFooter className="!mt-8" currentEventId={params.get("id")} />
+        <AppFooter className="mt-8" currentEventId={params.get("id")} />
         <CursorPartyScript />
       </DialogsProvider>
     </PreferencesProvider>

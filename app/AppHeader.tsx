@@ -13,7 +13,7 @@ export function AppHeader({ className }: { className?: string }) {
       )}
     >
       <a
-        className="font-sans text-sm font-bold !no-underline !text-inherit"
+        className="font-sans text-sm font-bold no-underline text-inherit"
         href="/"
       >
         bear fit
@@ -21,7 +21,7 @@ export function AppHeader({ className }: { className?: string }) {
       <nav className="flex items-center gap-2">
         {events.length > 0 && (
           <a
-            className="font-mono text-xs !text-neutral-500 hover:!text-neutral-800 !no-underline"
+            className="font-mono text-xs text-neutral-500 hover:text-neutral-800 no-underline"
             href="#footer"
           >
             [your events]
@@ -29,7 +29,7 @@ export function AppHeader({ className }: { className?: string }) {
         )}
         <a
           aria-label="GitHub"
-          className="!text-neutral-500 hover:!text-neutral-800"
+          className="text-neutral-500 hover:text-neutral-800"
           href="https://github.com/hasparus/bear-fit"
           rel="noopener noreferrer"
           target="_blank"
