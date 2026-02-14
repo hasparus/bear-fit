@@ -16,8 +16,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
 
   const eventName = `test event ${Math.random().toString(36).substring(2, 15)}`;
 
-  await alice.keyboard.press("Tab");
-  await alice.keyboard.type(eventName);
+  await alice.getByLabel("Name your event").fill(eventName);
 
   await alice.getByRole("button", { name: "next month" }).click();
 
@@ -48,8 +47,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await expect(alice.getByText("Event dates")).toBeVisible();
 
   // Type creator name
-  await alice.keyboard.press("Tab");
-  await alice.keyboard.type(CREATOR_NAME);
+  await alice.getByLabel("Your name").fill(CREATOR_NAME);
 
   // select 6th, 8th, 10th and 11th
   // (yeah, React Day Picker (above) is using custom date formatting for aria  labels, so we have some inconsistencies here)
@@ -222,8 +220,7 @@ test("edits event dates and preserves user availability", async ({
 
   const eventName = `edit test event ${Math.random().toString(36).substring(2, 15)}`;
 
-  await alice.keyboard.press("Tab");
-  await alice.keyboard.type(eventName);
+  await alice.getByLabel("Name your event").fill(eventName);
 
   await alice.getByRole("button", { name: "next month" }).click();
 
@@ -260,8 +257,7 @@ test("edits event dates and preserves user availability", async ({
   await expect(alice.getByText("Event dates")).toBeVisible();
 
   // Type creator name
-  await alice.keyboard.press("Tab");
-  await alice.keyboard.type(CREATOR_NAME);
+  await alice.getByLabel("Your name").fill(CREATOR_NAME);
 
   // Add some availability in the initial range (6th, 7th, 8th)
   await alice.getByRole("button", { name: `${nextMonthName} 6` }).click();
@@ -389,8 +385,7 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
 
   const eventName = `drag availability ${Math.random().toString(36).slice(2)}`;
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(eventName);
+  await page.getByLabel("Name your event").fill(eventName);
 
   await page.getByRole("button", { name: "next month" }).click();
 
@@ -416,7 +411,20 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
 
   const summaryCount = page.getByRole("definition").first();
 
-  const cells = [6, 7, 8].map((day) =>
+  // Pick 3 consecutive weekdays in the same calendar row (Mon-Fri)
+  // to avoid drag crossing row boundaries and hitting extra cells
+  const dragDays: number[] = [];
+  for (let d = START_DAY; d <= END_DAY - 2; d++) {
+    const dow = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), d).getDay();
+    // dow 1=Mon..4=Thu guarantees d, d+1, d+2 are Mon-Sat (same row)
+    if (dow >= 1 && dow <= 4) {
+      dragDays.push(d, d + 1, d + 2);
+      break;
+    }
+  }
+  if (dragDays.length === 0) throw new Error("Could not find 3 same-row days");
+
+  const cells = dragDays.map((day) =>
     page.getByRole("button", { name: `${nextMonthName} ${day}` }).first(),
   );
 
@@ -468,8 +476,7 @@ test("toggles availability with keyboard navigation", async ({ page }) => {
     .toString(36)
     .slice(2)}`;
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(eventName);
+  await page.getByLabel("Name your event").fill(eventName);
 
   await page.getByRole("button", { name: "next month" }).click();
 
@@ -539,8 +546,7 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
     .toString(36)
     .slice(2)}`;
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(eventName);
+  await page.getByLabel("Name your event").fill(eventName);
 
   await page.getByRole("button", { name: "next month" }).click();
 
