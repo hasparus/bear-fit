@@ -52,7 +52,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
             }),
           }}
           modifiersClassNames={{
-            initial: "*:!bg-neutral-100",
+            initial: "*:bg-neutral-100",
           }}
         />
       </div>

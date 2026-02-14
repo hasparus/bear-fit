@@ -1,3 +1,6 @@
+@layer retro;
+
+@import "./retro.css";
 @import "tailwindcss";
 
 @source './**/*.css';

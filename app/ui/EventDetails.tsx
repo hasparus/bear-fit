@@ -267,8 +267,7 @@ export function EventDetails({
           >
             <div>
               <p className="block font-mono text-sm">Calendar</p>
-              {/* todo: I should really use CSS layers or ditch system.css to avoid all these !important */}
-              <h1 className="mb-4 !text-2xl">
+              <h1 className="mb-4 text-2xl">
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Event dates</p>
