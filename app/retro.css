@@ -2,30 +2,6 @@
 /* https://github.com/sakofchit/system.css */
 
 @layer retro {
-  @font-face {
-    font-family: Chicago;
-    src: url("/fonts/ChicagoFLF.woff") format("woff");
-    src: url("/fonts/ChicagoFLF.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: Monaco;
-    src: url("/fonts/monaco.woff") format("woff");
-    src: url("/fonts/monaco.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: Chicago_12;
-    src: url("/fonts/ChiKareGo2.woff") format("woff");
-    src: url("/fonts/ChiKareGo2.woff2") format("woff2");
-  }
-
-  @font-face {
-    font-family: Geneva_9;
-    src: url("/fonts/FindersKeepers.woff") format("woff");
-    src: url("/fonts/FindersKeepers.woff2") format("woff2");
-  }
-
   ::-webkit-scrollbar {
     background-color: #fff;
     width: 22px;
@@ -170,7 +146,7 @@
   .btn,
   .btn-default {
     background: #fff;
-    border-image: url("/assets/button.svg") 30 stretch;
+    border-image: url("data:image/svg+xml,<svg%20width="81"%20height="81"%20viewBox="0%200%2081%2081"%20fill="none"%20xmlns="http://www.w3.org/2000/svg">%0A<path%20fill-rule="evenodd"%20clip-rule="evenodd"%20d="M61%200H20V6H14H6V14V20H0V61H6V67V75H14H20V81H61V75H67H75V67V61H81V20H75V14V6H67H61V0ZM74%2021H67V14H60V7H21V14H14V21H7V60H14V67H21V74H60V67H67V60H74V21Z"%20fill="black"/>%0A</svg>") 30 stretch;
     border-style: solid;
     border-width: 5.5px;
     color: #000;
@@ -193,7 +169,7 @@
 
   .btn:disabled {
     background: #fff;
-    border-image: url("/assets/button.svg") 30 stretch;
+    border-image: url("data:image/svg+xml,<svg%20width="81"%20height="81"%20viewBox="0%200%2081%2081"%20fill="none"%20xmlns="http://www.w3.org/2000/svg">%0A<path%20fill-rule="evenodd"%20clip-rule="evenodd"%20d="M61%200H20V6H14H6V14V20H0V61H6V67V75H14H20V81H61V75H67H75V67V61H81V20H75V14V6H67H61V0ZM74%2021H67V14H60V7H21V14H14V21H7V60H14V67H21V74H60V67H67V60H74V21Z"%20fill="black"/>%0A</svg>") 30 stretch;
     border-style: solid;
     border-width: 5.5px;
     color: #b6b7b8;
@@ -206,7 +182,7 @@
   }
 
   .btn-default {
-    border-image: url("/assets/button-default.svg") 60 stretch;
+    border-image: url("data:image/svg+xml,<svg%20width="155"%20height="155"%20viewBox="0%200%20155%20155"%20fill="none"%20xmlns="http://www.w3.org/2000/svg">%0A<path%20fill-rule="evenodd"%20clip-rule="evenodd"%20d="M35.1893%200H119.811V10.5571H144.443L144.443%2035.1898H155V119.811H144.443V144.444H119.811V155H35.1893V144.444H10.5569V119.811H0V35.1898H10.5569V10.5571H35.1893V0ZM6.24161%20113.57V113.57H16.7984V113.57H6.24161ZM30.8742%20138.202L30.8741%20138.202V138.201H41.4308L30.8742%20138.202ZM113.569%20138.201V148.759H41.431L113.569%20148.759V138.201H124.126L113.569%20138.201ZM148.758%2041.4315V113.57H138.202L148.758%20113.57V41.4314L148.758%2041.4315ZM113.569%206.24161V16.7986H113.569V6.24161H113.569ZM18.5579%2043.1907V111.81H18.5578V43.1906H30.8741V30.8744H43.1904V18.5578H111.81V18.5579H43.1905V30.8745H30.8742V43.1907H18.5579ZM30.8741%20124.126V111.81H30.8742V124.126H30.8741ZM43.1904%20136.442V124.126H43.1905V136.442L43.1904%20136.442ZM124.126%2030.8744V30.8745H111.81V30.8744H124.126ZM24.7995%2049.4324V105.569H37.1158V117.884H49.4321V130.201H105.568V117.884H117.884V105.569H130.201V49.4324H117.884V37.1161H105.568V24.7995H49.4321V37.1161H37.1158V49.4324H24.7995ZM57%2037.0002H98V43.0002H104H112V51.0002V57.0002H118V98.0002H112V104V112H104H98V118H57V112H51H43V104V98.0002H37V57.0002H43V51.0002V43.0002H51H57V37.0002ZM104%2058.0002H111V97.0002H104V104H97V111H58V104H51V97.0002H44V58.0002H51V51.0002H58V44.0002H97V51.0002H104V58.0002Z"%20fill="black"/>%0A</svg>") 60 stretch;
     border-width: 0.5em;
   }
 
