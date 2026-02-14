@@ -1,7 +1,7 @@
-@layer retro;
+@layer theme, base, retro, components, utilities;
 
-@import "./retro.css";
 @import "tailwindcss";
+@import "./retro.css";
 
 @source './**/*.css';
 
