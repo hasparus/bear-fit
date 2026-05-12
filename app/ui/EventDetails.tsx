@@ -17,6 +17,7 @@ import {
   type CalendarEvent,
   IsoDate,
   isoDate,
+  resolveCalendarEvent,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
@@ -49,6 +50,7 @@ import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
+import { formatRollingWindow } from "./RollingWindowControls";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
@@ -67,7 +69,8 @@ export function EventDetails({
   const yDoc = useYDoc();
 
   const eventMap = getEventMap(yDoc);
-  const event = useY(eventMap) as Partial<CalendarEvent>;
+  const rawEvent = useY(eventMap) as Partial<CalendarEvent>;
+  const event = resolveCalendarEvent(rawEvent);
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -76,7 +79,7 @@ export function EventDetails({
     }
   }, [event.id, event.name]);
 
-  useRememberEvent(event);
+  useRememberEvent(rawEvent);
 
   const namesMap = yDoc.getMap("names");
   const names = useY(namesMap) as Record<UserId, string>;
@@ -281,6 +284,14 @@ export function EventDetails({
                     <time dateTime={event.endDate}>
                       {new Date(event.endDate).toLocaleDateString()}
                     </time>
+                    {event.rolling && (
+                      <small
+                        aria-label="Rolling window"
+                        className="block text-neutral-500"
+                      >
+                        Rolling: {formatRollingWindow(event.rolling)}
+                      </small>
+                    )}
                   </>
                 ) : (
                   <Skeleton className="w-[206px]" />

@@ -1,6 +1,6 @@
 import { useY } from "react-yjs";
 
-import { CalendarEvent, IsoDate } from "../schemas";
+import { CalendarEvent, IsoDate, type RollingWindow } from "../schemas";
 import { getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
@@ -19,9 +19,18 @@ export function EditEventDialog() {
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
-  const handleSubmit = async (startDate: IsoDate, endDate: IsoDate) => {
+  const handleSubmit = async (
+    startDate: IsoDate,
+    endDate: IsoDate,
+    rolling: RollingWindow | undefined,
+  ) => {
     eventMap.set("startDate", startDate);
     eventMap.set("endDate", endDate);
+    if (rolling) {
+      eventMap.set("rolling", rolling);
+    } else {
+      eventMap.delete("rolling");
+    }
     dialogs.set("edit-event", false);
   };
 
