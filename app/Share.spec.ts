@@ -36,7 +36,9 @@ async function createEvent(page: Page) {
   return { eventName, eventUrl: page.url() };
 }
 
-test("copies the event URL from the desktop sharing panel", async ({ page }) => {
+test("copies the event URL from the desktop sharing panel", async ({
+  page,
+}) => {
   const { eventUrl } = await createEvent(page);
 
   const urlInput = page.getByLabel("Event URL").first();
@@ -60,7 +62,10 @@ test.describe("touch layout sharing UI", () => {
 
     await page.evaluate(() => navigator.clipboard.writeText(""));
 
-    await page.getByRole("button", { name: "Copy to clipboard" }).first().click();
+    await page
+      .getByRole("button", { name: "Copy to clipboard" })
+      .first()
+      .click();
     await expect(page.getByText("Copied to clipboard")).toBeVisible();
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
