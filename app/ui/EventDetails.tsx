@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { useY } from "react-yjs";
@@ -629,21 +630,20 @@ function EventDetailsFooter({
   );
 }
 
+const HOVER_QUERY = "(hover: hover)";
+
+function subscribeHover(callback: () => void) {
+  const mq = window.matchMedia(HOVER_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
 function useSupportsHover() {
-  const [supportsHover, setSupportsHover] = useState(() =>
-    typeof window === "undefined"
-      ? true
-      : window.matchMedia("(hover: hover)").matches,
+  return useSyncExternalStore(
+    subscribeHover,
+    () => window.matchMedia(HOVER_QUERY).matches,
+    () => true,
   );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover)");
-    const onChange = () => setSupportsHover(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  return supportsHover;
 }
 
 function useRememberEvent(event: Partial<CalendarEvent>) {
