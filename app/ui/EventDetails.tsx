@@ -84,11 +84,11 @@ export function EventDetails({
   const availabilityMap = yDoc.getMap("availability");
   const availability = useY(availabilityMap) as AvailabilitySet;
 
+  const supportsHover = useSupportsHover();
   const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
     {},
   );
-  const hasSelection = Object.values(selectedUsers).some(Boolean);
 
   const [_tooltipTransition, startTooltipTransition] = useTransition();
   const [hoveredCell, setHoveredCell] = useState<HoveredCellData | undefined>();
@@ -318,9 +318,12 @@ export function EventDetails({
                     availabilityForUsers={availabilityForUsers}
                     creatorId={event.creator}
                     names={names}
-                    onHover={(userId) => setHoveredUser(userId)}
                     selectedUsers={selectedUsers}
                     userId={userId}
+                    onHover={(userId) => {
+                      if (!supportsHover) return;
+                      setHoveredUser(userId);
+                    }}
                     onSelect={(userId) => {
                       if (!userId) return;
                       setSelectedUsers((prev) => ({
@@ -402,13 +405,8 @@ export function EventDetails({
                         const hoveredUserIsAvailable =
                           hoveredUser && availableUsers.includes(hoveredUser);
 
-                        // Hover-dim only when comparing against a selection —
-                        // mouse stays on a user item after a toggle-off click,
-                        // so unconditional hover-dim looks like stale state.
                         const hoveredUserIsUnavailable =
-                          hoveredUser &&
-                          hasSelection &&
-                          !availableUsers.includes(hoveredUser);
+                          hoveredUser && !availableUsers.includes(hoveredUser);
 
                         return (
                           <AvailabilityGridCell
@@ -629,6 +627,23 @@ function EventDetailsFooter({
       <MoreButton />
     </footer>
   );
+}
+
+function useSupportsHover() {
+  const [supportsHover, setSupportsHover] = useState(() =>
+    typeof window === "undefined"
+      ? true
+      : window.matchMedia("(hover: hover)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover)");
+    const onChange = () => setSupportsHover(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return supportsHover;
 }
 
 function useRememberEvent(event: Partial<CalendarEvent>) {
