@@ -88,6 +88,7 @@ export function EventDetails({
   const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
     {},
   );
+  const hasSelection = Object.values(selectedUsers).some(Boolean);
 
   const [_tooltipTransition, startTooltipTransition] = useTransition();
   const [hoveredCell, setHoveredCell] = useState<HoveredCellData | undefined>();
@@ -401,8 +402,13 @@ export function EventDetails({
                         const hoveredUserIsAvailable =
                           hoveredUser && availableUsers.includes(hoveredUser);
 
+                        // Hover-dim only when comparing against a selection —
+                        // mouse stays on a user item after a toggle-off click,
+                        // so unconditional hover-dim looks like stale state.
                         const hoveredUserIsUnavailable =
-                          hoveredUser && !availableUsers.includes(hoveredUser);
+                          hoveredUser &&
+                          hasSelection &&
+                          !availableUsers.includes(hoveredUser);
 
                         return (
                           <AvailabilityGridCell
