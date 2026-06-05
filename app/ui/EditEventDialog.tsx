@@ -1,10 +1,10 @@
 import { useY } from "react-yjs";
 
-import { CalendarEvent, IsoDate, type RollingWindow } from "../schemas";
+import { CalendarEvent } from "../schemas";
 import { getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
-import { EditEventForm } from "./EditEventForm";
+import { EditEventForm, type EditEventPayload } from "./EditEventForm";
 import { EditIcon } from "./EditIcon";
 
 declare module "./Dialog" {
@@ -19,22 +19,21 @@ export function EditEventDialog() {
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
-  const handleSubmit = async (
-    startDate: IsoDate,
-    endDate: IsoDate,
-    rolling: RollingWindow | undefined,
-  ) => {
-    eventMap.set("startDate", startDate);
-    eventMap.set("endDate", endDate);
-    if (rolling) {
-      eventMap.set("rolling", rolling);
+  const handleSubmit = async (payload: EditEventPayload) => {
+    if (payload.kind === "rolling") {
+      eventMap.set("rolling", payload.rolling);
+      eventMap.delete("startDate");
+      eventMap.delete("endDate");
     } else {
+      eventMap.set("startDate", payload.startDate);
+      eventMap.set("endDate", payload.endDate);
       eventMap.delete("rolling");
     }
     dialogs.set("edit-event", false);
   };
 
-  if (!event.id || !event.startDate || !event.endDate) {
+  const hasFixedDates = !!event.startDate && !!event.endDate;
+  if (!event.id || (!event.rolling && !hasFixedDates)) {
     return null;
   }
 

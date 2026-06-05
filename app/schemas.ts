@@ -49,10 +49,25 @@ const offsetToApproxDays = (o: RollingOffset): number =>
 export const CalendarEvent = type({
   id: "string",
   creator: UserId,
-  endDate: IsoDate,
+  "endDate?": IsoDate,
   name: "string",
   "rolling?": RollingWindow,
-  startDate: IsoDate,
+  "startDate?": IsoDate,
+}).narrow((event, ctx): boolean => {
+  if (event.rolling) {
+    return (
+      (!event.startDate && !event.endDate) ||
+      ctx.reject({
+        expected: "no startDate or endDate on rolling events",
+      })
+    );
+  }
+  return (
+    !!(event.startDate && event.endDate) ||
+    ctx.reject({
+      expected: "either both startDate and endDate, or a rolling window",
+    })
+  );
 });
 
 export type CalendarEvent = typeof CalendarEvent.infer;

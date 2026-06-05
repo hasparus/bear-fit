@@ -17,11 +17,12 @@ export const initializeEventMap = (doc: Doc, event: CalendarEvent) => {
 
   eventMap.set("id", event.id);
   eventMap.set("name", event.name);
-  eventMap.set("startDate", event.startDate);
-  eventMap.set("endDate", event.endDate);
   eventMap.set("creator", event.creator);
   if (event.rolling) {
     eventMap.set("rolling", event.rolling);
+  } else {
+    eventMap.set("startDate", event.startDate);
+    eventMap.set("endDate", event.endDate);
   }
 };
 

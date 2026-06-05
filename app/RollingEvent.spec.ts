@@ -58,6 +58,7 @@ test("creates a rolling event and shows today through the resolved end date", as
     end: { days: 7 },
     start: { days: 0 },
   });
-  expect(event.startDate).toBe(todayIso);
-  expect(event.endDate).toBe(sevenDaysLaterIso);
+  // Rolling events don't store snapshot dates — they're derived at read time.
+  expect(event.startDate).toBeUndefined();
+  expect(event.endDate).toBeUndefined();
 });

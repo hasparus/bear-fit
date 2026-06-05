@@ -6,7 +6,7 @@ import {
   CalendarEvent,
   isoDate,
   IsoDate,
-  resolveRollingWindow,
+  resolveCalendarEvent,
   type RollingWindow,
 } from "../schemas";
 import { CheckboxField } from "./CheckboxField";
@@ -17,13 +17,13 @@ import {
   RollingWindowControls,
 } from "./RollingWindowControls";
 
+export type EditEventPayload =
+  | { endDate: IsoDate; kind: "fixed"; startDate: IsoDate }
+  | { kind: "rolling"; rolling: RollingWindow };
+
 export interface EditEventFormProps {
   event: CalendarEvent;
-  onSubmit: (
-    startDate: IsoDate,
-    endDate: IsoDate,
-    rolling: RollingWindow | undefined,
-  ) => Promise<void>;
+  onSubmit: (payload: EditEventPayload) => Promise<void>;
 }
 
 export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
@@ -31,14 +31,22 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
   const [rolling, setRolling] = useState<RollingWindow>(
     event.rolling ?? DEFAULT_ROLLING_PRESET.value,
   );
+
+  // For a rolling event, seed the fixed-date controls with the currently
+  // resolved window so toggling off rolling mode gives a sensible default.
+  const resolved = resolveCalendarEvent(event);
+  const seedStart = resolved.startDate
+    ? new Date(resolved.startDate)
+    : undefined;
+  const seedEnd = resolved.endDate ? new Date(resolved.endDate) : undefined;
+
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(event.startDate),
-    to: new Date(event.endDate),
+    from: seedStart,
+    to: seedEnd,
   });
 
-  const initialStartDate = new Date(event.startDate);
   const today = new Date();
-  const earliestDate = initialStartDate < today ? initialStartDate : today;
+  const earliestDate = seedStart && seedStart < today ? seedStart : today;
 
   const canSubmit = isRolling || isValidDateRange(dateRange);
 
@@ -48,18 +56,18 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
       onSubmit={(e) => {
         e.preventDefault();
 
-        const dates = isRolling
-          ? resolveRollingWindow(rolling)
+        const payload: EditEventPayload = isRolling
+          ? { kind: "rolling", rolling }
           : (() => {
               const { from, to } = requireValidDateRange(dateRange);
-              return { endDate: isoDate(to), startDate: isoDate(from) };
+              return {
+                endDate: isoDate(to),
+                kind: "fixed",
+                startDate: isoDate(from),
+              };
             })();
 
-        onSubmit(
-          dates.startDate,
-          dates.endDate,
-          isRolling ? rolling : undefined,
-        ).finally(() => {
+        onSubmit(payload).finally(() => {
           Clarity.event("event-dates-edited");
         });
       }}
@@ -91,10 +99,10 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
             onSelect={setDateRange}
             selected={dateRange}
             modifiers={{
-              initial: unfoldDateRange({
-                from: initialStartDate,
-                to: new Date(event.endDate),
-              }),
+              initial:
+                seedStart && seedEnd
+                  ? unfoldDateRange({ from: seedStart, to: seedEnd })
+                  : [],
             }}
             modifiersClassNames={{
               initial: "*:bg-neutral-100",

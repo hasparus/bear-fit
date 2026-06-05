@@ -10,12 +10,7 @@ import {
 } from "unique-names-generator";
 
 import { getUserId } from "../getUserId";
-import {
-  CalendarEvent,
-  isoDate,
-  resolveRollingWindow,
-  type RollingWindow,
-} from "../schemas";
+import { CalendarEvent, isoDate, type RollingWindow } from "../schemas";
 import { CheckboxField } from "./CheckboxField";
 import { Container } from "./Container";
 import { DateRangePicker, handleCalendarArrowKeys } from "./DateRangePicker";
@@ -61,22 +56,25 @@ export function CreateEventForm({
               style: "capital",
             });
 
-          const dates = isRolling
-            ? resolveRollingWindow(rolling)
-            : (() => {
-                const { from, to } = requireValidDateRange(dateRange);
-                return { endDate: isoDate(to), startDate: isoDate(from) };
-              })();
-
-          setIsSubmitting(true);
-          onSubmit({
+          const base = {
             id: nanoid(),
             creator: getUserId(),
-            endDate: dates.endDate,
             name,
-            startDate: dates.startDate,
-            ...(isRolling && { rolling }),
-          }).finally(() => {
+          };
+          let calendarEvent: CalendarEvent;
+          if (isRolling) {
+            calendarEvent = { ...base, rolling };
+          } else {
+            const { from, to } = requireValidDateRange(dateRange);
+            calendarEvent = {
+              ...base,
+              endDate: isoDate(to),
+              startDate: isoDate(from),
+            };
+          }
+
+          setIsSubmitting(true);
+          onSubmit(calendarEvent).finally(() => {
             Clarity.event("event-created");
             setIsSubmitting(false);
           });

@@ -51,17 +51,19 @@ export function AppFooter({
                       }}
                     >
                       {event.name}{" "}
-                      <span>
-                        (
-                        <time dateTime={startDate}>
-                          {new Date(startDate).toLocaleDateString()}
-                        </time>
-                        {" - "}
-                        <time dateTime={endDate}>
-                          {new Date(endDate).toLocaleDateString()}
-                        </time>
-                        {event.rolling && ", rolling"})
-                      </span>
+                      {startDate && endDate && (
+                        <span>
+                          (
+                          <time dateTime={startDate}>
+                            {new Date(startDate).toLocaleDateString()}
+                          </time>
+                          {" - "}
+                          <time dateTime={endDate}>
+                            {new Date(endDate).toLocaleDateString()}
+                          </time>
+                          {event.rolling && ", rolling"})
+                        </span>
+                      )}
                       {event.id === currentEventId && <span> (current)</span>}
                     </a>
                   </li>
