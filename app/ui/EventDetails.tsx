@@ -50,7 +50,7 @@ import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
-import { formatRollingWindow } from "./RollingWindowControls";
+import { RollingWindowIndicator } from "./RollingWindowIndicator";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
@@ -285,12 +285,7 @@ export function EventDetails({
                       {new Date(event.endDate).toLocaleDateString()}
                     </time>
                     {event.rolling && (
-                      <small
-                        aria-label="Rolling window"
-                        className="block text-neutral-500"
-                      >
-                        Rolling: {formatRollingWindow(event.rolling)}
-                      </small>
+                      <RollingWindowIndicator window={event.rolling} />
                     )}
                   </>
                 ) : (

@@ -1,4 +1,11 @@
-import { type RollingWindow } from "../schemas";
+import { type RollingOffset, type RollingWindow } from "../schemas";
+
+const offset = (days: number, months: number): RollingOffset => ({
+  days,
+  months,
+});
+
+const TODAY = offset(0, 0);
 
 export interface RollingPreset {
   label: string;
@@ -6,29 +13,40 @@ export interface RollingPreset {
 }
 
 export const ROLLING_PRESETS: readonly RollingPreset[] = [
-  { label: "Next week", value: { end: { days: 7 }, start: { days: 0 } } },
-  { label: "Next 2 weeks", value: { end: { days: 14 }, start: { days: 0 } } },
-  { label: "Next month", value: { end: { months: 1 }, start: { days: 0 } } },
-  { label: "Next 2 months", value: { end: { months: 2 }, start: { days: 0 } } },
-  { label: "Next 3 months", value: { end: { months: 3 }, start: { days: 0 } } },
-  { label: "Next 6 months", value: { end: { months: 6 }, start: { days: 0 } } },
+  { label: "Next week", value: { end: offset(7, 0), start: TODAY } },
+  { label: "Next 2 weeks", value: { end: offset(14, 0), start: TODAY } },
+  { label: "Next month", value: { end: offset(0, 1), start: TODAY } },
+  { label: "Next 2 months", value: { end: offset(0, 2), start: TODAY } },
+  { label: "Next 3 months", value: { end: offset(0, 3), start: TODAY } },
+  { label: "Next 6 months", value: { end: offset(0, 6), start: TODAY } },
 ];
 
 export const DEFAULT_ROLLING_PRESET = ROLLING_PRESETS[3];
 
-export const rollingPresetIndex = (window: RollingWindow): number => {
-  const i = ROLLING_PRESETS.findIndex(
+const offsetsEqual = (a: RollingOffset, b: RollingOffset): boolean =>
+  a.days === b.days && a.months === b.months;
+
+const matchingPresetLabel = (window: RollingWindow): string | undefined =>
+  ROLLING_PRESETS.find(
     (p) =>
-      p.value.start.days === window.start.days &&
-      p.value.start.months === window.start.months &&
-      p.value.end.days === window.end.days &&
-      p.value.end.months === window.end.months,
-  );
-  return i === -1 ? 3 : i;
+      offsetsEqual(p.value.start, window.start) &&
+      offsetsEqual(p.value.end, window.end),
+  )?.label;
+
+const formatOffset = (o: RollingOffset): string => {
+  const parts: string[] = [];
+  if (o.months) parts.push(`${o.months} month${o.months === 1 ? "" : "s"}`);
+  if (o.days) parts.push(`${o.days} day${o.days === 1 ? "" : "s"}`);
+  return parts.join(" ") || "today";
 };
 
 export function formatRollingWindow(window: RollingWindow): string {
-  return ROLLING_PRESETS[rollingPresetIndex(window)].label;
+  const preset = matchingPresetLabel(window);
+  if (preset) return preset;
+  const startIsToday = offsetsEqual(window.start, TODAY);
+  return startIsToday
+    ? `today through +${formatOffset(window.end)}`
+    : `+${formatOffset(window.start)} through +${formatOffset(window.end)}`;
 }
 
 export function RollingWindowControls({
@@ -38,7 +56,7 @@ export function RollingWindowControls({
   onChange: (window: RollingWindow) => void;
   value: RollingWindow;
 }) {
-  const currentIndex = rollingPresetIndex(value);
+  const currentLabel = matchingPresetLabel(value) ?? "";
 
   return (
     <div className="mb-4">
@@ -51,14 +69,19 @@ export function RollingWindowControls({
       <select
         id="rolling-window-preset"
         className="w-full border pt-2 pr-2 pb-2 pl-[5px] rounded-sm"
-        value={currentIndex}
+        value={currentLabel}
         onChange={(e) => {
-          const next = ROLLING_PRESETS[Number(e.target.value)];
+          const next = ROLLING_PRESETS.find((p) => p.label === e.target.value);
           if (next) onChange(next.value);
         }}
       >
-        {ROLLING_PRESETS.map((preset, i) => (
-          <option key={preset.label} value={i}>
+        {!currentLabel && (
+          <option disabled value="">
+            Custom ({formatRollingWindow(value)})
+          </option>
+        )}
+        {ROLLING_PRESETS.map((preset) => (
+          <option key={preset.label} value={preset.label}>
             {preset.label}
           </option>
         ))}

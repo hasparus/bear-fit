@@ -1,7 +1,6 @@
 import Clarity from "@microsoft/clarity";
 import { nanoid } from "nanoid";
 import { useState } from "react";
-import { type DateRange } from "react-day-picker";
 import {
   adjectives,
   animals,
@@ -10,15 +9,16 @@ import {
 } from "unique-names-generator";
 
 import { getUserId } from "../getUserId";
-import { CalendarEvent, isoDate, type RollingWindow } from "../schemas";
-import { CheckboxField } from "./CheckboxField";
+import { type CalendarEvent } from "../schemas";
 import { Container } from "./Container";
-import { DateRangePicker, handleCalendarArrowKeys } from "./DateRangePicker";
-import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
+import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
-  DEFAULT_ROLLING_PRESET,
-  RollingWindowControls,
-} from "./RollingWindowControls";
+  defaultEventDatesValue,
+  EventDatesPicker,
+  type EventDatesValue,
+  eventDatesValueToPayload,
+  isEventDatesValueValid,
+} from "./EventDatesPicker";
 
 export function CreateEventForm({
   onSubmit,
@@ -26,16 +26,9 @@ export function CreateEventForm({
   onSubmit: (event: CalendarEvent) => Promise<void>;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRolling, setIsRolling] = useState(false);
-  const [rolling, setRolling] = useState<RollingWindow>(
-    DEFAULT_ROLLING_PRESET.value,
+  const [dates, setDates] = useState<EventDatesValue>(() =>
+    defaultEventDatesValue(),
   );
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
-  });
-
-  const canSubmit = isRolling || isValidDateRange(dateRange);
 
   return (
     <Container>
@@ -56,22 +49,16 @@ export function CreateEventForm({
               style: "capital",
             });
 
-          const base = {
-            id: nanoid(),
-            creator: getUserId(),
-            name,
-          };
-          let calendarEvent: CalendarEvent;
-          if (isRolling) {
-            calendarEvent = { ...base, rolling };
-          } else {
-            const { from, to } = requireValidDateRange(dateRange);
-            calendarEvent = {
-              ...base,
-              endDate: isoDate(to),
-              startDate: isoDate(from),
-            };
-          }
+          const payload = eventDatesValueToPayload(dates);
+          const base = { id: nanoid(), creator: getUserId(), name };
+          const calendarEvent: CalendarEvent =
+            payload.kind === "rolling"
+              ? { ...base, rolling: payload.rolling }
+              : {
+                  ...base,
+                  endDate: payload.endDate,
+                  startDate: payload.startDate,
+                };
 
           setIsSubmitting(true);
           onSubmit(calendarEvent).finally(() => {
@@ -95,39 +82,16 @@ export function CreateEventForm({
             className="w-full border pt-2 pr-2 pb-2 pl-[5px]"
           />
         </div>
-        <div className="mb-4">
-          <CheckboxField
-            id="is-rolling"
-            checked={isRolling}
-            onChange={(e) => setIsRolling(e.target.checked)}
-          >
-            Rolling window
-          </CheckboxField>
-          <small className="block text-neutral-500 mt-1">
-            always show today through a fixed amount of time ahead
-          </small>
-        </div>
-        {isRolling ? (
-          <RollingWindowControls onChange={setRolling} value={rolling} />
-        ) : (
-          <div className="mb-4">
-            <label className="mb-2 block">
-              <span>Choose a date range</span>
-              <small className="block text-neutral-500">
-                what times should the guests consider?
-              </small>
-            </label>
-            <DateRangePicker
-              disabled={{ before: new Date() }}
-              onSelect={setDateRange}
-              selected={dateRange}
-            />
-          </div>
-        )}
+        <EventDatesPicker
+          checkboxId="is-rolling"
+          fixedRangeProps={{ disabled: { before: new Date() } }}
+          onChange={setDates}
+          value={dates}
+        />
         <button
           type="submit"
           className="btn btn-default w-full"
-          disabled={!canSubmit}
+          disabled={!isEventDatesValueValid(dates)}
           style={{ borderWidth: "0.5em" }}
           onClick={(event) => {
             event.currentTarget.textContent = "Creating...";

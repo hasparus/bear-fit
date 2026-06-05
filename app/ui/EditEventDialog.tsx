@@ -4,8 +4,9 @@ import { CalendarEvent } from "../schemas";
 import { getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
-import { EditEventForm, type EditEventPayload } from "./EditEventForm";
+import { EditEventForm } from "./EditEventForm";
 import { EditIcon } from "./EditIcon";
+import { type EventDatesPayload } from "./EventDatesPicker";
 
 declare module "./Dialog" {
   export interface DialogIds {
@@ -19,7 +20,7 @@ export function EditEventDialog() {
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
-  const handleSubmit = async (payload: EditEventPayload) => {
+  const handleSubmit = async (payload: EventDatesPayload) => {
     if (payload.kind === "rolling") {
       eventMap.set("rolling", payload.rolling);
       eventMap.delete("startDate");

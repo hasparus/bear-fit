@@ -17,17 +17,11 @@ export const isoDate = (date: Date): IsoDate =>
 export const UserId = type("string").brand("UserId");
 export type UserId = typeof UserId.infer;
 
-// A non-negative integer count of days or months relative to a reference date.
-// Refinement: at least one of `days`/`months` must be set (rejects `{}`).
+// A non-negative integer count of days and months relative to a reference date.
 export const RollingOffset = type({
-  "days?": "number.integer >= 0",
-  "months?": "number.integer >= 0",
-}).narrow(
-  (offset, ctx) =>
-    typeof offset.days === "number" ||
-    typeof offset.months === "number" ||
-    ctx.reject({ expected: "at least one of days or months" }),
-);
+  days: "number.integer >= 0",
+  months: "number.integer >= 0",
+});
 
 export type RollingOffset = typeof RollingOffset.infer;
 
@@ -43,8 +37,7 @@ export const RollingWindow = type({
 
 export type RollingWindow = typeof RollingWindow.infer;
 
-const offsetToApproxDays = (o: RollingOffset): number =>
-  (o.months ?? 0) * 31 + (o.days ?? 0);
+const offsetToApproxDays = (o: RollingOffset): number => o.months * 31 + o.days;
 
 export const CalendarEvent = type({
   id: "string",
@@ -72,14 +65,16 @@ export const CalendarEvent = type({
 
 export type CalendarEvent = typeof CalendarEvent.infer;
 
-const applyOffset = (today: Date, offset: RollingOffset): IsoDate => {
-  const base = new Date(
-    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+const applyOffset = (today: Date, offset: RollingOffset): IsoDate =>
+  isoDate(
+    new Date(
+      Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth() + offset.months,
+        today.getUTCDate() + offset.days,
+      ),
+    ),
   );
-  if (offset.months) base.setUTCMonth(base.getUTCMonth() + offset.months);
-  if (offset.days) base.setUTCDate(base.getUTCDate() + offset.days);
-  return isoDate(base);
-};
 
 export const resolveRollingWindow = (
   window: RollingWindow,

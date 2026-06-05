@@ -55,8 +55,8 @@ test("creates a rolling event and shows today through the resolved end date", as
   const event = CalendarEvent.assert(exported.event);
 
   expect(event.rolling).toEqual({
-    end: { days: 7 },
-    start: { days: 0 },
+    end: { days: 7, months: 0 },
+    start: { days: 0, months: 0 },
   });
   // Rolling events don't store snapshot dates — they're derived at read time.
   expect(event.startDate).toBeUndefined();
