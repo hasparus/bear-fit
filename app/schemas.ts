@@ -84,12 +84,12 @@ export const resolveRollingWindow = (
   startDate: applyOffset(today, window.start),
 });
 
-export const resolveCalendarEvent = <T extends Partial<CalendarEvent>>(
-  event: T,
+export const resolveEventDates = (
+  event: Pick<Partial<CalendarEvent>, "endDate" | "rolling" | "startDate">,
   today: Date = new Date(),
-): T & { endDate?: IsoDate; startDate?: IsoDate } => {
-  if (!event.rolling) return event;
-  return { ...event, ...resolveRollingWindow(event.rolling, today) };
+): { endDate: IsoDate | undefined; startDate: IsoDate | undefined } => {
+  if (event.rolling) return resolveRollingWindow(event.rolling, today);
+  return { endDate: event.endDate, startDate: event.startDate };
 };
 
 export const AvailabilityDelta = type({

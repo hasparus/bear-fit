@@ -2,7 +2,7 @@ import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
-import { type CalendarEvent, resolveCalendarEvent } from "../schemas";
+import { type CalendarEvent, resolveEventDates } from "../schemas";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
   defaultEventDatesValue,
@@ -21,11 +21,9 @@ export interface EditEventFormProps {
 export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
   // For a rolling event, seed the fixed-date controls with the currently
   // resolved window so toggling off rolling mode gives a sensible default.
-  const resolved = resolveCalendarEvent(event);
-  const seedStart = resolved.startDate
-    ? new Date(resolved.startDate)
-    : undefined;
-  const seedEnd = resolved.endDate ? new Date(resolved.endDate) : undefined;
+  const { endDate, startDate } = resolveEventDates(event);
+  const seedStart = startDate ? new Date(startDate) : undefined;
+  const seedEnd = endDate ? new Date(endDate) : undefined;
 
   const [dates, setDates] = useState<EventDatesValue>(() =>
     defaultEventDatesValue({

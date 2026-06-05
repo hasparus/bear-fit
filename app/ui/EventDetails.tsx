@@ -17,7 +17,7 @@ import {
   type CalendarEvent,
   IsoDate,
   isoDate,
-  resolveCalendarEvent,
+  resolveEventDates,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
@@ -69,8 +69,8 @@ export function EventDetails({
   const yDoc = useYDoc();
 
   const eventMap = getEventMap(yDoc);
-  const rawEvent = useY(eventMap) as Partial<CalendarEvent>;
-  const event = resolveCalendarEvent(rawEvent);
+  const event = useY(eventMap) as Partial<CalendarEvent>;
+  const { endDate, startDate } = resolveEventDates(event);
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -79,7 +79,7 @@ export function EventDetails({
     }
   }, [event.id, event.name]);
 
-  useRememberEvent(rawEvent);
+  useRememberEvent(event);
 
   const namesMap = yDoc.getMap("names");
   const names = useY(namesMap) as Record<UserId, string>;
@@ -124,8 +124,8 @@ export function EventDetails({
   );
 
   const groupedDays = eachDayOfInterval(
-    event.startDate ? new Date(event.startDate) : new Date(),
-    event.endDate ? new Date(event.endDate) : new Date(),
+    startDate ? new Date(startDate) : new Date(),
+    endDate ? new Date(endDate) : new Date(),
   ).reduce(
     (acc, day) => {
       const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
@@ -274,15 +274,15 @@ export function EventDetails({
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Event dates</p>
-              <p aria-busy={!event.startDate} className="mb-4 leading-[1.3333]">
-                {event.startDate && event.endDate ? (
+              <p aria-busy={!startDate} className="mb-4 leading-[1.3333]">
+                {startDate && endDate ? (
                   <>
-                    <time dateTime={event.startDate}>
-                      {new Date(event.startDate).toLocaleDateString()}
+                    <time dateTime={startDate}>
+                      {new Date(startDate).toLocaleDateString()}
                     </time>
                     {" - "}
-                    <time dateTime={event.endDate}>
-                      {new Date(event.endDate).toLocaleDateString()}
+                    <time dateTime={endDate}>
+                      {new Date(endDate).toLocaleDateString()}
                     </time>
                     {event.rolling && (
                       <RollingWindowIndicator window={event.rolling} />
@@ -346,7 +346,7 @@ export function EventDetails({
                 setHoveredCell(undefined);
               }}
             >
-              {event.startDate &&
+              {startDate &&
                 Object.entries(groupedDays).map(([monthKey, monthDays]) => (
                   <React.Fragment key={monthKey}>
                     <div className="mb-2 mt-4 first:mt-2">

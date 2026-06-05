@@ -1,7 +1,7 @@
 import { use } from "react";
 
 import { getPublicRoomInfo } from "./api/getRoomCount";
-import { resolveCalendarEvent } from "./schemas";
+import { resolveEventDates } from "./schemas";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
@@ -37,7 +37,7 @@ export function AppFooter({
             <h3 className="font-sans mt-4">Your recent events</h3>
             <ul className="mt-2">
               {events.map((event) => {
-                const { endDate, startDate } = resolveCalendarEvent(event);
+                const { endDate, startDate } = resolveEventDates(event);
                 return (
                   <li key={event.id}>
                     <a
