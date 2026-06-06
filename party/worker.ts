@@ -6,8 +6,8 @@ import { OccupancyPartyServer } from "./occupancy.partyserver";
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type Env = {
   main: DurableObjectNamespace<EditorPartyServer>;
-  rooms: DurableObjectNamespace<OccupancyPartyServer>;
   PUBLIC_KEY_B64: string;
+  rooms: DurableObjectNamespace<OccupancyPartyServer>;
 };
 
 export { EditorPartyServer, OccupancyPartyServer };

@@ -174,7 +174,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       `CREATE TABLE IF NOT EXISTS ${TABLE_UPDATES} (
         doc_id TEXT NOT NULL,
         clock INTEGER NOT NULL,
-        update BLOB NOT NULL,
+        update_data BLOB NOT NULL,
         PRIMARY KEY (doc_id, clock)
       )`,
     );
@@ -194,11 +194,11 @@ export class EditorPartyServer extends YServer<EditorEnv> {
   private loadUpdates(): UpdateRow[] {
     return [
       ...this.ctx.storage.sql.exec(
-        `SELECT clock, update FROM ${TABLE_UPDATES} WHERE doc_id = ? ORDER BY clock ASC`,
+        `SELECT clock, update_data FROM ${TABLE_UPDATES} WHERE doc_id = ? ORDER BY clock ASC`,
         this.name,
       ),
     ].map((row) => {
-      const raw = row.update as unknown;
+      const raw = row.update_data as unknown;
       let update: ArrayBufferLike;
       if (raw instanceof ArrayBuffer || raw instanceof SharedArrayBuffer) {
         update = raw;
@@ -219,7 +219,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     this.#lastClock += 1;
     try {
       this.ctx.storage.sql.exec(
-        `INSERT OR REPLACE INTO ${TABLE_UPDATES} (doc_id, clock, update) VALUES (?, ?, ?)`,
+        `INSERT INTO ${TABLE_UPDATES} (doc_id, clock, update_data) VALUES (?, ?, ?)`,
         this.name,
         this.#lastClock,
         update,
@@ -237,8 +237,6 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       parts.push(value);
       parts.push(HISTORY_SEPARATOR);
     };
-
-    appendPair("sv", Y.encodeStateAsUpdate(this.document));
 
     for (const row of rows) {
       appendPair(String(row.clock), new Uint8Array(row.update));

@@ -86,7 +86,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
       }
 
       if (validated.count === 0) {
-        delete this.rooms[validated.room];
+        Reflect.deleteProperty(this.rooms, validated.room);
       } else {
         this.rooms[validated.room] = validated.count;
       }
