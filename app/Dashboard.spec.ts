@@ -55,7 +55,7 @@ test("dashboard only shows per-room details after successful authorization", asy
   await updateRoomCount(request, roomB, 5);
 
   await page.goto("/dashboard");
-  await expect(page).toHaveURL(/\/dashboard\.html$/);
+  await expect(page).toHaveURL(/\/dashboard$/);
 
   const summary = page.locator(".bg-neutral-100 dl");
   await expect(summary).toBeVisible();

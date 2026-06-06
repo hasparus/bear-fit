@@ -2,6 +2,29 @@ import { defineConfig, devices } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
+const TEST_PUBLIC_KEY_B64 = (() => {
+  const pubkeyPath = path.join(
+    process.cwd(),
+    ".ssh",
+    "test",
+    "id_ed25519.pub",
+  );
+  try {
+    return fs.readFileSync(pubkeyPath, "utf8").trim();
+  } catch (error) {
+    throw new Error(
+      `Failed to read ${pubkeyPath}. Ensure it exists before running Playwright tests.`,
+      { cause: error },
+    );
+  }
+})();
+
+// @cloudflare/vite-plugin sources Worker vars from `.dev.vars`/`.env` files
+fs.writeFileSync(
+  path.join(process.cwd(), ".dev.vars"),
+  `PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"\n`,
+);
+
 export default defineConfig({
   forbidOnly: !!process.env.CI,
   fullyParallel: true,
@@ -30,29 +53,14 @@ export default defineConfig({
   },
 
   webServer: {
-    command: "pnpm dev --port 1999",
+    command: "pnpm exec vite preview --port 1999",
     reuseExistingServer: !process.env.CI,
     stderr: "pipe",
     stdout: "pipe",
     timeout: 60000,
-    url: "http://localhost:1999",
+    url: "http://127.0.0.1:1999",
     env: {
-      PUBLIC_KEY_B64: (() => {
-        const pubkeyPath = path.join(
-          process.cwd(),
-          ".ssh",
-          "test",
-          "id_ed25519.pub",
-        );
-        try {
-          return fs.readFileSync(pubkeyPath, "utf8").trim();
-        } catch (error) {
-          throw new Error(
-            `Failed to read ${pubkeyPath}. Ensure it exists before running Playwright tests.`,
-            { cause: error },
-          );
-        }
-      })(),
+      PUBLIC_KEY_B64: TEST_PUBLIC_KEY_B64,
     },
   },
 });
