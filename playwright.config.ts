@@ -19,11 +19,16 @@ const TEST_PUBLIC_KEY_B64 = (() => {
   }
 })();
 
-// @cloudflare/vite-plugin sources Worker vars from `.dev.vars`/`.env` files
-fs.writeFileSync(
-  path.join(process.cwd(), ".dev.vars"),
-  `PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"\n`,
-);
+// @cloudflare/vite-plugin sources Worker vars from `.dev.vars`/`.env`. Dev
+const devVars = `PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"\n`;
+for (const dir of [process.cwd(), path.join(process.cwd(), "dist", "bear_fit")]) {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, ".dev.vars"), devVars);
+  } catch (error) {
+    console.warn(`Could not write .dev.vars to ${dir}`, error);
+  }
+}
 
 export default defineConfig({
   forbidOnly: !!process.env.CI,

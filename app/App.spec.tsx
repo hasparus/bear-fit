@@ -213,7 +213,7 @@ test("creator imports a JSON file to overwrite the event doc", async ({
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.getByText("Nerd Mode").click();
 
-  await page.locator("#import-json").setInputFiles({
+  await page.locator("#import-json").first().setInputFiles({
     buffer: Buffer.from(JSON.stringify(payload)),
     mimeType: "application/json",
     name: "imported-event.json",
