@@ -86,7 +86,10 @@ function YProvider({
     room,
     options: {
       connect: true,
-      protocol: process.env.NODE_ENV !== "production" ? "ws" : "wss",
+      protocol:
+        typeof window !== "undefined" && window.location.protocol === "https:"
+          ? "wss"
+          : "ws",
     },
   });
 
