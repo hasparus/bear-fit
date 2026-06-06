@@ -31,8 +31,18 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Split system deps from the browser download: the combined
+      # `--with-deps` wedges on the interactive `needrestart` apt prompt.
+      - name: Install Playwright system deps
+        run: pnpm exec playwright install-deps chromium
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+
       - name: Install Playwright browsers
-        run: pnpm playwright install --with-deps
+        run: pnpm exec playwright install chromium
+        timeout-minutes: 5
 
       # `pnpm test` builds the app first, then runs Playwright against the
       # built output served by `vite preview`.
