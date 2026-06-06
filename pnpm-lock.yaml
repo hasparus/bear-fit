@@ -88,8 +88,8 @@ importers:
         specifier: ^3.17.5
         version: 3.17.5(tailwindcss@4.0.10)
       '@playwright/test':
-        specifier: ^1.51.1
-        version: 1.51.1
+        specifier: ^1.60.0
+        version: 1.60.0
       '@types/bun':
         specifier: ^1.2.9
         version: 1.2.9
@@ -1078,8 +1078,8 @@ packages:
       react: '>=18'
       react-dom: '>=18'
 
-  '@playwright/test@1.51.1':
-    resolution: {integrity: sha512-nM+kEaTSAoVlXmMPH10017vn3FSiFqr/bh4fKg9vmAdMfd9SDqRZNvPSiAHADc/itWak+qPvMPZQOPwCBW7k7Q==}
+  '@playwright/test@1.60.0':
+    resolution: {integrity: sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -3018,8 +3018,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright-core@1.51.1:
-    resolution: {integrity: sha512-/crRMj8+j/Nq5s8QcvegseuyeZPxpQCZb6HNk3Sos3BlZyAknRjoyJPFWkpNn8v0+P3WiwqFF8P+zQo4eqiNuw==}
+  playwright-core@1.60.0:
+    resolution: {integrity: sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -3028,8 +3028,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.51.1:
-    resolution: {integrity: sha512-kkx+MB2KQRkyxjYPc3a0wLZZoDczmppyGJIvQ43l+aZihkaVvmu/21kiyaHeHjiFxjxNNFnUncKmcGIyOojsaw==}
+  playwright@1.60.0:
+    resolution: {integrity: sha512-hheHdokM8cdqCb0lcE3s+zT4t4W+vvjpGxsZlDnikarzx8tSzMebh3UiFtgqwFwnTnjYQcsyMF8ei2mCO/tpeA==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -4403,9 +4403,9 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
-  '@playwright/test@1.51.1':
+  '@playwright/test@1.60.0':
     dependencies:
-      playwright: 1.51.1
+      playwright: 1.60.0
 
   '@poppinss/colors@4.1.5':
     dependencies:
@@ -6413,7 +6413,7 @@ snapshots:
 
   playwright-core@1.50.1: {}
 
-  playwright-core@1.51.1: {}
+  playwright-core@1.60.0: {}
 
   playwright@1.50.1:
     dependencies:
@@ -6421,9 +6421,9 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.2
 
-  playwright@1.51.1:
+  playwright@1.60.0:
     dependencies:
-      playwright-core: 1.51.1
+      playwright-core: 1.60.0
     optionalDependencies:
       fsevents: 2.3.2
 
