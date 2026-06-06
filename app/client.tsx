@@ -20,11 +20,4 @@ if (process.env.NODE_ENV === "development" && SCAN) {
   });
 }
 
-if (
-  typeof window !== "undefined" &&
-  window.location.pathname === "/dashboard"
-) {
-  window.location.pathname = "/dashboard.html";
-} else {
-  createRoot(document.getElementById("app")!).render(<App />);
-}
+createRoot(document.getElementById("app")!).render(<App />);

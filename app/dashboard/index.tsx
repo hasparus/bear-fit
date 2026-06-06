@@ -7,6 +7,8 @@ import { createRoot } from "react-dom/client";
 import type { ClientMessage, PublicRoomInfo, Rooms } from "../../party/rooms";
 
 import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "../../party/shared";
+import { serverUrl } from "../api/serverUrl";
+import "../styles.css";
 
 createRoot(document.getElementById("app")!).render(<Dashboard />);
 
@@ -18,7 +20,7 @@ function Dashboard() {
   const [rooms, setRooms] = useState<PublicRoomInfo | Rooms | null>(null);
 
   const ws = usePartySocket({
-    host: PARTYKIT_HOST,
+    host: serverUrl,
     party: "rooms",
     room: OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
     onClose() {

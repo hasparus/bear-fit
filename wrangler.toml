@@ -12,9 +12,7 @@ class_name = "EditorPartyServer"
 name = "rooms"
 class_name = "OccupancyPartyServer"
 
-[vars]
-PUBLIC_KEY_B64 = "${PUBLIC_KEY_B64}"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["EditorPartyServer", "OccupancyPartyServer"]
+new_sqlite_classes = ["EditorPartyServer", "OccupancyPartyServer"]
