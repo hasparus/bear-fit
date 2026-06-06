@@ -23,14 +23,21 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      # Dashboard.spec.ts signs the auth message with `bun .ssh/sign-message.tsx`.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         run: pnpm playwright install --with-deps
 
+      # `pnpm test` builds the app first, then runs Playwright against the
+      # built output served by `vite preview`.
       - name: Run Playwright tests
-        run: pnpm playwright test
+        run: pnpm test
 
       - name: Generate coverage report
         if: always()

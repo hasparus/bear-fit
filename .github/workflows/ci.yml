@@ -24,6 +24,10 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
@@ -32,11 +36,20 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      # playwright.config.ts writes the committed test public key to .dev.vars,
+      # which @cloudflare/vite-plugin loads into the Worker for dashboard auth.
+      - name: Test
+        run: pnpm test
+
       - name: Deploy
         run: pnpm release
         env:
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: hasparus
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
       - name: Create GitHub Preview Deployment
