@@ -46,9 +46,16 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
           NEEDRESTART_MODE: a
 
+      # Chromium downloads fine but the secondary headless-shell fetch
+      # intermittently stalls; retry with a per-attempt timeout.
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium
-        timeout-minutes: 5
+        run: |
+          for i in 1 2 3; do
+            timeout 200 pnpm exec playwright install chromium && exit 0
+            echo "playwright install attempt $i stalled; retrying"
+          done
+          exit 1
+        timeout-minutes: 12
 
       # playwright.config.ts writes the committed test public key to .dev.vars,
       # which @cloudflare/vite-plugin loads into the Worker for dashboard auth.
