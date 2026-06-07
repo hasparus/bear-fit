@@ -221,14 +221,18 @@ test("creator imports a JSON file to overwrite the event doc", async ({
 
   await expect(page.getByRole("heading").first()).toHaveText(importedName);
 
+  const eventDates = page
+    .locator("p")
+    .filter({ has: page.locator("time") })
+    .first();
   await expect(
-    page.locator(`time[dateTime="${importedStartIso}"]`).first(),
+    eventDates.locator(`time[dateTime="${importedStartIso}"]`),
   ).toBeVisible();
   await expect(
-    page.locator(`time[dateTime="${importedEndIso}"]`).first(),
+    eventDates.locator(`time[dateTime="${importedEndIso}"]`),
   ).toBeVisible();
   await expect(
-    page.locator(`time[dateTime="${originalStartIso}"]`),
+    eventDates.locator(`time[dateTime="${originalStartIso}"]`),
   ).toHaveCount(0);
 
   const importedUserRow = page
