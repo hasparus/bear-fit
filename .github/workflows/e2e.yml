@@ -28,8 +28,16 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright system deps
+        run: pnpm playwright install-deps chromium
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+
       - name: Install Playwright browsers
-        run: pnpm playwright install --with-deps
+        run: pnpm playwright install chromium
+        timeout-minutes: 5
 
       - name: Run Playwright tests
         run: pnpm playwright test
