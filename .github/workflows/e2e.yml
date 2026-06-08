@@ -29,28 +29,18 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright system deps
-        run: pnpm playwright install-deps chromium
+        run: pnpm exec playwright install-deps chromium
         timeout-minutes: 5
         env:
           DEBIAN_FRONTEND: noninteractive
           NEEDRESTART_MODE: a
 
       - name: Install Playwright browsers
-        # Retry with a per-attempt cap: the chromium binary download
-        # occasionally stalls on the runner, and a fresh attempt usually
-        # hits a healthy CDN edge. timeout-minutes is the overall safety net.
-        run: |
-          for i in 1 2 3; do
-            timeout 150 pnpm playwright install chromium && exit 0
-            echo "playwright install attempt $i stalled or failed; retrying..." >&2
-            sleep 5
-          done
-          echo "playwright install failed after 3 attempts" >&2
-          exit 1
-        timeout-minutes: 9
+        run: pnpm exec playwright install chromium
+        timeout-minutes: 5
 
       - name: Run Playwright tests
-        run: pnpm playwright test
+        run: pnpm exec playwright test
 
       - name: Generate coverage report
         if: always() && github.event.pull_request.head.repo.full_name == github.repository
