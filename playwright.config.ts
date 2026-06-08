@@ -19,6 +19,15 @@ export default defineConfig({
         },
       },
     },
+    {
+      name: "firefox",
+      use: {
+        ...devices["Desktop Firefox"],
+        launchOptions: {
+          downloadsPath: "./test/downloads/firefox",
+        },
+      },
+    },
   ],
 
   use: {
