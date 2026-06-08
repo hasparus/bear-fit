@@ -1,3 +1,5 @@
+import Clarity from "@microsoft/clarity";
+import { useEffect } from "react";
 import { useY } from "react-yjs";
 
 import { CalendarEvent, IsoDate } from "../schemas";
@@ -18,6 +20,15 @@ export function EditEventDialog() {
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
+
+  // Pairs with "event-dates-edited" (fired on save) to give an
+  // open -> save funnel for the edit flow.
+  const isEditOpen = dialogs.isOpen("edit-event");
+  useEffect(() => {
+    if (isEditOpen) {
+      Clarity.event("event-dates-edit-opened");
+    }
+  }, [isEditOpen]);
 
   const handleSubmit = async (startDate: IsoDate, endDate: IsoDate) => {
     eventMap.set("startDate", startDate);
