@@ -17,6 +17,7 @@ export default defineConfig({
         launchOptions: {
           downloadsPath: "./test/downloads/chromium",
         },
+        permissions: ["clipboard-read", "clipboard-write"],
       },
     },
     {
@@ -25,6 +26,11 @@ export default defineConfig({
         ...devices["Desktop Firefox"],
         launchOptions: {
           downloadsPath: "./test/downloads/firefox",
+          firefoxUserPrefs: {
+            "dom.events.asyncClipboard.clipboardItem": true,
+            "dom.events.asyncClipboard.readText": true,
+            "dom.events.testing.asyncClipboard": true,
+          },
         },
       },
     },
@@ -32,7 +38,6 @@ export default defineConfig({
 
   use: {
     baseURL: "http://127.0.0.1:1999",
-    permissions: ["clipboard-read", "clipboard-write"],
     trace: "on-first-retry",
   },
 
