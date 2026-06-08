@@ -23,7 +23,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
 
   return (
     <form
-      className="flex flex-col gap-4 max-h-[calc(100dvh-4rem)]"
+      className="flex flex-col gap-4 min-h-0 flex-1"
       onKeyDown={handleCalendarArrowKeys}
       onSubmit={(event) => {
         event.preventDefault();
@@ -35,7 +35,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
         });
       }}
     >
-      <div className="min-h-0 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <label className="mb-2 block">
           <span>Choose new range</span>
           <small className="block text-neutral-500">
