@@ -21,6 +21,8 @@ export const test = base.extend<CoverageFixtures>({
       const coverageDir = path.join(process.cwd(), "test/coverage");
       await fs.mkdir(coverageDir, { recursive: true });
 
+      const { testId } = test.info();
+
       await Promise.all(
         coverage.map(async (entry) => {
           let pathname: string;
@@ -47,7 +49,7 @@ export const test = base.extend<CoverageFixtures>({
           await converter.load();
           converter.applyCoverage(entry.functions);
           await fs.writeFile(
-            path.join(coverageDir, filename + ".json"),
+            path.join(coverageDir, `${filename}.${testId}.json`),
             JSON.stringify(converter.toIstanbul()),
             "utf-8",
           );
