@@ -36,8 +36,18 @@ jobs:
           NEEDRESTART_MODE: a
 
       - name: Install Playwright browsers
-        run: pnpm playwright install chromium
-        timeout-minutes: 5
+        # Retry with a per-attempt cap: the chromium binary download
+        # occasionally stalls on the runner, and a fresh attempt usually
+        # hits a healthy CDN edge. timeout-minutes is the overall safety net.
+        run: |
+          for i in 1 2 3; do
+            timeout 150 pnpm playwright install chromium && exit 0
+            echo "playwright install attempt $i stalled or failed; retrying..." >&2
+            sleep 5
+          done
+          echo "playwright install failed after 3 attempts" >&2
+          exit 1
+        timeout-minutes: 9
 
       - name: Run Playwright tests
         run: pnpm playwright test
