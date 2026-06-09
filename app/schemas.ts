@@ -25,19 +25,38 @@ export const RollingOffset = type({
 
 export type RollingOffset = typeof RollingOffset.infer;
 
+const applyOffset = (today: Date, offset: RollingOffset): IsoDate =>
+  isoDate(
+    new Date(
+      Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth() + offset.months,
+        today.getUTCDate() + offset.days,
+      ),
+    ),
+  );
+
 // A rolling window: two offsets from "today". Refinement: end strictly after start.
 export const RollingWindow = type({
   end: RollingOffset,
   start: RollingOffset,
-}).narrow(
-  (window, ctx) =>
-    offsetToApproxDays(window.end) > offsetToApproxDays(window.start) ||
-    ctx.reject({ expected: "end offset to be after start offset" }),
-);
+}).narrow((window, ctx) => {
+  const today = new Date();
+  return (
+    applyOffset(today, window.end) > applyOffset(today, window.start) ||
+    ctx.reject({ expected: "end offset to be after start offset" })
+  );
+});
 
 export type RollingWindow = typeof RollingWindow.infer;
 
-const offsetToApproxDays = (o: RollingOffset): number => o.months * 31 + o.days;
+export const resolveRollingWindow = (
+  window: RollingWindow,
+  today: Date = new Date(),
+): { endDate: IsoDate; startDate: IsoDate } => ({
+  endDate: applyOffset(today, window.end),
+  startDate: applyOffset(today, window.start),
+});
 
 export const CalendarEvent = type({
   id: "string",
@@ -64,25 +83,6 @@ export const CalendarEvent = type({
 });
 
 export type CalendarEvent = typeof CalendarEvent.infer;
-
-const applyOffset = (today: Date, offset: RollingOffset): IsoDate =>
-  isoDate(
-    new Date(
-      Date.UTC(
-        today.getUTCFullYear(),
-        today.getUTCMonth() + offset.months,
-        today.getUTCDate() + offset.days,
-      ),
-    ),
-  );
-
-export const resolveRollingWindow = (
-  window: RollingWindow,
-  today: Date = new Date(),
-): { endDate: IsoDate; startDate: IsoDate } => ({
-  endDate: applyOffset(today, window.end),
-  startDate: applyOffset(today, window.start),
-});
 
 export const resolveEventDates = (
   event: Pick<Partial<CalendarEvent>, "endDate" | "rolling" | "startDate">,
