@@ -415,7 +415,11 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
   // to avoid drag crossing row boundaries and hitting extra cells
   const dragDays: number[] = [];
   for (let d = START_DAY; d <= END_DAY - 2; d++) {
-    const dow = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), d).getDay();
+    const dow = new Date(
+      nextMonth.getFullYear(),
+      nextMonth.getMonth(),
+      d,
+    ).getDay();
     // dow 1=Mon..4=Thu guarantees d, d+1, d+2 are Mon-Sat (same row)
     if (dow >= 1 && dow <= 4) {
       dragDays.push(d, d + 1, d + 2);
@@ -542,9 +546,7 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
 
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
-  const eventName = `nerd mode gating ${Math.random()
-    .toString(36)
-    .slice(2)}`;
+  const eventName = `nerd mode gating ${Math.random().toString(36).slice(2)}`;
 
   await page.getByLabel("Name your event").fill(eventName);
 
@@ -592,7 +594,9 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
 
   await expect(nerdToggle).toBeChecked();
   await expect(exportButton).toBeVisible();
-  await expect(page.getByRole("button", { name: "Export to JSON" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Export to JSON" }),
+  ).toBeVisible();
   await expect(importControl).toBeVisible();
 
   const eventUrl = await page.getByLabel("Event URL").first().inputValue();

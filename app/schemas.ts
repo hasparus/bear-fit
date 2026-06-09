@@ -17,15 +17,73 @@ export const isoDate = (date: Date): IsoDate =>
 export const UserId = type("string").brand("UserId");
 export type UserId = typeof UserId.infer;
 
+export const startOfTodayUtc = (): Date => {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+};
+
+export const utcDay = (date: Date): number =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+
+export const diffDays = (later: Date, earlier: Date): number =>
+  (utcDay(later) - utcDay(earlier)) / 86_400_000;
+
+export const addDays = (date: Date, days: number): Date =>
+  new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() + days,
+    ),
+  );
+
+export const resolveRollingWindow = (
+  days: number,
+  today: Date = startOfTodayUtc(),
+): { endDate: IsoDate; startDate: IsoDate } => ({
+  endDate: isoDate(addDays(today, days)),
+  startDate: isoDate(today),
+});
+
 export const CalendarEvent = type({
   id: "string",
   creator: UserId,
-  endDate: IsoDate,
+  "endDate?": IsoDate,
   name: "string",
-  startDate: IsoDate,
+  "rolling?": "number.integer > 0",
+  "startDate?": IsoDate,
+}).narrow((event, ctx): boolean => {
+  if (event.rolling) {
+    return (
+      (!event.startDate && !event.endDate) ||
+      ctx.reject({
+        expected: "no startDate or endDate on rolling events",
+      })
+    );
+  }
+  return (
+    !!(event.startDate && event.endDate) ||
+    ctx.reject({
+      expected: "either both startDate and endDate, or a rolling window",
+    })
+  );
 });
 
 export type CalendarEvent = typeof CalendarEvent.infer;
+
+export type EventDatesPatch =
+  | { endDate: IsoDate; startDate: IsoDate }
+  | { rolling: number };
+
+export const resolveEventDates = (
+  event: Pick<Partial<CalendarEvent>, "endDate" | "rolling" | "startDate">,
+  today: Date = startOfTodayUtc(),
+): { endDate: IsoDate | undefined; startDate: IsoDate | undefined } => {
+  if (event.rolling) return resolveRollingWindow(event.rolling, today);
+  return { endDate: event.endDate, startDate: event.startDate };
+};
 
 export const AvailabilityDelta = type({
   "add?": type(["string"]),

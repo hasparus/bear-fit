@@ -1,6 +1,7 @@
 import { use } from "react";
 
 import { getPublicRoomInfo } from "./api/getRoomCount";
+import { resolveEventDates } from "./schemas";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
@@ -35,34 +36,39 @@ export function AppFooter({
           <section className="mb-6">
             <h3 className="font-sans mt-4">Your recent events</h3>
             <ul className="mt-2">
-              {events.map((event) => (
-                <li key={event.id}>
-                  <a
-                    className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 no-underline"
-                    href={`?id=${event.id}`}
-                    onClick={(e) => {
-                      if (event.id === currentEventId) {
-                        e.preventDefault();
-                        document.body.scrollIntoView({ behavior: "smooth" });
-                      }
-                    }}
-                  >
-                    {event.name}{" "}
-                    <span>
-                      (
-                      <time dateTime={event.startDate}>
-                        {new Date(event.startDate).toLocaleDateString()}
-                      </time>
-                      {" - "}
-                      <time dateTime={event.endDate}>
-                        {new Date(event.endDate).toLocaleDateString()}
-                      </time>
-                      )
-                    </span>
-                    {event.id === currentEventId && <span> (current)</span>}
-                  </a>
-                </li>
-              ))}
+              {events.map((event) => {
+                const { endDate, startDate } = resolveEventDates(event);
+                return (
+                  <li key={event.id}>
+                    <a
+                      className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 no-underline"
+                      href={`?id=${event.id}`}
+                      onClick={(e) => {
+                        if (event.id === currentEventId) {
+                          e.preventDefault();
+                          document.body.scrollIntoView({ behavior: "smooth" });
+                        }
+                      }}
+                    >
+                      {event.name}{" "}
+                      {startDate && endDate && (
+                        <span>
+                          (
+                          <time dateTime={startDate}>
+                            {new Date(startDate).toLocaleDateString()}
+                          </time>
+                          {" - "}
+                          <time dateTime={endDate}>
+                            {new Date(endDate).toLocaleDateString()}
+                          </time>
+                          {event.rolling && ", rolling"})
+                        </span>
+                      )}
+                      {event.id === currentEventId && <span> (current)</span>}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}

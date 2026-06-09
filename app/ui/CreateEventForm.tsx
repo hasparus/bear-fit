@@ -1,7 +1,6 @@
 import Clarity from "@microsoft/clarity";
 import { nanoid } from "nanoid";
 import { useState } from "react";
-import { type DateRange } from "react-day-picker";
 import {
   adjectives,
   animals,
@@ -10,10 +9,16 @@ import {
 } from "unique-names-generator";
 
 import { getUserId } from "../getUserId";
-import { CalendarEvent, isoDate } from "../schemas";
+import { type CalendarEvent } from "../schemas";
 import { Container } from "./Container";
-import { DateRangePicker, handleCalendarArrowKeys } from "./DateRangePicker";
-import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
+import { handleCalendarArrowKeys } from "./DateRangePicker";
+import {
+  defaultEventDatesValue,
+  EventDatesPicker,
+  type EventDatesValue,
+  eventDatesValueToPatch,
+  isEventDatesValueValid,
+} from "./EventDatesPicker";
 
 export function CreateEventForm({
   onSubmit,
@@ -21,10 +26,9 @@ export function CreateEventForm({
   onSubmit: (event: CalendarEvent) => Promise<void>;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
-  });
+  const [dates, setDates] = useState<EventDatesValue>(() =>
+    defaultEventDatesValue(),
+  );
 
   return (
     <Container>
@@ -36,23 +40,21 @@ export function CreateEventForm({
             "eventName",
           ) as HTMLInputElement;
 
-          const { from, to } = requireValidDateRange(dateRange);
+          const name =
+            eventName.value ||
+            uniqueNamesGenerator({
+              dictionaries: [adjectives, animals, colors],
+              length: 3,
+              separator: " ",
+              style: "capital",
+            });
+
+          const patch = eventDatesValueToPatch(dates);
+          const base = { id: nanoid(), creator: getUserId(), name };
+          const calendarEvent: CalendarEvent = { ...base, ...patch };
 
           setIsSubmitting(true);
-          onSubmit({
-            id: nanoid(),
-            creator: getUserId(),
-            endDate: isoDate(to),
-            startDate: isoDate(from),
-            name:
-              eventName.value ||
-              uniqueNamesGenerator({
-                dictionaries: [adjectives, animals, colors],
-                length: 3,
-                separator: " ",
-                style: "capital",
-              }),
-          }).finally(() => {
+          onSubmit(calendarEvent).finally(() => {
             Clarity.event("event-created");
             setIsSubmitting(false);
           });
@@ -73,23 +75,16 @@ export function CreateEventForm({
             className="w-full border pt-2 pr-2 pb-2 pl-[5px]"
           />
         </div>
-        <div className="mb-4">
-          <label className="mb-2 block">
-            <span>Choose a date range</span>
-            <small className="block text-neutral-500">
-              what times should the guests consider?
-            </small>
-          </label>
-          <DateRangePicker
-            disabled={{ before: new Date() }}
-            onSelect={setDateRange}
-            selected={dateRange}
-          />
-        </div>
+        <EventDatesPicker
+          fixedRangeProps={{ disabled: { before: new Date() } }}
+          name="calendar-mode"
+          onChange={setDates}
+          value={dates}
+        />
         <button
           type="submit"
           className="btn btn-default w-full"
-          disabled={!isValidDateRange(dateRange)}
+          disabled={!isEventDatesValueValid(dates)}
           style={{ borderWidth: "0.5em" }}
           onClick={(event) => {
             event.currentTarget.textContent = "Creating...";

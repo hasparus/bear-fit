@@ -2,8 +2,8 @@ import Clarity from "@microsoft/clarity";
 import { useEffect } from "react";
 import { useY } from "react-yjs";
 
-import { CalendarEvent, IsoDate } from "../schemas";
-import { getEventMap } from "../shared-data";
+import { CalendarEvent } from "../schemas";
+import { applyEventDates, type EventDatesPatch, getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
 import { EditEventForm } from "./EditEventForm";
@@ -21,8 +21,6 @@ export function EditEventDialog() {
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
-  // Pairs with "event-dates-edited" (fired on save) to give an
-  // open -> save funnel for the edit flow.
   const isEditOpen = dialogs.isOpen("edit-event");
   useEffect(() => {
     if (isEditOpen) {
@@ -30,13 +28,13 @@ export function EditEventDialog() {
     }
   }, [isEditOpen]);
 
-  const handleSubmit = async (startDate: IsoDate, endDate: IsoDate) => {
-    eventMap.set("startDate", startDate);
-    eventMap.set("endDate", endDate);
+  const handleSubmit = async (patch: EventDatesPatch) => {
+    applyEventDates(eventMap, patch);
     dialogs.set("edit-event", false);
   };
 
-  if (!event.id || !event.startDate || !event.endDate) {
+  const hasFixedDates = !!event.startDate && !!event.endDate;
+  if (!event.id || (!event.rolling && !hasFixedDates)) {
     return null;
   }
 
