@@ -177,5 +177,4 @@ app/__screenshots__/
 /blob-report/
 /playwright/.cache/
 
-# Node.js module compile cache (NODE_COMPILE_CACHE)
 node-compile-cache/
