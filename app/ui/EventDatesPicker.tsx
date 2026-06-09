@@ -129,7 +129,7 @@ export function EventDatesPicker({
       >
         Rolling window
         {rollingDays !== undefined && rollingDays > 0 && (
-          <small className="block text-neutral-500">
+          <small className="ml-2 text-neutral-500">
             {rollingDays} day{rollingDays === 1 ? "" : "s"} ahead
           </small>
         )}
