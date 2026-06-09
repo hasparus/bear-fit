@@ -1,10 +1,7 @@
-import { type RollingWindow } from "../schemas";
-import { formatRollingWindow } from "./formatRollingWindow";
-
-export function RollingWindowIndicator({ window }: { window: RollingWindow }) {
+export function RollingWindowIndicator({ days }: { days: number }) {
   return (
     <small aria-label="Rolling window" className="block text-neutral-500">
-      Rolling: {formatRollingWindow(window)}
+      Rolling: {days} day{days === 1 ? "" : "s"}
     </small>
   );
 }

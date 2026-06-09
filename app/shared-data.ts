@@ -1,8 +1,13 @@
 import type { Doc } from "yjs";
+import type { Map as YMap } from "yjs";
 
 import { type } from "arktype";
 
-import { CalendarEvent, UserId } from "./schemas";
+import {
+  CalendarEvent,
+  type EventDatesPatch,
+  UserId,
+} from "./schemas";
 
 export const getEventMap = (doc: Doc) => {
   return doc.getMap("event");
@@ -12,6 +17,21 @@ export const hasCalendarEvent = (doc: Doc) => {
   return getEventMap(doc).has("id");
 };
 
+export const applyEventDates = (
+  eventMap: YMap<unknown>,
+  patch: EventDatesPatch,
+) => {
+  if ("rolling" in patch) {
+    eventMap.set("rolling", patch.rolling);
+    eventMap.delete("startDate");
+    eventMap.delete("endDate");
+  } else {
+    eventMap.set("startDate", patch.startDate);
+    eventMap.set("endDate", patch.endDate);
+    eventMap.delete("rolling");
+  }
+};
+
 export const initializeEventMap = (doc: Doc, event: CalendarEvent) => {
   const eventMap = getEventMap(doc);
 
@@ -19,13 +39,12 @@ export const initializeEventMap = (doc: Doc, event: CalendarEvent) => {
   eventMap.set("name", event.name);
   eventMap.set("creator", event.creator);
   if (event.rolling) {
-    eventMap.set("rolling", event.rolling);
-    eventMap.delete("startDate");
-    eventMap.delete("endDate");
+    applyEventDates(eventMap, { rolling: event.rolling });
   } else {
-    eventMap.set("startDate", event.startDate);
-    eventMap.set("endDate", event.endDate);
-    eventMap.delete("rolling");
+    applyEventDates(eventMap, {
+      endDate: event.endDate!,
+      startDate: event.startDate!,
+    });
   }
 };
 
@@ -38,9 +57,11 @@ export function yDocToJson(doc: Doc) {
 }
 
 export const YDocJsonSchema = type({
-  availability: type.Record("string" /* availability key */, "boolean"),
+  availability: type.Record("string", "boolean"),
   event: CalendarEvent,
   names: type.Record(UserId, "string"),
 });
 
 export type YDocJson = typeof YDocJsonSchema.infer;
+
+export type { EventDatesPatch };

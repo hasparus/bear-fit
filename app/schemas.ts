@@ -17,45 +17,34 @@ export const isoDate = (date: Date): IsoDate =>
 export const UserId = type("string").brand("UserId");
 export type UserId = typeof UserId.infer;
 
-// A non-negative integer count of days and months relative to a reference date.
-export const RollingOffset = type({
-  days: "number.integer >= 0",
-  months: "number.integer >= 0",
-});
+export const startOfTodayUtc = (): Date => {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+};
 
-export type RollingOffset = typeof RollingOffset.infer;
+export const utcDay = (date: Date): number =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 
-const applyOffset = (today: Date, offset: RollingOffset): IsoDate =>
-  isoDate(
-    new Date(
-      Date.UTC(
-        today.getUTCFullYear(),
-        today.getUTCMonth() + offset.months,
-        today.getUTCDate() + offset.days,
-      ),
+export const diffDays = (later: Date, earlier: Date): number =>
+  (utcDay(later) - utcDay(earlier)) / 86_400_000;
+
+export const addDays = (date: Date, days: number): Date =>
+  new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() + days,
     ),
   );
 
-// A rolling window: two offsets from "today". Refinement: end strictly after start.
-export const RollingWindow = type({
-  end: RollingOffset,
-  start: RollingOffset,
-}).narrow((window, ctx) => {
-  const today = new Date();
-  return (
-    applyOffset(today, window.end) > applyOffset(today, window.start) ||
-    ctx.reject({ expected: "end offset to be after start offset" })
-  );
-});
-
-export type RollingWindow = typeof RollingWindow.infer;
-
 export const resolveRollingWindow = (
-  window: RollingWindow,
-  today: Date = new Date(),
+  days: number,
+  today: Date = startOfTodayUtc(),
 ): { endDate: IsoDate; startDate: IsoDate } => ({
-  endDate: applyOffset(today, window.end),
-  startDate: applyOffset(today, window.start),
+  endDate: isoDate(addDays(today, days)),
+  startDate: isoDate(today),
 });
 
 export const CalendarEvent = type({
@@ -63,7 +52,7 @@ export const CalendarEvent = type({
   creator: UserId,
   "endDate?": IsoDate,
   name: "string",
-  "rolling?": RollingWindow,
+  "rolling?": "number.integer > 0",
   "startDate?": IsoDate,
 }).narrow((event, ctx): boolean => {
   if (event.rolling) {
@@ -84,9 +73,13 @@ export const CalendarEvent = type({
 
 export type CalendarEvent = typeof CalendarEvent.infer;
 
+export type EventDatesPatch =
+  | { endDate: IsoDate; startDate: IsoDate }
+  | { rolling: number };
+
 export const resolveEventDates = (
   event: Pick<Partial<CalendarEvent>, "endDate" | "rolling" | "startDate">,
-  today: Date = new Date(),
+  today: Date = startOfTodayUtc(),
 ): { endDate: IsoDate | undefined; startDate: IsoDate | undefined } => {
   if (event.rolling) return resolveRollingWindow(event.rolling, today);
   return { endDate: event.endDate, startDate: event.startDate };

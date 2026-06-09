@@ -18,6 +18,7 @@ import {
   type CalendarEvent,
   IsoDate,
   isoDate,
+  normalizeRolling,
   resolveEventDates,
   type UserId,
 } from "../schemas";
@@ -72,6 +73,7 @@ export function EventDetails({
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const { endDate, startDate } = resolveEventDates(event);
+  const rollingDays = normalizeRolling(event.rolling);
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -174,7 +176,6 @@ export function EventDetails({
     return undefined;
   });
 
-  // If we have a name for the user in the YJs doc, we use it.
   if (
     userId &&
     names[userId] &&
@@ -231,14 +232,11 @@ export function EventDetails({
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, []);
 
-  // I need SSR for this to affect social cards.
-  // Left for a migration to PartyServer.
   useEffect(() => {
     if (event.name) {
       const oldTitle = document.title;
       document.title = `bear-fit: ${event.name}`;
 
-      // This won't do anything. Need to move it to render to SSR.
       const metaTitle = document.querySelector("meta[name='title']");
       const metaTitleName = metaTitle?.getAttribute("content");
       if (metaTitle) {
@@ -286,8 +284,8 @@ export function EventDetails({
                     <time dateTime={endDate}>
                       {new Date(endDate).toLocaleDateString()}
                     </time>
-                    {event.rolling && (
-                      <RollingWindowIndicator window={event.rolling} />
+                    {rollingDays !== undefined && (
+                      <RollingWindowIndicator days={rollingDays} />
                     )}
                   </>
                 ) : (
@@ -451,7 +449,6 @@ export function EventDetails({
                                 event.pointerType === "mouse" &&
                                 event.button === 2
                               ) {
-                                // right clicks open context menu
                                 return;
                               }
 
@@ -460,7 +457,6 @@ export function EventDetails({
                                 !!currentUserAvailable,
                               );
 
-                              // This is needed for drag-painting to work on mobiles.
                               event.currentTarget.releasePointerCapture(
                                 event.pointerId,
                               );
@@ -524,7 +520,6 @@ function GridCellTooltip({
   const users =
     hoveredCell?.availableUsers || previousHoveredCell.current?.availableUsers;
 
-  // Effect to update the tooltip position based on mouse position
   useEffect(() => {
     const moveTooltip = (e: MouseEvent) => {
       if (tooltipRef.current) {
@@ -554,8 +549,6 @@ function GridCellTooltip({
   }, []);
 
   // TODO: We can't use view transitions together with system.css, because the `filter: invert(0.9)`
-  // isn't applied to transition layer, and the colors blink jarringly. If we migrated out of system.css,
-  // to our own stylesheet with proper dark mode support, we could add `<unstable_ViewTransition>` here.
   return (
     <TooltipContent
       aria-live="polite"

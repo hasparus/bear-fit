@@ -3,12 +3,11 @@ import { useEffect } from "react";
 import { useY } from "react-yjs";
 
 import { CalendarEvent } from "../schemas";
-import { getEventMap } from "../shared-data";
+import { applyEventDates, type EventDatesPatch, getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
 import { EditEventForm } from "./EditEventForm";
 import { EditIcon } from "./EditIcon";
-import { type EventDatesPayload } from "./EventDatesPicker";
 
 declare module "./Dialog" {
   export interface DialogIds {
@@ -29,21 +28,14 @@ export function EditEventDialog() {
     }
   }, [isEditOpen]);
 
-  const handleSubmit = async (payload: EventDatesPayload) => {
-    if (payload.kind === "rolling") {
-      eventMap.set("rolling", payload.rolling);
-      eventMap.delete("startDate");
-      eventMap.delete("endDate");
-    } else {
-      eventMap.set("startDate", payload.startDate);
-      eventMap.set("endDate", payload.endDate);
-      eventMap.delete("rolling");
-    }
+  const handleSubmit = async (patch: EventDatesPatch) => {
+    applyEventDates(eventMap, patch);
     dialogs.set("edit-event", false);
   };
 
   const hasFixedDates = !!event.startDate && !!event.endDate;
-  if (!event.id || (!event.rolling && !hasFixedDates)) {
+  const rolling = normalizeRolling(event.rolling);
+  if (!event.id || (rolling === undefined && !hasFixedDates)) {
     return null;
   }
 

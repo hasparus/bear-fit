@@ -16,7 +16,7 @@ import {
   defaultEventDatesValue,
   EventDatesPicker,
   type EventDatesValue,
-  eventDatesValueToPayload,
+  eventDatesValueToPatch,
   isEventDatesValueValid,
 } from "./EventDatesPicker";
 
@@ -49,16 +49,9 @@ export function CreateEventForm({
               style: "capital",
             });
 
-          const payload = eventDatesValueToPayload(dates);
+          const patch = eventDatesValueToPatch(dates);
           const base = { id: nanoid(), creator: getUserId(), name };
-          const calendarEvent: CalendarEvent =
-            payload.kind === "rolling"
-              ? { ...base, rolling: payload.rolling }
-              : {
-                  ...base,
-                  endDate: payload.endDate,
-                  startDate: payload.startDate,
-                };
+          const calendarEvent: CalendarEvent = { ...base, ...patch };
 
           setIsSubmitting(true);
           onSubmit(calendarEvent).finally(() => {

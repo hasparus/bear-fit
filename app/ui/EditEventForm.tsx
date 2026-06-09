@@ -2,20 +2,24 @@ import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
-import { type CalendarEvent, resolveEventDates } from "../schemas";
+import {
+  type CalendarEvent,
+  normalizeRolling,
+  resolveEventDates,
+} from "../schemas";
+import { type EventDatesPatch } from "../shared-data";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
   defaultEventDatesValue,
-  type EventDatesPayload,
   EventDatesPicker,
   type EventDatesValue,
-  eventDatesValueToPayload,
+  eventDatesValueToPatch,
   isEventDatesValueValid,
 } from "./EventDatesPicker";
 
 export interface EditEventFormProps {
   event: CalendarEvent;
-  onSubmit: (payload: EventDatesPayload) => Promise<void>;
+  onSubmit: (patch: EventDatesPatch) => Promise<void>;
 }
 
 export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
@@ -25,7 +29,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
 
   const [dates, setDates] = useState<EventDatesValue>(() =>
     defaultEventDatesValue({
-      isRolling: !!event.rolling,
+      isRolling: normalizeRolling(event.rolling) !== undefined,
       range: { from: seedStart, to: seedEnd },
     }),
   );
@@ -41,7 +45,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
       onKeyDown={handleCalendarArrowKeys}
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(eventDatesValueToPayload(dates)).finally(() => {
+        onSubmit(eventDatesValueToPatch(dates)).finally(() => {
           Clarity.event("event-dates-edited");
         });
       }}

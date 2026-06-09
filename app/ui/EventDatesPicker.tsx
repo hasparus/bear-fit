@@ -1,6 +1,12 @@
 import { type DateRange } from "react-day-picker";
 
-import { isoDate, type IsoDate, type RollingWindow } from "../schemas";
+import {
+  addDays,
+  diffDays,
+  type EventDatesPatch,
+  isoDate,
+  startOfTodayUtc,
+} from "../schemas";
 import { CheckboxField } from "./CheckboxField";
 import { DateRangePicker, type DateRangePickerProps } from "./DateRangePicker";
 import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
@@ -12,10 +18,6 @@ export interface EventDatesValue {
   range: DateRange;
 }
 
-export type EventDatesPayload =
-  | { endDate: IsoDate; kind: "fixed"; startDate: IsoDate }
-  | { kind: "rolling"; rolling: RollingWindow };
-
 export const defaultEventDatesValue = (
   partial?: Partial<EventDatesValue>,
 ): EventDatesValue => ({
@@ -23,36 +25,6 @@ export const defaultEventDatesValue = (
   range: { from: undefined, to: undefined },
   ...partial,
 });
-
-const startOfTodayUtc = (): Date => {
-  const now = new Date();
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-};
-
-const utcDay = (date: Date): number =>
-  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-
-const diffDays = (later: Date, earlier: Date): number =>
-  (utcDay(later) - utcDay(earlier)) / 86_400_000;
-
-const addDays = (date: Date, days: number): Date =>
-  new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate() + days,
-    ),
-  );
-
-const rangeToRolling = (range: DateRange, today: Date): RollingWindow => {
-  const { to } = requireValidDateRange({ from: today, to: range.to });
-  return {
-    end: { days: diffDays(to, today), months: 0 },
-    start: { days: 0, months: 0 },
-  };
-};
 
 export const isEventDatesValueValid = (value: EventDatesValue): boolean => {
   if (value.isRolling) {
@@ -62,18 +34,16 @@ export const isEventDatesValueValid = (value: EventDatesValue): boolean => {
   return isValidDateRange(value.range);
 };
 
-export const eventDatesValueToPayload = (
+export const eventDatesValueToPatch = (
   value: EventDatesValue,
-): EventDatesPayload => {
+): EventDatesPatch => {
   if (value.isRolling) {
     const today = startOfTodayUtc();
-    return {
-      kind: "rolling",
-      rolling: rangeToRolling({ from: today, to: value.range.to }, today),
-    };
+    const { to } = requireValidDateRange({ from: today, to: value.range.to });
+    return { rolling: diffDays(to, today) };
   }
   const { from, to } = requireValidDateRange(value.range);
-  return { endDate: isoDate(to), kind: "fixed", startDate: isoDate(from) };
+  return { endDate: isoDate(to), startDate: isoDate(from) };
 };
 
 export interface EventDatesPickerProps {
@@ -157,3 +127,5 @@ export function EventDatesPicker({
     </div>
   );
 }
+
+export type { EventDatesPatch };

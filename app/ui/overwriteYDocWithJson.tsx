@@ -2,10 +2,18 @@ import type { Doc } from "yjs";
 
 import { getUserId } from "../getUserId";
 import { AvailabilityKey, type UserId } from "../schemas";
-import { YDocJsonSchema } from "../shared-data";
+import { normalizeImportedEvent, YDocJsonSchema } from "../shared-data";
 
 export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
-  const jsonData = YDocJsonSchema.assert(json);
+  const raw = json as {
+    availability: Record<string, boolean>;
+    event: Record<string, unknown>;
+    names: Record<string, string>;
+  };
+  const jsonData = YDocJsonSchema.assert({
+    ...raw,
+    event: normalizeImportedEvent(raw.event),
+  });
 
   const currentUserId = getUserId();
 
@@ -58,7 +66,6 @@ export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
     }
     eventMap.set(key, value);
   });
-  // Enforce the CalendarEvent invariant: rolling XOR fixed dates.
   if (jsonData.event.rolling) {
     eventMap.delete("startDate");
     eventMap.delete("endDate");

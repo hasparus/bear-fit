@@ -72,10 +72,7 @@ test("creates a rolling event and shows today through the resolved end date", as
   const exported = YDocJsonSchema.assert(JSON.parse(copiedJson));
   const event = CalendarEvent.assert(exported.event);
 
-  expect(event.rolling).toEqual({
-    end: { days: 7, months: 0 },
-    start: { days: 0, months: 0 },
-  });
+  expect(event.rolling).toBe(7);
   expect(event.startDate).toBeUndefined();
   expect(event.endDate).toBeUndefined();
 });
