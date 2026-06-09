@@ -167,6 +167,8 @@ dist
 .pnp.\*
 
 .partykit
+.wrangler/
+.dev.vars*
 .DS_Store
 app/__screenshots__/
 
