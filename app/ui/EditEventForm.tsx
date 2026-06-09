@@ -19,8 +19,6 @@ export interface EditEventFormProps {
 }
 
 export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
-  // For a rolling event, seed the fixed-date controls with the currently
-  // resolved window so toggling off rolling mode gives a sensible default.
   const { endDate, startDate } = resolveEventDates(event);
   const seedStart = startDate ? new Date(startDate) : undefined;
   const seedEnd = endDate ? new Date(endDate) : undefined;
@@ -29,7 +27,6 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     defaultEventDatesValue({
       isRolling: !!event.rolling,
       range: { from: seedStart, to: seedEnd },
-      ...(event.rolling && { rolling: event.rolling }),
     }),
   );
 
@@ -51,8 +48,8 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <EventDatesPicker
-          name="edit-calendar-mode"
           fixedRangeLabel="Choose new range"
+          name="edit-calendar-mode"
           onChange={setDates}
           value={dates}
           fixedRangeProps={{

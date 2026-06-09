@@ -1,5 +1,5 @@
 import { type RollingWindow } from "../schemas";
-import { formatRollingWindow } from "./RollingWindowControls";
+import { formatRollingWindow } from "./formatRollingWindow";
 
 export function RollingWindowIndicator({ window }: { window: RollingWindow }) {
   return (

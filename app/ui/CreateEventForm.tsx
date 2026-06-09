@@ -83,8 +83,8 @@ export function CreateEventForm({
           />
         </div>
         <EventDatesPicker
-          name="calendar-mode"
           fixedRangeProps={{ disabled: { before: new Date() } }}
+          name="calendar-mode"
           onChange={setDates}
           value={dates}
         />
