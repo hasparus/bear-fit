@@ -40,6 +40,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
 
   return (
     <form
+      className="flex flex-col gap-4 min-h-0 flex-1"
       onKeyDown={handleCalendarArrowKeys}
       onSubmit={(e) => {
         e.preventDefault();
@@ -48,21 +49,23 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
         });
       }}
     >
-      <EventDatesPicker
-        checkboxId="edit-is-rolling"
-        onChange={setDates}
-        value={dates}
-        fixedRangeProps={{
-          disabled: { before: earliestDate },
-          modifiersClassNames: { initial: "*:bg-neutral-100" },
-          modifiers: {
-            initial: initialRange ? unfoldDateRange(initialRange) : [],
-          },
-        }}
-      />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <EventDatesPicker
+          checkboxId="edit-is-rolling"
+          onChange={setDates}
+          value={dates}
+          fixedRangeProps={{
+            disabled: { before: earliestDate },
+            modifiersClassNames: { initial: "*:bg-neutral-100" },
+            modifiers: {
+              initial: initialRange ? unfoldDateRange(initialRange) : [],
+            },
+          }}
+        />
+      </div>
       <button
         type="submit"
-        className="btn btn-default w-full"
+        className="btn btn-default w-full shrink-0"
         disabled={!isEventDatesValueValid(dates)}
         style={{ borderWidth: "0.5em" }}
       >

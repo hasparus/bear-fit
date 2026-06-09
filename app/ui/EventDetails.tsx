@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { useY } from "react-yjs";
@@ -87,6 +88,7 @@ export function EventDetails({
   const availabilityMap = yDoc.getMap("availability");
   const availability = useY(availabilityMap) as AvailabilitySet;
 
+  const supportsHover = useSupportsHover();
   const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
     {},
@@ -323,9 +325,12 @@ export function EventDetails({
                     availabilityForUsers={availabilityForUsers}
                     creatorId={event.creator}
                     names={names}
-                    onHover={(userId) => setHoveredUser(userId)}
                     selectedUsers={selectedUsers}
                     userId={userId}
+                    onHover={(userId) => {
+                      if (!supportsHover) return;
+                      setHoveredUser(userId);
+                    }}
                     onSelect={(userId) => {
                       if (!userId) return;
                       setSelectedUsers((prev) => ({
@@ -628,6 +633,22 @@ function EventDetailsFooter({
       </span>
       <MoreButton />
     </footer>
+  );
+}
+
+const HOVER_QUERY = "(hover: hover)";
+
+function subscribeHover(callback: () => void) {
+  const mq = window.matchMedia(HOVER_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function useSupportsHover() {
+  return useSyncExternalStore(
+    subscribeHover,
+    () => window.matchMedia(HOVER_QUERY).matches,
+    () => true,
   );
 }
 

@@ -47,7 +47,7 @@
     "@eslint/compat": "^1.2.7",
     "@eslint/js": "^9.23.0",
     "@hasparus/eslint-plugin-tailwindcss": "^3.17.5",
-    "@playwright/test": "^1.51.1",
+    "@playwright/test": "^1.60.0",
     "@types/bun": "^1.2.9",
     "@types/react": "19.0.12",
     "@types/react-dom": "^19.0.4",
@@ -69,7 +69,9 @@
       "partykit@0.0.111": "patches/partykit@0.0.110.patch"
     },
     "overrides": {
-      "@types/react": "19.0.12"
+      "@types/react": "19.0.12",
+      "playwright": "1.60.0",
+      "playwright-core": "1.60.0"
     },
     "onlyBuiltDependencies": [
       "deasync",

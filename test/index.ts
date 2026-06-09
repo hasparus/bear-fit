@@ -9,7 +9,14 @@ interface CoverageFixtures {
 
 export const test = base.extend<CoverageFixtures>({
   autoTestFixture: [
-    async ({ page }, use) => {
+    async ({ browserName, page }, use) => {
+      // V8 JS coverage (page.coverage) is Chromium-only; skip it elsewhere
+      // so the suite can run on Firefox too.
+      if (browserName !== "chromium") {
+        await use();
+        return;
+      }
+
       // Start coverage before the test
       await page.coverage.startJSCoverage();
 
