@@ -41,6 +41,7 @@ export const eventDatesValueToPayload = (
 
 export interface EventDatesPickerProps {
   checkboxId: string;
+  fixedRangeLabel?: string;
   onChange: (value: EventDatesValue) => void;
   value: EventDatesValue;
   fixedRangeProps?: Pick<
@@ -51,6 +52,7 @@ export interface EventDatesPickerProps {
 
 export function EventDatesPicker({
   checkboxId,
+  fixedRangeLabel = "Choose a date range",
   fixedRangeProps,
   onChange,
   value,
@@ -77,7 +79,7 @@ export function EventDatesPicker({
       ) : (
         <div className="mb-4">
           <label className="mb-2 block">
-            <span>Choose a date range</span>
+            <span>{fixedRangeLabel}</span>
             <small className="block text-neutral-500">
               what times should the guests consider?
             </small>
