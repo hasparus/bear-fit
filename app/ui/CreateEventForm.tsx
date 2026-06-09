@@ -83,7 +83,7 @@ export function CreateEventForm({
           />
         </div>
         <EventDatesPicker
-          checkboxId="is-rolling"
+          name="calendar-mode"
           fixedRangeProps={{ disabled: { before: new Date() } }}
           onChange={setDates}
           value={dates}

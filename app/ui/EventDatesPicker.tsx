@@ -1,9 +1,9 @@
 import { type DateRange } from "react-day-picker";
 
 import { isoDate, type IsoDate, type RollingWindow } from "../schemas";
-import { CheckboxField } from "./CheckboxField";
 import { DateRangePicker, type DateRangePickerProps } from "./DateRangePicker";
 import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
+import { RadioField } from "./RadioField";
 import {
   DEFAULT_ROLLING_PRESET,
   RollingWindowControls,
@@ -40,7 +40,8 @@ export const eventDatesValueToPayload = (
 };
 
 export interface EventDatesPickerProps {
-  checkboxId: string;
+  /** Radio group name; must be unique per picker instance on the page. */
+  name: string;
   fixedRangeLabel?: string;
   onChange: (value: EventDatesValue) => void;
   value: EventDatesValue;
@@ -51,7 +52,7 @@ export interface EventDatesPickerProps {
 }
 
 export function EventDatesPicker({
-  checkboxId,
+  name,
   fixedRangeLabel = "Choose a date range",
   fixedRangeProps,
   onChange,
@@ -59,16 +60,25 @@ export function EventDatesPicker({
 }: EventDatesPickerProps) {
   return (
     <>
-      <div className="mb-4">
-        <CheckboxField
-          id={checkboxId}
+      <div role="radiogroup" aria-label="Calendar mode" className="mb-4">
+        <RadioField
+          id={`${name}-finite`}
+          name={name}
+          checked={!value.isRolling}
+          onChange={() => onChange({ ...value, isRolling: false })}
+        >
+          Finite
+        </RadioField>
+        <RadioField
+          id={`${name}-rolling`}
+          name={name}
           checked={value.isRolling}
-          onChange={(e) => onChange({ ...value, isRolling: e.target.checked })}
+          onChange={() => onChange({ ...value, isRolling: true })}
         >
           Rolling window
-        </CheckboxField>
+        </RadioField>
         <small className="block text-neutral-500 mt-1">
-          always show today through a fixed amount of time ahead
+          rolling always shows today through a fixed amount of time ahead
         </small>
       </div>
       {value.isRolling ? (

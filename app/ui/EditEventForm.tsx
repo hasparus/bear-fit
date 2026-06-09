@@ -51,7 +51,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <EventDatesPicker
-          checkboxId="edit-is-rolling"
+          name="edit-calendar-mode"
           fixedRangeLabel="Choose new range"
           onChange={setDates}
           value={dates}

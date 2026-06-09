@@ -14,8 +14,10 @@ test("creates a rolling event and shows today through the resolved end date", as
   const eventName = `rolling test ${Math.random().toString(36).slice(2)}`;
   await page.getByLabel("Name your event").fill(eventName);
 
-  await page.locator('label[for="is-rolling"]').click();
-  await expect(page.locator("#is-rolling")).toBeChecked();
+  await page.locator('label[for="calendar-mode-rolling"]').click();
+  await expect(
+    page.getByRole("radio", { name: "Rolling window" }),
+  ).toBeChecked();
 
   // Default preset is "Next 2 months" — switch to "Next week" to keep the test
   // tight and avoid month-boundary flakiness when reading day buttons.
