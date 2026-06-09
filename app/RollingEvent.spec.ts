@@ -1,5 +1,5 @@
 import { expect, test } from "../test";
-import { CalendarEvent } from "./schemas";
+import { addDays, CalendarEvent, isoDate, startOfTodayUtc } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
 
 test.setTimeout(60_000);
@@ -14,9 +14,8 @@ test("creates a rolling event and shows today through the resolved end date", as
   const eventName = `rolling test ${Math.random().toString(36).slice(2)}`;
   await page.getByLabel("Name your event").fill(eventName);
 
-  const today = new Date();
-  const sevenDaysLater = new Date(today);
-  sevenDaysLater.setUTCDate(sevenDaysLater.getUTCDate() + 7);
+  const today = startOfTodayUtc();
+  const sevenDaysLater = addDays(today, 7);
 
   const formatCalendarDay = (date: Date) => {
     const month = date.toLocaleDateString("en-US", {
@@ -49,8 +48,8 @@ test("creates a rolling event and shows today through the resolved end date", as
   await expect(page).toHaveURL(/\?id=/);
   await expect(page.getByRole("heading", { name: eventName })).toBeVisible();
 
-  const todayIso = today.toISOString().split("T")[0];
-  const sevenDaysLaterIso = sevenDaysLater.toISOString().split("T")[0];
+  const todayIso = isoDate(today);
+  const sevenDaysLaterIso = isoDate(sevenDaysLater);
 
   await expect(
     page.locator(`time[dateTime="${todayIso}"]`).first(),

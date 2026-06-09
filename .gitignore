@@ -177,5 +177,4 @@ app/__screenshots__/
 /blob-report/
 /playwright/.cache/
 
-# Node.js compile cache (created when running tests)
 node-compile-cache/

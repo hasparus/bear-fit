@@ -469,8 +469,8 @@
   }
 
   input[type="checkbox"]+label:before {
-    background: undefined;
-    box-shadow: undefined;
+    background: none;
+    box-shadow: none;
     content: "";
     display: inline-block;
     height: 13px;
@@ -500,11 +500,12 @@
   }
 
   input[type="checkbox"][disabled]+label:before {
-    background: undefined;
+    background: none;
   }
 
   input[type="checkbox"][disabled]:checked+label:after {
-    background: svg-load("./icon/checkmark-disabled.svg");
+    background: url("data:image/svg+xml;charset=utf-8,%3Csvg width='12' height='12' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23808080' d='M0 0h1v1H0zM1 1h1v1H1zM2 2h1v1H2zM3 3h1v1H3zM4 4h1v1H4zM5 5h1v1H5zM6 6h1v1H6zM7 7h1v1H7zM8 8h1v1H8zM9 9h1v1H9zM10 10h1v1h-1zM11 11h1v1h-1zM11 0h1v1h-1zM10 1h1v1h-1zM9 2h1v1H9zM8 3h1v1H8zM7 4h1v1H7zM6 5h1v1H6zM5 6h1v1H5zM4 7h1v1H4zM3 8h1v1H3zM2 9h1v1H2zM1 10h1v1H1zM0 11h1v1H0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
   }
 
   .field-row {
