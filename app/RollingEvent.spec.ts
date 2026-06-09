@@ -51,11 +51,20 @@ test("creates a rolling event and shows today through the resolved end date", as
 
   const todayIso = isoDate(today);
   const sevenDaysLaterIso = isoDate(sevenDaysLater);
-  const displayDate = (iso: string) => new Date(iso).toLocaleDateString();
+  // Format expected dates in the browser context so they match the UI's
+  // toLocaleDateString() output (which depends on the page's locale/timezone,
+  // not Node's).
+  const [todayDisplay, sevenDaysLaterDisplay] = await page.evaluate(
+    ([t, s]) => [
+      new Date(t).toLocaleDateString(),
+      new Date(s).toLocaleDateString(),
+    ],
+    [todayIso, sevenDaysLaterIso] as const,
+  );
   const eventDateRange = page.getByText("Event dates").locator("+ p");
 
-  await expect(eventDateRange).toContainText(displayDate(todayIso));
-  await expect(eventDateRange).toContainText(displayDate(sevenDaysLaterIso));
+  await expect(eventDateRange).toContainText(todayDisplay);
+  await expect(eventDateRange).toContainText(sevenDaysLaterDisplay);
   await expect(eventDateRange.getByText("Rolling: 7 days")).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
