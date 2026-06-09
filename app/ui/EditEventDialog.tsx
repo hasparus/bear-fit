@@ -34,8 +34,7 @@ export function EditEventDialog() {
   };
 
   const hasFixedDates = !!event.startDate && !!event.endDate;
-  const rolling = normalizeRolling(event.rolling);
-  if (!event.id || (rolling === undefined && !hasFixedDates)) {
+  if (!event.id || (!event.rolling && !hasFixedDates)) {
     return null;
   }
 

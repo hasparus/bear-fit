@@ -2,18 +2,10 @@ import type { Doc } from "yjs";
 
 import { getUserId } from "../getUserId";
 import { AvailabilityKey, type UserId } from "../schemas";
-import { normalizeImportedEvent, YDocJsonSchema } from "../shared-data";
+import { YDocJsonSchema } from "../shared-data";
 
 export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
-  const raw = json as {
-    availability: Record<string, boolean>;
-    event: Record<string, unknown>;
-    names: Record<string, string>;
-  };
-  const jsonData = YDocJsonSchema.assert({
-    ...raw,
-    event: normalizeImportedEvent(raw.event),
-  });
+  const jsonData = YDocJsonSchema.assert(json);
 
   const currentUserId = getUserId();
 

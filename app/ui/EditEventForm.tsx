@@ -2,11 +2,7 @@ import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
-import {
-  type CalendarEvent,
-  normalizeRolling,
-  resolveEventDates,
-} from "../schemas";
+import { type CalendarEvent, resolveEventDates } from "../schemas";
 import { type EventDatesPatch } from "../shared-data";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
@@ -29,7 +25,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
 
   const [dates, setDates] = useState<EventDatesValue>(() =>
     defaultEventDatesValue({
-      isRolling: normalizeRolling(event.rolling) !== undefined,
+      isRolling: !!event.rolling,
       range: { from: seedStart, to: seedEnd },
     }),
   );

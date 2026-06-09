@@ -18,7 +18,6 @@ import {
   type CalendarEvent,
   IsoDate,
   isoDate,
-  normalizeRolling,
   resolveEventDates,
   type UserId,
 } from "../schemas";
@@ -73,7 +72,6 @@ export function EventDetails({
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const { endDate, startDate } = resolveEventDates(event);
-  const rollingDays = normalizeRolling(event.rolling);
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -284,8 +282,8 @@ export function EventDetails({
                     <time dateTime={endDate}>
                       {new Date(endDate).toLocaleDateString()}
                     </time>
-                    {rollingDays !== undefined && (
-                      <RollingWindowIndicator days={rollingDays} />
+                    {event.rolling && (
+                      <RollingWindowIndicator days={event.rolling} />
                     )}
                   </>
                 ) : (

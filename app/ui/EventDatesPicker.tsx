@@ -100,6 +100,11 @@ export function EventDatesPicker({
     });
   };
 
+  const rollingDays =
+    value.isRolling && value.range.to
+      ? diffDays(value.range.to, today)
+      : undefined;
+
   return (
     <div className="mb-4">
       <label className="mb-2 block">
@@ -123,6 +128,11 @@ export function EventDatesPicker({
         onChange={(event) => handleRollingChange(event.target.checked)}
       >
         Rolling window
+        {rollingDays !== undefined && rollingDays > 0 && (
+          <small className="block text-neutral-500">
+            {rollingDays} day{rollingDays === 1 ? "" : "s"} ahead
+          </small>
+        )}
       </CheckboxField>
     </div>
   );
