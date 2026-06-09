@@ -6,8 +6,9 @@ BRANCH_NAME=$(echo "$BRANCH_NAME" | tr '/' '-' | tr '[:upper:]' '[:lower:]')
 MAX_PREVIEW_BRANCH_NAME_LENGTH=25
 COMMIT_HASH=${COMMIT_HASH:-$(git rev-parse --short HEAD)}
 
-if [ "$BRANCH_NAME" != "main" ] && [ ${#BRANCH_NAME} -gt $MAX_PREVIEW_BRANCH_NAME_LENGTH ]; then
-  BRANCH_NAME="$(echo "$BRANCH_NAME" | cut -d- -f1-2)-$(echo "$COMMIT_HASH" | cut -c1-4)"
+if [ "$BRANCH_NAME" != "main" ] && [ ${`#BRANCH_NAME`} -gt $MAX_PREVIEW_BRANCH_NAME_LENGTH ]; then
+  # Take first 20 chars of branch name + hyphen + first 4 chars of commit hash = 25 total
+  BRANCH_NAME="$(echo "$BRANCH_NAME" | cut -c1-20)-$(echo "$COMMIT_HASH" | cut -c1-4)"
 fi
 
 DEPLOY_DATE=$(date -u +"%Y-%m-%d")
