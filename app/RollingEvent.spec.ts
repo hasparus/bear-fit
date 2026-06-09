@@ -40,8 +40,9 @@ test("creates a rolling event and shows today through the resolved end date", as
   await page
     .getByRole("button", { name: formatCalendarDay(sevenDaysLater) })
     .click();
-  await page.locator('label[for="calendar-mode-rolling"]').click();
-  await expect(page.locator("#calendar-mode-rolling")).toBeChecked();
+
+  await page.getByText("Rolling window", { exact: true }).click();
+  await expect(page.getByLabel("Rolling window")).toBeChecked();
 
   await page.getByText("Create Event").click();
 
@@ -50,14 +51,12 @@ test("creates a rolling event and shows today through the resolved end date", as
 
   const todayIso = isoDate(today);
   const sevenDaysLaterIso = isoDate(sevenDaysLater);
+  const displayDate = (iso: string) => new Date(iso).toLocaleDateString();
+  const eventDateRange = page.getByText("Event dates").locator("+ p");
 
-  await expect(
-    page.locator(`time[dateTime="${todayIso}"]`).first(),
-  ).toBeVisible();
-  await expect(
-    page.locator(`time[dateTime="${sevenDaysLaterIso}"]`).first(),
-  ).toBeVisible();
-  await expect(page.getByText("Rolling: 7 days")).toBeVisible();
+  await expect(eventDateRange).toContainText(displayDate(todayIso));
+  await expect(eventDateRange).toContainText(displayDate(sevenDaysLaterIso));
+  await expect(eventDateRange.getByText("Rolling: 7 days")).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.getByText("Nerd Mode").click();
