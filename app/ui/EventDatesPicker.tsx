@@ -118,7 +118,9 @@ export function EventDatesPicker({
         onSelect={handleRangeSelect}
         selected={selected}
         disabled={
-          value.isRolling ? { before: today } : fixedRangeProps?.disabled
+          value.isRolling
+            ? { before: addDays(today, 1) }
+            : fixedRangeProps?.disabled
         }
       />
       <CheckboxField
