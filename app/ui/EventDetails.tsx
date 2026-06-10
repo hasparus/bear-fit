@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
 import { useY } from "react-yjs";
@@ -17,6 +18,7 @@ import {
   type CalendarEvent,
   IsoDate,
   isoDate,
+  resolveEventDates,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
@@ -49,6 +51,7 @@ import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
 import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
+import { RollingWindowIndicator } from "./RollingWindowIndicator";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
@@ -68,6 +71,7 @@ export function EventDetails({
 
   const eventMap = getEventMap(yDoc);
   const event = useY(eventMap) as Partial<CalendarEvent>;
+  const { endDate, startDate } = resolveEventDates(event);
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -84,6 +88,7 @@ export function EventDetails({
   const availabilityMap = yDoc.getMap("availability");
   const availability = useY(availabilityMap) as AvailabilitySet;
 
+  const supportsHover = useSupportsHover();
   const [hoveredUser, setHoveredUser] = useState<UserId | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<Record<UserId, boolean>>(
     {},
@@ -121,8 +126,8 @@ export function EventDetails({
   );
 
   const groupedDays = eachDayOfInterval(
-    event.startDate ? new Date(event.startDate) : new Date(),
-    event.endDate ? new Date(event.endDate) : new Date(),
+    startDate ? new Date(startDate) : new Date(),
+    endDate ? new Date(endDate) : new Date(),
   ).reduce(
     (acc, day) => {
       const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
@@ -169,7 +174,6 @@ export function EventDetails({
     return undefined;
   });
 
-  // If we have a name for the user in the YJs doc, we use it.
   if (
     userId &&
     names[userId] &&
@@ -226,14 +230,11 @@ export function EventDetails({
     return () => document.removeEventListener("mouseup", handleMouseUp);
   }, []);
 
-  // I need SSR for this to affect social cards.
-  // Left for a migration to PartyServer.
   useEffect(() => {
     if (event.name) {
       const oldTitle = document.title;
       document.title = `bear-fit: ${event.name}`;
 
-      // This won't do anything. Need to move it to render to SSR.
       const metaTitle = document.querySelector("meta[name='title']");
       const metaTitleName = metaTitle?.getAttribute("content");
       if (metaTitle) {
@@ -267,34 +268,36 @@ export function EventDetails({
           >
             <div>
               <p className="block font-mono text-sm">Calendar</p>
-              {/* todo: I should really use CSS layers or ditch system.css to avoid all these !important */}
-              <h1 className="mb-4 !text-2xl">
+              <h1 className="mb-4 leading-[1.3333]">
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Event dates</p>
-              <p aria-busy={!event.startDate} className="mb-4">
-                {event.startDate && event.endDate ? (
+              <p aria-busy={!startDate} className="mb-4 leading-[1.3333]">
+                {startDate && endDate ? (
                   <>
-                    <time dateTime={event.startDate}>
-                      {new Date(event.startDate).toLocaleDateString()}
+                    <time dateTime={startDate}>
+                      {new Date(startDate).toLocaleDateString()}
                     </time>
                     {" - "}
-                    <time dateTime={event.endDate}>
-                      {new Date(event.endDate).toLocaleDateString()}
+                    <time dateTime={endDate}>
+                      {new Date(endDate).toLocaleDateString()}
                     </time>
+                    {event.rolling && (
+                      <RollingWindowIndicator days={event.rolling} />
+                    )}
                   </>
                 ) : (
                   <Skeleton className="w-[206px]" />
                 )}
               </p>
-              <div className="mb-4">
+              <div className="mb-4 leading-[1.3333]">
                 <label className="block" htmlFor="name">
                   Your name
                 </label>
                 <input
                   id="name"
                   type="text"
-                  className="w-full border p-2 rounded-sm"
+                  className="w-full border pt-2 pr-2 pb-2 pl-[5px] rounded-sm"
                   value={userName || ""}
                   onChange={(e) => {
                     if (!userId) {
@@ -318,9 +321,12 @@ export function EventDetails({
                     availabilityForUsers={availabilityForUsers}
                     creatorId={event.creator}
                     names={names}
-                    onHover={(userId) => setHoveredUser(userId)}
                     selectedUsers={selectedUsers}
                     userId={userId}
+                    onHover={(userId) => {
+                      if (!supportsHover) return;
+                      setHoveredUser(userId);
+                    }}
                     onSelect={(userId) => {
                       if (!userId) return;
                       setSelectedUsers((prev) => ({
@@ -341,7 +347,7 @@ export function EventDetails({
                 setHoveredCell(undefined);
               }}
             >
-              {event.startDate &&
+              {startDate &&
                 Object.entries(groupedDays).map(([monthKey, monthDays]) => (
                   <React.Fragment key={monthKey}>
                     <div className="mb-2 mt-4 first:mt-2">
@@ -441,7 +447,6 @@ export function EventDetails({
                                 event.pointerType === "mouse" &&
                                 event.button === 2
                               ) {
-                                // right clicks open context menu
                                 return;
                               }
 
@@ -450,7 +455,6 @@ export function EventDetails({
                                 !!currentUserAvailable,
                               );
 
-                              // This is needed for drag-painting to work on mobiles.
                               event.currentTarget.releasePointerCapture(
                                 event.pointerId,
                               );
@@ -514,7 +518,6 @@ function GridCellTooltip({
   const users =
     hoveredCell?.availableUsers || previousHoveredCell.current?.availableUsers;
 
-  // Effect to update the tooltip position based on mouse position
   useEffect(() => {
     const moveTooltip = (e: MouseEvent) => {
       if (tooltipRef.current) {
@@ -544,8 +547,6 @@ function GridCellTooltip({
   }, []);
 
   // TODO: We can't use view transitions together with system.css, because the `filter: invert(0.9)`
-  // isn't applied to transition layer, and the colors blink jarringly. If we migrated out of system.css,
-  // to our own stylesheet with proper dark mode support, we could add `<unstable_ViewTransition>` here.
   return (
     <TooltipContent
       aria-live="polite"
@@ -623,6 +624,22 @@ function EventDetailsFooter({
       </span>
       <MoreButton />
     </footer>
+  );
+}
+
+const HOVER_QUERY = "(hover: hover)";
+
+function subscribeHover(callback: () => void) {
+  const mq = window.matchMedia(HOVER_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function useSupportsHover() {
+  return useSyncExternalStore(
+    subscribeHover,
+    () => window.matchMedia(HOVER_QUERY).matches,
+    () => true,
   );
 }
 

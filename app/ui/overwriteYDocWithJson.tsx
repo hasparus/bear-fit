@@ -58,6 +58,12 @@ export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
     }
     eventMap.set(key, value);
   });
+  if (jsonData.event.rolling) {
+    eventMap.delete("startDate");
+    eventMap.delete("endDate");
+  } else {
+    eventMap.delete("rolling");
+  }
 
   Object.entries(jsonData.names).forEach(([key, value]) => {
     if (!sameNameUserIds.includes(key as UserId)) {

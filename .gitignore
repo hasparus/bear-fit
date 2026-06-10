@@ -172,6 +172,8 @@ dist
 .pnp.\*
 
 .partykit
+.wrangler/
+.dev.vars*
 .DS_Store
 app/__screenshots__/
 
@@ -179,3 +181,5 @@ app/__screenshots__/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+node-compile-cache/

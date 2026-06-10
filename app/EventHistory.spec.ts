@@ -24,8 +24,7 @@ async function createEvent(page: Page) {
 
   const eventName = `event history ${Math.random().toString(36).slice(2)}`;
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(eventName);
+  await page.getByLabel("Name your event").fill(eventName);
 
   await page.getByRole("button", { name: "next month" }).click();
 
@@ -47,8 +46,7 @@ async function createEvent(page: Page) {
   await expect(page.getByRole("heading").first()).toHaveText(eventName);
   await expect(page).toHaveURL(/\?id=/);
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(CREATOR_NAME);
+  await page.getByLabel("Your name").fill(CREATOR_NAME);
 
   const url = new URL(page.url());
   const eventId = url.searchParams.get("id");

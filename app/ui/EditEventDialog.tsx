@@ -1,7 +1,9 @@
+import Clarity from "@microsoft/clarity";
+import { useEffect } from "react";
 import { useY } from "react-yjs";
 
-import { CalendarEvent, IsoDate } from "../schemas";
-import { getEventMap } from "../shared-data";
+import { CalendarEvent } from "../schemas";
+import { applyEventDates, type EventDatesPatch, getEventMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
 import { EditEventForm } from "./EditEventForm";
@@ -19,13 +21,20 @@ export function EditEventDialog() {
   const event = useY(eventMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
-  const handleSubmit = async (startDate: IsoDate, endDate: IsoDate) => {
-    eventMap.set("startDate", startDate);
-    eventMap.set("endDate", endDate);
+  const isEditOpen = dialogs.isOpen("edit-event");
+  useEffect(() => {
+    if (isEditOpen) {
+      Clarity.event("event-dates-edit-opened");
+    }
+  }, [isEditOpen]);
+
+  const handleSubmit = async (patch: EventDatesPatch) => {
+    applyEventDates(eventMap, patch);
     dialogs.set("edit-event", false);
   };
 
-  if (!event.id || !event.startDate || !event.endDate) {
+  const hasFixedDates = !!event.startDate && !!event.endDate;
+  if (!event.id || (!event.rolling && !hasFixedDates)) {
     return null;
   }
 
@@ -36,8 +45,8 @@ export function EditEventDialog() {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 bg-black/20 dark:bg-white/80 animate-overlay-show" />
-        <Dialog.Popup className="grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none max-sm:w-fit max-sm:min-h-fit max-sm:m-auto">
-          <section className="window max-sm:!m-0 animate-content-show -col-end-1 pointer-events-auto">
+        <Dialog.Popup className="grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-[100dvh] inset-0 max-sm:[place-items:center] sm:[place-items:center_end] pointer-events-none">
+          <section className="window max-sm:m-0 animate-content-show -col-end-1 pointer-events-auto max-h-full flex flex-col">
             <div className="title-bar">
               <Dialog.Close aria-label="Close" className="close" />
               <Dialog.Title className="title">Edit Event</Dialog.Title>
@@ -45,7 +54,7 @@ export function EditEventDialog() {
                 Change the date range for this event.
               </Dialog.Description>
             </div>
-            <div className="p-1 sm:p-2">
+            <div className="p-1 sm:p-2 flex min-h-0 flex-1 flex-col">
               <EditEventForm
                 event={event as CalendarEvent}
                 onSubmit={handleSubmit}

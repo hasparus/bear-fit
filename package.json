@@ -67,7 +67,9 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/react": "19.0.12"
+      "@types/react": "19.0.12",
+      "playwright": "1.60.0",
+      "playwright-core": "1.60.0"
     },
     "onlyBuiltDependencies": [
       "esbuild",

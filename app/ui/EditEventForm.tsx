@@ -2,64 +2,69 @@ import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
-import { CalendarEvent, isoDate, IsoDate } from "../schemas";
-import { DateRangePicker, handleCalendarArrowKeys } from "./DateRangePicker";
-import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
+import { type CalendarEvent, resolveEventDates } from "../schemas";
+import { type EventDatesPatch } from "../shared-data";
+import { handleCalendarArrowKeys } from "./DateRangePicker";
+import {
+  defaultEventDatesValue,
+  EventDatesPicker,
+  type EventDatesValue,
+  eventDatesValueToPatch,
+  isEventDatesValueValid,
+} from "./EventDatesPicker";
 
 export interface EditEventFormProps {
   event: CalendarEvent;
-  onSubmit: (startDate: IsoDate, endDate: IsoDate) => Promise<void>;
+  onSubmit: (patch: EventDatesPatch) => Promise<void>;
 }
 
 export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(event.startDate),
-    to: new Date(event.endDate),
-  });
+  const { endDate, startDate } = resolveEventDates(event);
+  const seedStart = startDate ? new Date(startDate) : undefined;
+  const seedEnd = endDate ? new Date(endDate) : undefined;
 
-  const initialStartDate = new Date(event.startDate);
+  const [dates, setDates] = useState<EventDatesValue>(() =>
+    defaultEventDatesValue({
+      isRolling: !!event.rolling,
+      range: { from: seedStart, to: seedEnd },
+    }),
+  );
+
   const today = new Date();
-  const earliestDate = initialStartDate < today ? initialStartDate : today;
+  const earliestDate = seedStart && seedStart < today ? seedStart : today;
+  const initialRange: DateRange | undefined =
+    seedStart && seedEnd ? { from: seedStart, to: seedEnd } : undefined;
 
   return (
     <form
+      className="flex flex-col gap-4 min-h-0 flex-1"
       onKeyDown={handleCalendarArrowKeys}
-      onSubmit={(event) => {
-        event.preventDefault();
-
-        const { from, to } = requireValidDateRange(dateRange);
-
-        onSubmit(isoDate(from), isoDate(to)).finally(() => {
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(eventDatesValueToPatch(dates)).finally(() => {
           Clarity.event("event-dates-edited");
         });
       }}
     >
-      <div className="mb-4">
-        <label className="mb-2 block">
-          <span>Choose new range</span>
-          <small className="block text-neutral-500">
-            what times should the guests consider?
-          </small>
-        </label>
-        <DateRangePicker
-          disabled={{ before: earliestDate }}
-          onSelect={setDateRange}
-          selected={dateRange}
-          modifiers={{
-            initial: unfoldDateRange({
-              from: initialStartDate,
-              to: new Date(event.endDate),
-            }),
-          }}
-          modifiersClassNames={{
-            initial: "*:!bg-neutral-100",
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <EventDatesPicker
+          fixedRangeLabel="Choose new range"
+          name="edit-calendar-mode"
+          onChange={setDates}
+          value={dates}
+          fixedRangeProps={{
+            disabled: { before: earliestDate },
+            modifiersClassNames: { initial: "*:bg-neutral-100" },
+            modifiers: {
+              initial: initialRange ? unfoldDateRange(initialRange) : [],
+            },
           }}
         />
       </div>
       <button
         type="submit"
-        className="btn btn-default w-full"
-        disabled={!isValidDateRange(dateRange)}
+        className="btn btn-default w-full shrink-0"
+        disabled={!isEventDatesValueValid(dates)}
         style={{ borderWidth: "0.5em" }}
       >
         Save Changes
@@ -68,11 +73,12 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
   );
 }
 
-function unfoldDateRange(dateRange: Required<DateRange>): Date[] {
-  const { from, to } = dateRange;
-  const dates = [];
+function unfoldDateRange(range: DateRange): Date[] {
+  const { from, to } = range;
+  if (!from || !to) return [];
+  const dates: Date[] = [];
   for (
-    let date = new Date(from!);
+    let date = new Date(from);
     date <= to;
     date.setDate(date.getDate() + 1)
   ) {
