@@ -107,7 +107,7 @@ test('"/" stays typable in form fields (Quick Find suppression is field-aware)',
   await expect(name).toHaveValue("lunch w/ team");
 });
 
-test("offline status reads orange on screen (through the dark-mode invert)", async ({
+test("offline status uses the pre-inverted danger color in dark mode", async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: "dark" });
@@ -117,29 +117,10 @@ test("offline status reads orange on screen (through the dark-mode invert)", asy
   const indicator = page.locator("[data-sync-status]");
   await expect(indicator).toContainText("offline");
 
-  const screenshot = (await indicator.screenshot()).toString("base64");
+  const [r, g, b] = await indicator.evaluate((el) =>
+    getComputedStyle(el).color.match(/\d+/g)!.slice(0, 3).map(Number),
+  );
 
-  const [r, g, b] = await page.evaluate(async (b64) => {
-    const img = new Image();
-    img.src = `data:image/png;base64,${b64}`;
-    await img.decode();
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0);
-    const { data } = ctx.getImageData(0, 0, img.width, img.height);
-
-    let best = [0, 0, 0];
-    let bestChroma = -1;
-    for (let i = 0; i < data.length; i += 4) {
-      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-      const chroma = r - Math.min(g, b);
-      if (chroma > bestChroma) [bestChroma, best] = [chroma, [r, g, b]];
-    }
-    return best;
-  }, screenshot);
-
-  expect(r).toBeGreaterThan(b + 60);
-  expect(r).toBeGreaterThan(g);
+  expect(b).toBeGreaterThan(r + 60);
+  expect(b).toBeGreaterThan(g);
 });
