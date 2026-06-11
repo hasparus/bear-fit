@@ -50,23 +50,23 @@ const LABEL = {
 /** Dispatched globally on Cmd/Ctrl+S; the indicator pops its toast in response. */
 const SAVE_HINT_EVENT = "bearfit:save-hint";
 
-/** True for ~2.5s after each Cmd/Ctrl+S, to flash the autosave toast. */
+/** True for ~2.5s after the last Cmd/Ctrl+S, to flash the autosave toast. */
 function useSaveHint() {
-  const [hint, setHint] = useState(false);
+  const [hintAt, setHintAt] = useState(0);
 
   useEffect(() => {
-    const onHint = () => setHint(true);
+    const onHint = () => setHintAt(Date.now());
     window.addEventListener(SAVE_HINT_EVENT, onHint);
     return () => window.removeEventListener(SAVE_HINT_EVENT, onHint);
   }, []);
 
   useEffect(() => {
-    if (!hint) return;
-    const timeout = setTimeout(() => setHint(false), 2500);
+    if (!hintAt) return;
+    const timeout = setTimeout(() => setHintAt(0), 2500);
     return () => clearTimeout(timeout);
-  }, [hint]);
+  }, [hintAt]);
 
-  return hint;
+  return hintAt !== 0;
 }
 
 export function SyncIndicator({ className }: { className?: string }) {

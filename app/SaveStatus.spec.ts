@@ -9,8 +9,7 @@ async function createEvent(page: Page) {
   await page.goto("/");
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
-  const eventName = `sync status ${Math.random().toString(36).slice(2)}`;
-  await page.getByLabel("Name your event").fill(eventName);
+  await page.getByLabel("Name your event").fill("sync status test");
   await page.getByRole("button", { name: "next month" }).click();
 
   const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
