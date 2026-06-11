@@ -12,6 +12,7 @@ import {
   initializeEventMap,
   yDocToJson,
 } from "../app/shared-data";
+import { EVENT_TTL_MS, shouldCompact } from "./editor.expiry";
 import { OccupancyPartyServer } from "./occupancy.partyserver";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
@@ -123,6 +124,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
 
         initializeEventMap(this.document, event);
         await this.onSave();
+        this.touch();
 
         return Response.json({ message: "created" }, { headers });
       } catch (error) {
@@ -212,6 +214,36 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     });
   }
 
+  private touch() {
+    void this.ctx.storage.setAlarm(Date.now() + EVENT_TTL_MS);
+  }
+
+  override async onAlarm(): Promise<void> {
+    await this.ctx.storage.deleteAll();
+  }
+
+  private compactUpdates() {
+    const state = Y.encodeStateAsUpdate(this.document);
+    this.ctx.storage.transactionSync(() => {
+      this.ctx.storage.sql.exec(
+        `INSERT OR REPLACE INTO ${TABLE_DOCUMENTS} (id, state) VALUES (?, ?)`,
+        this.name,
+        state,
+      );
+      this.ctx.storage.sql.exec(
+        `DELETE FROM ${TABLE_UPDATES} WHERE doc_id = ?`,
+        this.name,
+      );
+      this.ctx.storage.sql.exec(
+        `INSERT INTO ${TABLE_UPDATES} (doc_id, clock, update_data) VALUES (?, ?, ?)`,
+        this.name,
+        this.#lastClock + 1,
+        state,
+      );
+    });
+    this.#lastClock += 1;
+  }
+
   private persistIncrementalUpdate(update: Uint8Array) {
     this.#lastClock += 1;
     try {
@@ -223,6 +255,18 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       );
     } catch (error) {
       console.error("failed to persist update", error);
+    }
+    this.touch();
+    if (this.#lastClock % 256 === 0) {
+      const [row] = [
+        ...this.ctx.storage.sql.exec(
+          `SELECT COUNT(*) as cnt FROM ${TABLE_UPDATES} WHERE doc_id = ?`,
+          this.name,
+        ),
+      ];
+      if (row && shouldCompact(Number(row.cnt))) {
+        this.compactUpdates();
+      }
     }
   }
 
