@@ -3,23 +3,34 @@
 ## Project Structure & Module Organization
 
 - `app/` contains the React UI, shared schemas, and Playwright specs (e.g.
-  `App.spec.tsx`); browser entry points are `app/client.tsx` and
+  `App.spec.ts`); browser entry points are `app/client.tsx` and
   `app/dashboard/index.tsx`.
-- `party/` owns PartyKit rooms and the server entry in `server.ts`, while
-  `public/` serves static files and `assets/` stores reference media.
+- `party/` owns the Cloudflare Worker and its Durable Objects: `party/worker.ts`
+  routes requests via `routePartykitRequest`, `party/editor.partyserver.ts` is
+  the Yjs event-doc server (SQLite persistence), and
+  `party/occupancy.partyserver.ts` backs the room-count dashboard; shared
+  schemas live in `party/rooms.ts` and `party/shared.ts`.
+- `public/` is Vite's publicDir (fonts, `retro-fonts.css`, button SVGs).
+- The app is a Vite 6 multi-page build: `index.html` and `dashboard.html` at the
+  root are registered in `vite.config.ts`; Tailwind 4 comes via
+  `@tailwindcss/vite`, and `@cloudflare/vite-plugin` runs the Worker + Durable
+  Objects in dev.
 - Tooling lives beside the code: `test/` holds Playwright artifacts and helpers,
-  `scripts/` includes deployment automation, and `esbuild-postcss-plugin.cjs`
-  wires Tailwind 4 into the build.
+  and `scripts/` includes deployment automation.
 
 ## Build, Test, and Development Commands
 
-- `pnpm dev` (or `pnpm dev:prod` to run against prod server) serves the PartyKit
-  app with live reload on `http://127.0.0.1:1999`.
+- `pnpm dev` (or `pnpm dev:prod` to run against the prod server) runs `vite dev`
+  with the Worker and Durable Objects in-process on the default Vite port.
 - `pnpm typecheck` and `pnpm lint` keep strict TypeScript and ESLint
   (perfectionist sorting) happy; follow with `pnpm format` before committing.
-- `pnpm test` runs the Playwright suite headlessly, `pnpm test:ui` opens the
-  inspector, and `pnpm release` executes `scripts/deploy.sh` to deploy with an
-  `APP_VERSION` tag.
+- `pnpm test` runs `vite build` and then the Playwright suite headlessly against
+  `vite preview` on port 1999; `pnpm test:ui` opens the inspector, and
+  `pnpm release` executes `scripts/deploy.sh` to deploy with an `APP_VERSION`
+  tag.
+- `playwright.config.ts` auto-writes `.dev.vars` (`PUBLIC_KEY_B64`) from the
+  committed TEST key in `.ssh/test/`; prod sets it via `wrangler secret` — see
+  `MIGRATION_NOTES.md`.
 
 ## Coding Style & Naming Conventions
 
@@ -34,8 +45,8 @@
 
 - Playwright is the source of truth; keep specs deterministic, reuse helpers in
   `test/utils/`, and delete temporary downloads during cleanup.
-- Name end-to-end files `*.spec.ts(x)` so `playwright.config.ts` picks them up
-  from `./app`; UIs should be driven through visible interactions.
+- Name end-to-end files `*.spec.ts` so `playwright.config.ts` picks them up from
+  `./app`; UIs should be driven through visible interactions.
 - Run `pnpm test` locally before submitting—CI retries twice, so any flaky flow
   must be stabilized before review.
 
@@ -49,9 +60,9 @@
 
 # Current Focus
 
-We're migrating from Partykit to PartyServer.
-
-But first, we need a full end-to-end coverage.
+The PartyKit → Cloudflare Workers + partyserver migration is complete (see
+`MIGRATION_NOTES.md`), and end-to-end coverage is in place. Current work is
+tracked in `plans/README.md`.
 
 ---
 

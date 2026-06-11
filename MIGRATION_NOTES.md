@@ -1,14 +1,17 @@
+> Status: migration completed (2025-10). Kept as a decision record.
+
 ## Migration Decisions (PartyKit -> Cloudflare Workers + PartyServer)
 
 - **Client build**: the app is built by Vite as a multi-page app. `index.html`
   and `dashboard.html` now live at the project root and load `app/client.tsx`
   and `app/dashboard/index.tsx` as module scripts. `public/` holds static assets
   only (the stale partykit `public/dist/*` bundles and `public/*.html` were
-  removed). The second page is registered via `environments.client.build
-  .rollupOptions.input` so it stays out of the Worker build.
+  removed). The second page is registered via
+  `environments.client.build .rollupOptions.input` so it stays out of the Worker
+  build.
 - **Globals**: `APP_VERSION` and `import.meta.env.ALWAYS_PROD` are injected via
-  Vite `define` (replacing partykit.json's `define`). `PARTYKIT_HOST` was deleted
-  and the dashboard now uses the same `serverUrl` derivation as the app.
+  Vite `define` (replacing partykit.json's `define`). `PARTYKIT_HOST` was
+  deleted and the dashboard now uses the same `serverUrl` derivation as the app.
 - **Prod origin**: the worker serves the app and `/parties/*` from the same
   origin, so `serverUrl` defaults to same-origin. `dev:prod` can target a
   deployed origin by setting `PROD_SERVER_URL` (injected via `define`).
@@ -17,7 +20,8 @@
   `.ssh/test/id_ed25519` keypair is TEST-ONLY; production must use a different
   key so the committed key can never authorize a real deployment.
 - **Deploy**: `scripts/deploy.sh` runs `vite build` then `wrangler deploy`
-  (main) or `wrangler versions upload` (preview). CI uses `CLOUDFLARE_API_TOKEN`.
+  (main) or `wrangler versions upload` (preview). CI uses
+  `CLOUDFLARE_API_TOKEN`.
 - **SQLite DO**: migration uses `new_sqlite_classes` because `EditorPartyServer`
   (YServer) persists via `ctx.storage.sql`.
 - **Behavior change**: occupancy now deletes a room entry when its count reaches
