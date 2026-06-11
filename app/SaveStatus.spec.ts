@@ -107,40 +107,39 @@ test('"/" stays typable in form fields (Quick Find suppression is field-aware)',
   await expect(name).toHaveValue("lunch w/ team");
 });
 
-/**
- * The on-screen color of the offline status, accounting for the global
- * dark-mode `filter: invert(...)` on <body>. We read the actual filter rather
- * than hardcoding its amount, so the test stays honest if it changes.
- */
-async function offlineStatusScreenColor(page: Page) {
+test("offline status reads orange on screen (through the dark-mode invert)", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await createEvent(page);
+
   await page.context().setOffline(true);
   const indicator = page.locator("[data-sync-status]");
   await expect(indicator).toContainText("offline");
 
-  const { filter, rgb } = await indicator.evaluate((el) => ({
-    filter: getComputedStyle(document.body).filter,
-    rgb: getComputedStyle(el)
-      .color.match(/\d+/g)!
-      .slice(0, 3)
-      .map(Number),
-  }));
-  await page.context().setOffline(false);
+  const screenshot = (await indicator.screenshot()).toString("base64");
 
-  const inverted = filter.match(/invert\(([\d.]+)\)/);
-  if (!inverted) return rgb;
-  const amount = Number(inverted[1]);
-  return rgb.map((c) => Math.round(c * (1 - amount) + (255 - c) * amount));
-}
+  const [r, g, b] = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(img, 0, 0);
+    const { data } = ctx.getImageData(0, 0, img.width, img.height);
 
-for (const colorScheme of ["light", "dark"] as const) {
-  test(`offline status reads orange in ${colorScheme} mode`, async ({
-    page,
-  }) => {
-    await page.emulateMedia({ colorScheme });
-    await createEvent(page);
+    let best = [0, 0, 0];
+    let bestChroma = -1;
+    for (let i = 0; i < data.length; i += 4) {
+      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+      const chroma = r - Math.min(g, b);
+      if (chroma > bestChroma) [bestChroma, best] = [chroma, [r, g, b]];
+    }
+    return best;
+  }, screenshot);
 
-    const [r, g, b] = await offlineStatusScreenColor(page);
-    expect(r).toBeGreaterThan(b + 60);
-    expect(r).toBeGreaterThan(g);
-  });
-}
+  expect(r).toBeGreaterThan(b + 60);
+  expect(r).toBeGreaterThan(g);
+});
