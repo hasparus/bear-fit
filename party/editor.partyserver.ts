@@ -27,9 +27,6 @@ interface UpdateRow {
 const TABLE_DOCUMENTS = "documents";
 const TABLE_UPDATES = "document_updates";
 
-const TEXT_ENCODER = new TextEncoder();
-const HISTORY_SEPARATOR = TEXT_ENCODER.encode("\n\n");
-
 export class EditorPartyServer extends YServer<EditorEnv> {
   static callbackOptions = {
     debounceMaxWait: 5_000,
@@ -229,25 +226,24 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     }
   }
 
+  /**
+   * Length-prefixed framing, per record:
+   * [4-byte big-endian uint32: clock][4-byte big-endian uint32: update byteLength][update bytes]
+   */
   private encodeHistory(rows: UpdateRow[]): Uint8Array {
-    const parts: Uint8Array[] = [];
-    const appendPair = (label: string, value: Uint8Array) => {
-      parts.push(TEXT_ENCODER.encode(label));
-      parts.push(HISTORY_SEPARATOR);
-      parts.push(value);
-      parts.push(HISTORY_SEPARATOR);
-    };
-
-    for (const row of rows) {
-      appendPair(String(row.clock), new Uint8Array(row.update));
-    }
-
-    const totalSize = parts.reduce((acc, part) => acc + part.length, 0);
+    const totalSize = rows.reduce(
+      (acc, row) => acc + 8 + new Uint8Array(row.update).byteLength,
+      0,
+    );
     const body = new Uint8Array(totalSize);
+    const view = new DataView(body.buffer);
     let offset = 0;
-    for (const part of parts) {
-      body.set(part, offset);
-      offset += part.length;
+    for (const row of rows) {
+      const update = new Uint8Array(row.update);
+      view.setUint32(offset, row.clock);
+      view.setUint32(offset + 4, update.byteLength);
+      body.set(update, offset + 8);
+      offset += 8 + update.byteLength;
     }
     return body;
   }
