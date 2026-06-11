@@ -2,7 +2,6 @@ import type YPartyKitProvider from "y-partykit/provider";
 
 import {
   createContext,
-  type ReactNode,
   useContext,
   useEffect,
   useState,
@@ -20,9 +19,10 @@ function getStatus(provider: YPartyKitProvider): SyncStatus {
   return "offline";
 }
 
-function useSyncStatus(provider: YPartyKitProvider): SyncStatus {
+function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
   return useSyncExternalStore(
     (onChange) => {
+      if (!provider) return () => {};
       provider.on("status", onChange);
       provider.on("sync", onChange);
       window.addEventListener("online", onChange);
@@ -34,28 +34,12 @@ function useSyncStatus(provider: YPartyKitProvider): SyncStatus {
         window.removeEventListener("offline", onChange);
       };
     },
-    () => getStatus(provider),
+    () => (provider ? getStatus(provider) : null),
   );
 }
 
-const SyncStatusContext = createContext<SyncStatus | null>(null);
-
-/** Publishes the provider's live sync status to the event subtree. */
-export function SyncStatusProvider({
-  provider,
-  children,
-}: {
-  provider: YPartyKitProvider;
-  children: ReactNode;
-}) {
-  const status = useSyncStatus(provider);
-
-  return (
-    <SyncStatusContext.Provider value={status}>
-      {children}
-    </SyncStatusContext.Provider>
-  );
-}
+/** The room's Yjs provider, shared down to the one component that shows sync state. */
+export const SyncProviderContext = createContext<YPartyKitProvider | null>(null);
 
 const LABEL = {
   offline: "offline",
@@ -86,7 +70,7 @@ function useSaveHint() {
 }
 
 export function SyncIndicator({ className }: { className?: string }) {
-  const status = useContext(SyncStatusContext);
+  const status = useSyncStatus(useContext(SyncProviderContext));
   const hint = useSaveHint();
 
   if (!status) return null;
