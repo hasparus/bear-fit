@@ -170,3 +170,33 @@ Stop and report back (do not improvise) if:
 - If a creator-facing "delete event" lands later, it should call the same `deleteAll()` path.
 - The expiry silently invalidates shared links and footer "recents" — if users complain, the next iteration is a tombstone record ("this event expired") instead of a clean empty room.
 - Reviewer focus: alarm scheduling must not run on every keystroke-level update in a hot path synchronously — `setAlarm` is async/cheap, `void`-ing it is fine, but confirm no `await` was added inside the Yjs `update` handler (it must stay synchronous).
+
+---
+
+## Revision 2 (2026-06-11) — supersedes Steps 2's deleteAll and adds a UX surface
+
+Maintainer decision: **never let a user join an empty room, and never silently
+destroy an expired event** — expired events are sometimes important. The TTL
+bounds the unbounded part (the update log), not the event itself.
+
+Changes vs the original design:
+
+1. **`onAlarm`**: if the room has a calendar event → compact to a final state
+   snapshot in `documents`, delete all `document_updates` rows, and store an
+   `expiredAt` (ms) marker via `ctx.storage.put`. Only rooms with NO event
+   (junk from typo'd links) get `deleteAll()`.
+2. **`onConnect`** (EditorPartyServer): before starting sync, close the
+   connection with app code `4404` when the room has no event, and `4410` when
+   `expiredAt` is set. Legit clients always connect after the create POST
+   succeeded, so live flows are unaffected.
+3. **GET `/parties/main/:id`** additionally returns `expiredAt` (number | null)
+   alongside the doc JSON so the client can distinguish live / expired / absent.
+4. **Client**: `Routes` preflights that GET before mounting `YProvider`:
+   - no event → "event not found" retro box (no WS connection, nothing persisted);
+   - `expiredAt` set → hydrate the local doc from the JSON
+     (`overwriteYDocWithJson`) and render `<EventDetails disabled />` behind an
+     "expired on <date>" banner — Export JSON in the footer still works;
+   - live → current behavior.
+5. **Integration note**: PR #31's `Dashboard.spec.ts` seeds occupancy by opening
+   raw WebSockets to event-less rooms; once both land, that helper must create
+   real events first (the rejection in (2) closes its sockets).
