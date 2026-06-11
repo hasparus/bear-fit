@@ -1,0 +1,3 @@
+# Copy to .dev.vars (or just run `pnpm test` once — playwright.config.ts writes it).
+# Dev/CI use the committed TEST keypair in .ssh/test/. Prod sets this via `wrangler secret put PUBLIC_KEY_B64`.
+PUBLIC_KEY_B64="<contents of .ssh/test/id_ed25519.pub>"
