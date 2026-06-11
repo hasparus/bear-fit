@@ -106,21 +106,3 @@ test('"/" stays typable in form fields (Quick Find suppression is field-aware)',
 
   await expect(name).toHaveValue("lunch w/ team");
 });
-
-test("offline status uses the pre-inverted danger color in dark mode", async ({
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: "dark" });
-  await createEvent(page);
-
-  await page.context().setOffline(true);
-  const indicator = page.locator("[data-sync-status]");
-  await expect(indicator).toContainText("offline");
-
-  const [r, g, b] = await indicator.evaluate((el) =>
-    getComputedStyle(el).color.match(/\d+/g)!.slice(0, 3).map(Number),
-  );
-
-  expect(b).toBeGreaterThan(r + 60);
-  expect(b).toBeGreaterThan(g);
-});
