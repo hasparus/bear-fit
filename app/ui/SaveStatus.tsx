@@ -38,8 +38,8 @@ function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
   );
 }
 
-/** The room's Yjs provider, shared down to the one component that shows sync state. */
-export const SyncProviderContext = createContext<YPartyKitProvider | null>(null);
+/** The room's live Yjs provider (the websocket connection, not the doc). */
+export const YProviderContext = createContext<YPartyKitProvider | null>(null);
 
 const LABEL = {
   offline: "offline",
@@ -70,7 +70,7 @@ function useSaveHint() {
 }
 
 export function SyncIndicator({ className }: { className?: string }) {
-  const status = useSyncStatus(useContext(SyncProviderContext));
+  const status = useSyncStatus(useContext(YProviderContext));
   const hint = useSaveHint();
 
   if (!status) return null;

@@ -12,7 +12,7 @@ import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { DialogsProvider } from "./ui/Dialog";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
-import { SaveHotkey, SyncProviderContext } from "./ui/SaveStatus";
+import { SaveHotkey, YProviderContext } from "./ui/SaveStatus";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
@@ -96,9 +96,9 @@ function YProvider({
 
   return (
     <YDocContext.Provider value={yDoc}>
-      <SyncProviderContext.Provider value={yProvider}>
+      <YProviderContext.Provider value={yProvider}>
         {children}
-      </SyncProviderContext.Provider>
+      </YProviderContext.Provider>
     </YDocContext.Provider>
   );
 }
