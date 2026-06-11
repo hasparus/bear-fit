@@ -37,6 +37,8 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   retries: process.env.CI ? 2 : 0,
   testDir: "./app",
+  // *.test.ts files are vitest unit tests; only *.spec.ts are Playwright's.
+  testMatch: "**/*.spec.ts",
   workers: process.env.CI ? 1 : undefined,
 
   projects: [
