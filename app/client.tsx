@@ -12,12 +12,4 @@ Clarity.identify(getUserId());
 
 // TODO: Cookie Consent UI.
 
-const SCAN = false;
-if (process.env.NODE_ENV === "development" && SCAN) {
-  const { scan } = await import("react-scan");
-  scan({
-    enabled: true,
-  });
-}
-
 createRoot(document.getElementById("app")!).render(<App />);

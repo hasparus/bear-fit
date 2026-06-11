@@ -85,15 +85,6 @@ export const resolveEventDates = (
   return { endDate: event.endDate, startDate: event.startDate };
 };
 
-export const AvailabilityDelta = type({
-  "add?": type(["string"]),
-  "name?": type("string"),
-  "remove?": type(["string"]),
-  userId: "string",
-});
-
-export type AvailabilityDelta = typeof AvailabilityDelta.infer;
-
 const AVAILABILITY_KEY_SEPARATOR = "〷";
 export type AvailabilityKey =
   `${UserId}${typeof AVAILABILITY_KEY_SEPARATOR}${IsoDate}`;
@@ -103,11 +94,6 @@ export const AvailabilityKey = (
   date: IsoDate,
 ): AvailabilityKey =>
   `${userId}${AVAILABILITY_KEY_SEPARATOR}${date}` as AvailabilityKey;
-
-AvailabilityKey.split = (key: AvailabilityKey) => {
-  const [userId, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
-  return { date: date as IsoDate, userId: userId as UserId };
-};
 
 AvailabilityKey.parse = (key: string): AvailabilityKey => {
   const [_, date] = key.split(AVAILABILITY_KEY_SEPARATOR);
