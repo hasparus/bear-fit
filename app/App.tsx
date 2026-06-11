@@ -12,10 +12,9 @@ import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { DialogsProvider } from "./ui/Dialog";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
-import { SaveHotkey, YProviderContext } from "./ui/SaveStatus";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
-import { YDocContext } from "./useYDoc";
+import { YDocContext, YProviderContext } from "./useYDoc";
 import "./styles.css";
 
 export function App() {
@@ -35,7 +34,6 @@ export function App() {
         </div>
         <AppFooter className="mt-8" currentEventId={params.get("id")} />
         <CursorPartyScript />
-        <SaveHotkey />
       </DialogsProvider>
     </PreferencesProvider>
   );

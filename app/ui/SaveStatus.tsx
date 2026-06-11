@@ -1,13 +1,14 @@
 import type YPartyKitProvider from "y-partykit/provider";
 
 import {
-  createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
   useSyncExternalStore,
 } from "react";
 
+import { YProviderContext } from "../useYDoc";
 import { cn } from "./cn";
 
 type SyncStatus = "offline" | "saved" | "saving";
@@ -20,9 +21,9 @@ function getStatus(provider: YPartyKitProvider): SyncStatus {
 }
 
 function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (!provider) return () => {};
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      if (!provider) return () => undefined;
       provider.on("status", onChange);
       provider.on("sync", onChange);
       window.addEventListener("online", onChange);
@@ -34,12 +35,13 @@ function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
         window.removeEventListener("offline", onChange);
       };
     },
-    () => (provider ? getStatus(provider) : null),
+    [provider],
+  );
+
+  return useSyncExternalStore(subscribe, () =>
+    provider ? getStatus(provider) : null,
   );
 }
-
-/** The room's live Yjs provider (the websocket connection, not the doc). */
-export const YProviderContext = createContext<YPartyKitProvider | null>(null);
 
 const LABEL = {
   offline: "offline",
@@ -47,17 +49,25 @@ const LABEL = {
   saving: "saving…",
 } as const;
 
-/** Dispatched globally on Cmd/Ctrl+S; the indicator pops its toast in response. */
-const SAVE_HINT_EVENT = "bearfit:save-hint";
-
-/** True for ~2.5s after the last Cmd/Ctrl+S, to flash the autosave toast. */
+/**
+ * True for ~2.5s after the last Cmd/Ctrl+S, to flash the autosave toast.
+ * Swallows the browser's Save dialog. Capture phase so we run before the
+ * external cursor-party script, which otherwise eats Cmd+S in Firefox.
+ */
 function useSaveHint() {
   const [hintAt, setHintAt] = useState(0);
 
   useEffect(() => {
-    const onHint = () => setHintAt(Date.now());
-    window.addEventListener(SAVE_HINT_EVENT, onHint);
-    return () => window.removeEventListener(SAVE_HINT_EVENT, onHint);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        setHintAt(Date.now());
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", onKeyDown, { capture: true });
   }, []);
 
   useEffect(() => {
@@ -85,15 +95,14 @@ export function SyncIndicator({ className }: { className?: string }) {
       )}
     >
       <span
-        aria-live="polite"
         data-show={hint}
         role="status"
         className={cn(
           "pointer-events-none absolute bottom-full left-0 z-50 mb-1.5 origin-[16px_100%]",
           "whitespace-nowrap rounded-sm bg-black px-2 py-1 text-white",
-          "translate-y-[3px] scale-90 opacity-0 transition duration-300 ease-overshoot",
-          "group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
-          "data-[show=true]:translate-y-0 data-[show=true]:scale-100 data-[show=true]:opacity-100",
+          "invisible translate-y-[3px] scale-90 opacity-0 transition-all duration-300 ease-overshoot",
+          "group-hover:visible group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
+          "data-[show=true]:visible data-[show=true]:translate-y-0 data-[show=true]:scale-100 data-[show=true]:opacity-100",
         )}
       >
         {status === "offline"
@@ -103,27 +112,4 @@ export function SyncIndicator({ className }: { className?: string }) {
       {LABEL[status]}
     </span>
   );
-}
-
-/**
- * Mounted once at the root (renders nothing). Cmd/Ctrl+S never opens the
- * browser's Save dialog — instead it flashes the autosave toast. Capture phase
- * so we run before the external cursor-party script, which otherwise swallows
- * Cmd+S in Firefox.
- */
-export function SaveHotkey() {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-        event.preventDefault();
-        window.dispatchEvent(new Event(SAVE_HINT_EVENT));
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", onKeyDown, { capture: true });
-  }, []);
-
-  return null;
 }

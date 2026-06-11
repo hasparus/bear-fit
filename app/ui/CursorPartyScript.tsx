@@ -16,6 +16,10 @@ function isTyping(target: EventTarget | null) {
  * cursor-party opens its chat on "/". Capture the key before its own listener
  * to tame two browser quirks: keep "/" typable inside form fields (don't let
  * the chat eat it), and suppress Firefox's Quick Find so the chat wins.
+ *
+ * Beating cursor-party relies on registration order: capture listeners fire
+ * in the order they were added, and ours wins only because the external
+ * script loads async, after mount.
  */
 function useCursorChatKey() {
   useEffect(() => {

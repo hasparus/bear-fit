@@ -1,28 +1,12 @@
 import { type Page } from "@playwright/test";
 
 import { expect, test } from "../test";
+import { createEvent as createEventBase } from "../test/utils/createEvent";
 
 test.setTimeout(60_000);
 
-/** Creates an event and lands on its page. Returns nothing — the page is there. */
-async function createEvent(page: Page) {
-  await page.goto("/");
-  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
-
-  await page.getByLabel("Name your event").fill("sync status test");
-  await page.getByRole("button", { name: "next month" }).click();
-
-  const nextMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-  const nextMonthName = nextMonth.toLocaleDateString("en-US", { month: "long" });
-  await expect(page.getByText(nextMonthName)).toBeVisible();
-
-  await page.getByRole("button", { name: `${nextMonthName} 6th` }).click();
-  await page.getByRole("button", { name: `${nextMonthName} 12th` }).click();
-  await page.getByText("Create Event").click();
-
-  await expect(page).toHaveURL(/\?id=/);
-  await page.getByText("Event dates").waitFor({ state: "visible" });
-}
+const createEvent = (page: Page) =>
+  createEventBase(page, { name: "sync status test" });
 
 test("reflects online, offline, and reconnected sync state", async ({ page }) => {
   await createEvent(page);
