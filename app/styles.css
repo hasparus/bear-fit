@@ -16,7 +16,6 @@
   --color-slate-*: initial;
   --color-stone-*: initial;
   --color-accent: #05e;
-  /* Orange in light mode; the global dark-mode invert renders it blue. */
   --color-danger: #f97316;
 
   --ease-overshoot: linear(
@@ -124,6 +123,9 @@
     :root {
       --color-accent: #049;
       --accent: #049;
+      /* Pre-inverted: the body invert(0.9) turns this blue back into orange,
+         so "danger" stays orange-ish in dark mode instead of flipping. */
+      --color-danger: #08f;
     }
   }
 

@@ -106,3 +106,41 @@ test('"/" stays typable in form fields (Quick Find suppression is field-aware)',
 
   await expect(name).toHaveValue("lunch w/ team");
 });
+
+/**
+ * The on-screen color of the offline status, accounting for the global
+ * dark-mode `filter: invert(...)` on <body>. We read the actual filter rather
+ * than hardcoding its amount, so the test stays honest if it changes.
+ */
+async function offlineStatusScreenColor(page: Page) {
+  await page.context().setOffline(true);
+  const indicator = page.locator("[data-sync-status]");
+  await expect(indicator).toContainText("offline");
+
+  const { filter, rgb } = await indicator.evaluate((el) => ({
+    filter: getComputedStyle(document.body).filter,
+    rgb: getComputedStyle(el)
+      .color.match(/\d+/g)!
+      .slice(0, 3)
+      .map(Number),
+  }));
+  await page.context().setOffline(false);
+
+  const inverted = filter.match(/invert\(([\d.]+)\)/);
+  if (!inverted) return rgb;
+  const amount = Number(inverted[1]);
+  return rgb.map((c) => Math.round(c * (1 - amount) + (255 - c) * amount));
+}
+
+for (const colorScheme of ["light", "dark"] as const) {
+  test(`offline status reads orange in ${colorScheme} mode`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ colorScheme });
+    await createEvent(page);
+
+    const [r, g, b] = await offlineStatusScreenColor(page);
+    expect(r).toBeGreaterThan(b + 60);
+    expect(r).toBeGreaterThan(g);
+  });
+}

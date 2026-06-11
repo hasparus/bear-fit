@@ -14,12 +14,9 @@ import { cn } from "./cn";
 type SyncStatus = "offline" | "saved" | "saving";
 
 function getStatus(provider: YPartyKitProvider): SyncStatus {
-  const online =
-    provider.wsconnected &&
-    (typeof navigator === "undefined" || navigator.onLine);
-
-  if (online) return provider.synced ? "saved" : "saving";
-  if (provider.wsconnecting && navigator.onLine) return "saving";
+  if (!navigator.onLine) return "offline";
+  if (provider.wsconnected) return provider.synced ? "saved" : "saving";
+  if (provider.wsconnecting) return "saving";
   return "offline";
 }
 
@@ -69,8 +66,8 @@ const LABEL = {
 /** Dispatched globally on Cmd/Ctrl+S; the indicator pops its toast in response. */
 const SAVE_HINT_EVENT = "bearfit:save-hint";
 
-export function SyncIndicator({ className }: { className?: string }) {
-  const status = useContext(SyncStatusContext);
+/** True for ~2.5s after each Cmd/Ctrl+S, to flash the autosave toast. */
+function useSaveHint() {
   const [hint, setHint] = useState(false);
 
   useEffect(() => {
@@ -84,6 +81,13 @@ export function SyncIndicator({ className }: { className?: string }) {
     const timeout = setTimeout(() => setHint(false), 2500);
     return () => clearTimeout(timeout);
   }, [hint]);
+
+  return hint;
+}
+
+export function SyncIndicator({ className }: { className?: string }) {
+  const status = useContext(SyncStatusContext);
+  const hint = useSaveHint();
 
   if (!status) return null;
 
@@ -117,36 +121,18 @@ export function SyncIndicator({ className }: { className?: string }) {
   );
 }
 
-function isTyping(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.tagName === "SELECT")
-  );
-}
-
 /**
- * App-wide keyboard concerns, mounted once at the root (renders nothing):
- * - Cmd/Ctrl+S never opens the browser's Save dialog; it hints that we autosave.
- * - "/" is handed to cursor-party's chat instead of Firefox's Quick Find.
+ * Mounted once at the root (renders nothing). Cmd/Ctrl+S never opens the
+ * browser's Save dialog — instead it flashes the autosave toast. Capture phase
+ * so we run before the external cursor-party script, which otherwise swallows
+ * Cmd+S in Firefox.
  */
-export function GlobalKeyHandler() {
+export function SaveHotkey() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
         window.dispatchEvent(new Event(SAVE_HINT_EVENT));
-        return;
-      }
-
-      if (event.key === "/") {
-        if (isTyping(event.target)) {
-          event.stopImmediatePropagation();
-        } else {
-          event.preventDefault();
-        }
       }
     };
 

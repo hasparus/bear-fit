@@ -12,7 +12,7 @@ import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { DialogsProvider } from "./ui/Dialog";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
-import { GlobalKeyHandler, SyncStatusProvider } from "./ui/SaveStatus";
+import { SaveHotkey, SyncStatusProvider } from "./ui/SaveStatus";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
@@ -35,7 +35,7 @@ export function App() {
         </div>
         <AppFooter className="mt-8" currentEventId={params.get("id")} />
         <CursorPartyScript />
-        <GlobalKeyHandler />
+        <SaveHotkey />
       </DialogsProvider>
     </PreferencesProvider>
   );
