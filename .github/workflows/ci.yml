@@ -40,14 +40,14 @@ jobs:
       # Split system deps from the browser download: the combined
       # `--with-deps` wedges on the interactive `needrestart` apt prompt.
       - name: Install Playwright system deps
-        run: pnpm exec playwright install-deps chromium
+        run: pnpm exec playwright install-deps chromium firefox
         timeout-minutes: 5
         env:
           DEBIAN_FRONTEND: noninteractive
           NEEDRESTART_MODE: a
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium
+        run: pnpm exec playwright install chromium firefox
         timeout-minutes: 5
 
       # playwright.config.ts writes the committed test public key to .dev.vars,
