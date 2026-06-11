@@ -2,7 +2,12 @@ import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
-import { type CalendarEvent, resolveEventDates } from "../schemas";
+import {
+  addDays,
+  type CalendarEvent,
+  resolveEventDates,
+  startOfTodayUtc,
+} from "../schemas";
 import { type EventDatesPatch } from "../shared-data";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
@@ -20,6 +25,8 @@ export interface EditEventFormProps {
 
 export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
   const { endDate, startDate } = resolveEventDates(event);
+  // UTC-midnight seeds; DateRangePicker pins react-day-picker to timeZone="UTC",
+  // so every date it receives or emits is bucketed by its UTC day.
   const seedStart = startDate ? new Date(startDate) : undefined;
   const seedEnd = endDate ? new Date(endDate) : undefined;
 
@@ -30,7 +37,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     }),
   );
 
-  const today = new Date();
+  const today = startOfTodayUtc();
   const earliestDate = seedStart && seedStart < today ? seedStart : today;
   const initialRange: DateRange | undefined =
     seedStart && seedEnd ? { from: seedStart, to: seedEnd } : undefined;
@@ -77,12 +84,9 @@ function unfoldDateRange(range: DateRange): Date[] {
   const { from, to } = range;
   if (!from || !to) return [];
   const dates: Date[] = [];
-  for (
-    let date = new Date(from);
-    date <= to;
-    date.setDate(date.getDate() + 1)
-  ) {
-    dates.push(new Date(date));
+  // inputs are UTC-midnight dates, so step in UTC days (immune to DST shifts)
+  for (let date = new Date(from); date <= to; date = addDays(date, 1)) {
+    dates.push(date);
   }
   return dates;
 }

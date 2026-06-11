@@ -19,6 +19,7 @@ import {
   IsoDate,
   isoDate,
   resolveEventDates,
+  startOfTodayUtc,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
@@ -126,11 +127,11 @@ export function EventDetails({
   );
 
   const groupedDays = eachDayOfInterval(
-    startDate ? new Date(startDate) : new Date(),
-    endDate ? new Date(endDate) : new Date(),
+    startDate ? new Date(startDate) : startOfTodayUtc(),
+    endDate ? new Date(endDate) : startOfTodayUtc(),
   ).reduce(
     (acc, day) => {
-      const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
+      const monthKey = `${day.getUTCFullYear()}-${day.getUTCMonth()}`;
       if (!acc[monthKey]) {
         acc[monthKey] = [];
       }
@@ -276,11 +277,15 @@ export function EventDetails({
                 {startDate && endDate ? (
                   <>
                     <time dateTime={startDate}>
-                      {new Date(startDate).toLocaleDateString()}
+                      {new Date(startDate).toLocaleDateString(undefined, {
+                        timeZone: "UTC",
+                      })}
                     </time>
                     {" - "}
                     <time dateTime={endDate}>
-                      {new Date(endDate).toLocaleDateString()}
+                      {new Date(endDate).toLocaleDateString(undefined, {
+                        timeZone: "UTC",
+                      })}
                     </time>
                     {event.rolling && (
                       <RollingWindowIndicator days={event.rolling} />
@@ -353,6 +358,7 @@ export function EventDetails({
                     <div className="mb-2 mt-4 first:mt-2">
                       {monthDays[0].toLocaleDateString("en-US", {
                         month: "long",
+                        timeZone: "UTC",
                       })}
                     </div>
                     <div className="grid grid-cols-7 gap-1 relative">
