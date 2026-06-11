@@ -187,3 +187,24 @@ Stop and report back (do not improvise) if:
 
 - `app/api/getHistory.ts` and `app/api/getRoomCount.ts` still have zero error handling — candidates for the same `!res.ok` treatment in a later cleanup (deliberately excluded here).
 - If retry/offline handling is added later, do it at the form level, not inside postEvent (keep the API helper a thin throw-on-error fetch).
+
+---
+
+## Revision 2 (2026-06-11) — optimistic creation; Yjs sync owns delivery
+
+Maintainer decisions: waiting for the POST before navigating is a UX
+regression ("we must be optimistic"), and Yjs sync repairing the server state
+is a feature of the local-first design, not papering-over. Supersedes Steps 2-3:
+
+1. `App.tsx` onSubmit: `initializeEventMap(yDoc, ev)` → `params.set("id", ev.id)`
+   **synchronously** → `void postEvent(ev).catch(console.error)` in the
+   background. The local doc renders instantly; the WS sync creates the event
+   server-side even if the POST fails.
+2. `postEvent` keeps the `!res.ok` throw (diagnostics), but no UI consumes it —
+   remove the CreateEventForm error-alert state from revision 1.
+3. The e2e test flips: with the create POST intercepted to 400, submitting must
+   STILL navigate to `?id=` and render the event grid (sync delivered it).
+4. Interaction with plan 007: its preflight must treat "local doc already holds
+   this event id" as live (no fetch), and its `onConnect` must NOT reject
+   event-less rooms (4404) — that would break sync-repair; only expired rooms
+   (4410) are rejected. Recorded in plan 007 Revision 3.

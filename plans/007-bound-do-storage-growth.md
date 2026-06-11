@@ -200,3 +200,19 @@ Changes vs the original design:
 5. **Integration note**: PR #31's `Dashboard.spec.ts` seeds occupancy by opening
    raw WebSockets to event-less rooms; once both land, that helper must create
    real events first (the rejection in (2) closes its sockets).
+
+## Revision 3 (2026-06-11) — keep sync-repair alive
+
+Plan 004 Revision 2 makes event creation optimistic: the creator can reach the
+event view (and connect) before the POST lands — and if the POST fails, the
+Yjs sync IS the creation path. Therefore:
+
+1. Drop the `4404` (no event) rejection in `onConnect` — rejecting event-less
+   rooms would break sync-repair. The empty-room UX is handled client-side by
+   the preflight (visitors never connect to event-less rooms through the UI);
+   raw clients writing junk into event-less rooms are bounded by the TTL alarm
+   (no event at expiry → `deleteAll`).
+2. Keep the `4410` (expired) rejection — expired rooms must not be silently
+   resurrected by a reconnecting stale client.
+3. Preflight skips the fetch when `getEventMap(yDoc).get("id") === eventId`
+   (the creator's own optimistic navigation) and goes straight to "live".
