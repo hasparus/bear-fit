@@ -9,8 +9,7 @@ async function createEvent(page: Page, eventName: string, startDay: number, endD
 
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(eventName);
+  await page.getByLabel("Name your event").fill(eventName);
 
   await page.getByRole("button", { name: "next month" }).click();
 

@@ -154,8 +154,7 @@ test("creator imports a JSON file to overwrite the event doc", async ({
 
   const eventName = `import overwrite ${Math.random().toString(36).slice(2)}`;
 
-  await page.keyboard.press("Tab");
-  await page.keyboard.type(eventName);
+  await page.getByLabel("Name your event").fill(eventName);
 
   await page.getByRole("button", { name: "next month" }).click();
 
