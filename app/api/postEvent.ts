@@ -10,12 +10,15 @@ export async function postEvent(
     method: "POST",
   });
 
-  if (res.status === 404) {
-    throw new Error("server not found");
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    const detail = body?.error ?? "";
+    throw new Error(
+      `creating event failed (${res.status})${detail ? `: ${detail}` : ""}`,
+    );
   }
 
-  const json = await res.json();
-
-  // TODO: If the status was not 200, we should show an error message and retry.
-  return json;
+  return (await res.json()) as unknown;
 }

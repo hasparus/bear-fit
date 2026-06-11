@@ -56,16 +56,10 @@ function Routes({
     </Suspense>
   ) : (
     <CreateEventForm
-      onSubmit={(calendarEvent) => {
+      onSubmit={async (calendarEvent) => {
         initializeEventMap(yDoc, calendarEvent);
-
-        return postEvent(calendarEvent)
-          .catch((error) => {
-            console.error("creating event failed", error);
-          })
-          .then(() => {
-            params.set("id", calendarEvent.id);
-          });
+        await postEvent(calendarEvent);
+        params.set("id", calendarEvent.id);
       }}
     />
   );

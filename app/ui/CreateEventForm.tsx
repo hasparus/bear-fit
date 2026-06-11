@@ -26,6 +26,7 @@ export function CreateEventForm({
   onSubmit: (event: CalendarEvent) => Promise<void>;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<Error>();
   const [dates, setDates] = useState<EventDatesValue>(() =>
     defaultEventDatesValue(),
   );
@@ -53,11 +54,16 @@ export function CreateEventForm({
           const base = { id: nanoid(), creator: getUserId(), name };
           const calendarEvent: CalendarEvent = { ...base, ...patch };
 
+          setError(undefined);
           setIsSubmitting(true);
-          onSubmit(calendarEvent).finally(() => {
-            Clarity.event("event-created");
-            setIsSubmitting(false);
-          });
+          onSubmit(calendarEvent)
+            .catch((error: unknown) => {
+              setError(error instanceof Error ? error : new Error(`${error}`));
+            })
+            .finally(() => {
+              Clarity.event("event-created");
+              setIsSubmitting(false);
+            });
         }}
       >
         <h1 className="mb-4 font-bold leading-[1.3333]">Create a Calendar</h1>
@@ -92,6 +98,11 @@ export function CreateEventForm({
         >
           {isSubmitting ? "Creating..." : "Create Event"}
         </button>
+        {error && (
+          <p className="mt-2 text-red-500" role="alert">
+            {error.message}
+          </p>
+        )}
       </form>
     </Container>
   );
