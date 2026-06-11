@@ -15,7 +15,7 @@ honor its STOP conditions, and update your row when done.
 | 004 | Surface event-creation failures in the create form | P2 | S | — | PR [#30](https://github.com/hasparus/bear-fit/pull/30) |
 | 005 | Harden occupancy endpoint + replay-bounded dashboard auth | P1 | M | — | PR [#31](https://github.com/hasparus/bear-fit/pull/31) |
 | 006 | Dependency security pass (CVE patches, placement, pruning) | P1 | M | — | PR [#32](https://github.com/hasparus/bear-fit/pull/32) |
-| 007 | Bound DO storage: event TTL via alarms + log compaction | P2 | L | 002 | IN PROGRESS |
+| 007 | Bound DO storage: event TTL via alarms + log compaction | P2 | L | 002 | PR [#34](https://github.com/hasparus/bear-fit/pull/34) (stacked on #28) |
 | 008 | Refresh AGENTS.md/README for the Workers + partyserver stack | P2 | S | — | PR [#33](https://github.com/hasparus/bear-fit/pull/33) |
 
 Status values: TODO | IN PROGRESS | DONE | BLOCKED (with one-line reason) |
@@ -89,7 +89,9 @@ Grounded suggestions from the audit, for when the bug/security queue clears:
 3. **Timezone display support** — plan 003 made the math UTC-consistent
    (react-day-picker turned out to already be UTC-pinned, so no boundary
    helpers were needed); showing the event in a chosen IANA zone (crab.fit
-   parity) is the natural next layer on that invariant.
+   parity) is the natural next layer on that invariant. Maintainer decision
+   (2026-06-11): NO visible timezone select in the main UI — expose it only
+   through right-click/context-menu or a future command palette.
 4. **.ics export** — todo.gitignored.md "Big Features" lists calendar saving;
    right-click → download .ics for the winning date is a contained, offline
    feature.
