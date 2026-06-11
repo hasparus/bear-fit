@@ -12,6 +12,7 @@ import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { DialogsProvider } from "./ui/Dialog";
 import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
+import { GlobalKeyHandler, SyncStatusProvider } from "./ui/SaveStatus";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
 import { YDocContext } from "./useYDoc";
@@ -34,6 +35,7 @@ export function App() {
         </div>
         <AppFooter className="mt-8" currentEventId={params.get("id")} />
         <CursorPartyScript />
+        <GlobalKeyHandler />
       </DialogsProvider>
     </PreferencesProvider>
   );
@@ -82,7 +84,7 @@ function YProvider({
 }) {
   // This needs to be a separate component, because the `.room` option is immutable in
   // `useYProvider`, and we don't know the room until we create the event.
-  const _yProvider = useYProvider({
+  const yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,
     room,
@@ -92,5 +94,9 @@ function YProvider({
     },
   });
 
-  return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;
+  return (
+    <YDocContext.Provider value={yDoc}>
+      <SyncStatusProvider provider={yProvider}>{children}</SyncStatusProvider>
+    </YDocContext.Provider>
+  );
 }

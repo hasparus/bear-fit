@@ -104,14 +104,11 @@ const ContextMenuCheckboxItem = React.forwardRef<
     )}
     {...props}
   >
-    <span className="absolute left-2 flex size-4 items-center justify-center">
+    <span className="absolute left-2 top-1/2 flex size-4 -translate-y-1/2 items-center justify-center">
       <ContextMenuPrimitive.ItemIndicator>
-        <CheckIcon checked className="translate-x-1.5 translate-y-[3.5px]" />
+        <CheckIcon checked className="translate-x-1" />
       </ContextMenuPrimitive.ItemIndicator>
-      <CheckIcon
-        checked={false}
-        className="translate-x-1.5 translate-y-[3.5px] first:block hidden"
-      />
+      <CheckIcon checked={false} className="translate-x-1 first:block hidden" />
     </span>
     {children}
   </ContextMenuPrimitive.CheckboxItem>

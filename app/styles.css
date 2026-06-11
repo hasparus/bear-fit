@@ -16,6 +16,8 @@
   --color-slate-*: initial;
   --color-stone-*: initial;
   --color-accent: #05e;
+  /* Orange in light mode; the global dark-mode invert renders it blue. */
+  --color-danger: #f97316;
 
   --ease-overshoot: linear(
     0 0%,

@@ -52,6 +52,7 @@ import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { RollingWindowIndicator } from "./RollingWindowIndicator";
+import { SyncIndicator } from "./SaveStatus";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
@@ -602,6 +603,7 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
+      <SyncIndicator className="mr-auto self-center" />
       <span
         className="contents"
         style={{ visibility: nerdMode ? "visible" : "hidden" }}
