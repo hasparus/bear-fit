@@ -1,12 +1,17 @@
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import useYProvider from "y-partyserver/react";
+import * as Y from "yjs";
 import { Doc } from "yjs";
 
+import type { EventResponse } from "./api/getEvent";
+
+import { getEvent } from "./api/getEvent";
 import { postEvent } from "./api/postEvent";
 import { serverUrl } from "./api/serverUrl";
 import { AppFooter } from "./AppFooter";
 import { AppHeader } from "./AppHeader";
-import { initializeEventMap } from "./shared-data";
+import { getEventMap, initializeEventMap } from "./shared-data";
+import { Container } from "./ui/Container";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { DialogsProvider } from "./ui/Dialog";
@@ -39,6 +44,12 @@ export function App() {
   );
 }
 
+type PreflightState =
+  | { json: EventResponse; status: "expired" }
+  | { status: "live" }
+  | { status: "loading" }
+  | { status: "not-found" };
+
 function Routes({
   params,
   yDoc,
@@ -48,27 +59,120 @@ function Routes({
 }) {
   const eventId = params.get("id");
 
-  return eventId ? (
+  const [preflight, setPreflight] = useState<PreflightState>({ status: "loading" });
+
+  useEffect(() => {
+    if (!eventId) return;
+    if (getEventMap(yDoc).get("id") === eventId) {
+      setPreflight({ status: "live" });
+      return;
+    }
+    setPreflight({ status: "loading" });
+    getEvent(eventId)
+      .then((json) => {
+        if (!json.event?.id) {
+          setPreflight({ status: "not-found" });
+        } else if (json.expiredAt != null) {
+          setPreflight({ json, status: "expired" });
+        } else {
+          setPreflight({ status: "live" });
+        }
+      })
+      .catch(() => {
+        setPreflight({ status: "not-found" });
+      });
+  }, [eventId, yDoc]);
+
+  const hydratedDoc = useMemo(
+    () =>
+      preflight.status === "expired" ? hydrateDocFromJson(preflight.json) : null,
+    [preflight],
+  );
+
+  if (!eventId) {
+    return (
+      <CreateEventForm
+        onSubmit={(calendarEvent) => {
+          initializeEventMap(yDoc, calendarEvent);
+
+          return postEvent(calendarEvent)
+            .catch((error) => {
+              console.error("creating event failed", error);
+            })
+            .then(() => {
+              params.set("id", calendarEvent.id);
+            });
+        }}
+      />
+    );
+  }
+
+  if (preflight.status === "loading") {
+    return <Loading />;
+  }
+
+  if (preflight.status === "not-found") {
+    return <NotFoundBox />;
+  }
+
+  if (preflight.status === "expired" && hydratedDoc) {
+    const expiredDate = new Date(preflight.json.expiredAt!).toLocaleDateString(
+      undefined,
+      { day: "numeric", month: "long", timeZone: "UTC", year: "numeric" },
+    );
+    return (
+      <div className="w-(--container-width) mx-auto">
+        <div className="mb-2 px-[10px] py-2 bg-neutral-100 border border-neutral-300 rounded-sm font-mono text-sm text-neutral-700">
+          This event expired on {expiredDate} and is now read-only.
+        </div>
+        <YDocContext.Provider value={hydratedDoc}>
+          <EventDetails disabled />
+        </YDocContext.Provider>
+      </div>
+    );
+  }
+
+  return (
     <Suspense fallback={<Loading />}>
       <YProvider room={eventId} yDoc={yDoc}>
         <EventDetails />
       </YProvider>
     </Suspense>
-  ) : (
-    <CreateEventForm
-      onSubmit={(calendarEvent) => {
-        initializeEventMap(yDoc, calendarEvent);
-
-        return postEvent(calendarEvent)
-          .catch((error) => {
-            console.error("creating event failed", error);
-          })
-          .then(() => {
-            params.set("id", calendarEvent.id);
-          });
-      }}
-    />
   );
+}
+
+function NotFoundBox() {
+  return (
+    <Container>
+      <h1 className="mb-4 font-bold leading-[1.3333]">Event not found</h1>
+      <p className="mb-4 font-mono text-sm text-neutral-500">
+        This link doesn&apos;t point to an existing event &mdash; it may have
+        expired after 60 days of inactivity.
+      </p>
+      <a className="btn btn-default" href="/">
+        Create a new event
+      </a>
+    </Container>
+  );
+}
+
+function hydrateDocFromJson(json: EventResponse): Doc {
+  const doc = new Y.Doc();
+  const eventMap = doc.getMap("event");
+  const namesMap = doc.getMap("names");
+  const availabilityMap = doc.getMap("availability");
+
+  Object.entries(json.event).forEach(([k, v]) => {
+    eventMap.set(k, v);
+  });
+  Object.entries(json.names).forEach(([k, v]) => {
+    namesMap.set(k, v);
+  });
+  Object.entries(json.availability).forEach(([k, v]) => {
+    availabilityMap.set(k, v);
+  });
+
+  return doc;
 }
 
 function YProvider({
@@ -80,8 +184,6 @@ function YProvider({
   room: string;
   yDoc: Doc;
 }) {
-  // This needs to be a separate component, because the `.room` option is immutable in
-  // `useYProvider`, and we don't know the room until we create the event.
   const _yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,
