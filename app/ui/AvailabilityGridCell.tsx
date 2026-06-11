@@ -23,8 +23,11 @@ export function AvailabilityGridCell({
   return (
     <button
       type="button"
-      aria-label={day.toLocaleDateString(undefined, { dateStyle: "full" })}
       disabled={disabled}
+      aria-label={day.toLocaleDateString(undefined, {
+        dateStyle: "full",
+        timeZone: "UTC",
+      })}
       className={cn(
         "group flex items-center justify-center rounded-md size-10 select-none hover:border-neutral-200 bg-neutral-100 hover:border-2 relative transition-all border-transparent",
         className,
@@ -37,7 +40,7 @@ export function AvailabilityGridCell({
       }}
       {...rest}
     >
-      {day.toLocaleDateString("en-US", { day: "numeric" })}
+      {day.toLocaleDateString("en-US", { day: "numeric", timeZone: "UTC" })}
     </button>
   );
 }

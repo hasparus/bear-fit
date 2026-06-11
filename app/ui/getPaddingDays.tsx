@@ -1,4 +1,4 @@
 export function getPaddingDays(firstDay: Date, weekStartsOn: number): number {
-  const day = firstDay.getDay();
+  const day = firstDay.getUTCDay();
   return (day - weekStartsOn + 7) % 7;
 }
