@@ -85,6 +85,15 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     connection: Connection,
     ctx: ConnectionContext,
   ): Promise<void> {
+    const expiredAt = await this.ctx.storage.get<number>("expiredAt");
+    if (expiredAt != null) {
+      connection.close(4410, "event expired");
+      return;
+    }
+    if (!hasCalendarEvent(this.document)) {
+      connection.close(4404, "event not found");
+      return;
+    }
     await super.onConnect(connection, ctx);
     void this.updateOccupancyCount();
   }
@@ -154,7 +163,12 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       }
 
       if (url.pathname === `/parties/main/${this.name}`) {
-        return Response.json(yDocToJson(this.document), { headers });
+        const expiredAt =
+          (await this.ctx.storage.get<number>("expiredAt")) ?? null;
+        return Response.json(
+          { ...yDocToJson(this.document), expiredAt },
+          { headers },
+        );
       }
     }
 
@@ -219,7 +233,21 @@ export class EditorPartyServer extends YServer<EditorEnv> {
   }
 
   override async onAlarm(): Promise<void> {
-    await this.ctx.storage.deleteAll();
+    if (hasCalendarEvent(this.document)) {
+      const state = Y.encodeStateAsUpdate(this.document);
+      this.ctx.storage.sql.exec(
+        `INSERT OR REPLACE INTO ${TABLE_DOCUMENTS} (id, state) VALUES (?, ?)`,
+        this.name,
+        state,
+      );
+      this.ctx.storage.sql.exec(
+        `DELETE FROM ${TABLE_UPDATES} WHERE doc_id = ?`,
+        this.name,
+      );
+      await this.ctx.storage.put("expiredAt", Date.now());
+    } else {
+      await this.ctx.storage.deleteAll();
+    }
   }
 
   private compactUpdates() {
