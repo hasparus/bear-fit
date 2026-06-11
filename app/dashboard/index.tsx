@@ -83,14 +83,19 @@ function Dashboard() {
           onSubmit={(event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const signature = formData.get("signature")?.toString();
-            if (signature) {
-              ws.send(
-                JSON.stringify({
-                  type: "auth",
-                  payload: { signature },
-                } satisfies ClientMessage),
-              );
+            const token = formData.get("signature")?.toString();
+            const separatorIndex = token?.indexOf(".") ?? -1;
+            if (token && separatorIndex > 0) {
+              const timestamp = Number(token.slice(0, separatorIndex));
+              const signature = token.slice(separatorIndex + 1);
+              if (Number.isSafeInteger(timestamp) && signature) {
+                ws.send(
+                  JSON.stringify({
+                    type: "auth",
+                    payload: { signature, timestamp },
+                  } satisfies ClientMessage),
+                );
+              }
             }
           }}
         >

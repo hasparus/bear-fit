@@ -2,10 +2,11 @@ import { type } from "arktype";
 import { type Connection, Server } from "partyserver";
 
 import {
+  AUTH_MESSAGE_MAX_AGE,
+  AUTH_MESSAGE_PREFIX,
   AUTHORIZATION_EXPIRATION_TIME,
   base64ToArrayBuffer,
   ClientMessage,
-  HARDCODED_AUTH_MESSAGE_NOT_SMART,
   makePublicRoomInfo,
   type Rooms,
   textEncoder,
@@ -60,7 +61,11 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
 
     if (parsed.type === "auth") {
       try {
-        const verified = await this.verifySignature(parsed.payload.signature);
+        const { signature, timestamp } = parsed.payload;
+        if (Math.abs(Date.now() - timestamp) > AUTH_MESSAGE_MAX_AGE) {
+          return;
+        }
+        const verified = await this.verifySignature(signature, timestamp);
         if (verified) {
           this.authorizeConnection(connection);
         }
@@ -79,6 +84,14 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
     }
 
     if (request.method === "POST") {
+      const url = new URL(request.url);
+      if (
+        url.hostname !== "occupancy.internal" ||
+        request.headers.get("x-occupancy-internal") !== "1"
+      ) {
+        return Response.json({ error: "forbidden" }, { status: 403 });
+      }
+
       const body = await request.json();
       const validated = UpdateFromRoom(body);
       if (validated instanceof type.errors) {
@@ -136,9 +149,14 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
     );
   }
 
-  private async verifySignature(signatureB64: string): Promise<boolean> {
+  private async verifySignature(
+    signatureB64: string,
+    timestamp: number,
+  ): Promise<boolean> {
     try {
-      const encoded = textEncoder.encode(HARDCODED_AUTH_MESSAGE_NOT_SMART);
+      const encoded = textEncoder.encode(
+        AUTH_MESSAGE_PREFIX + String(timestamp),
+      );
       const signature = base64ToArrayBuffer(signatureB64);
       const publicKey = await this.publicKeyPromise;
       return crypto.subtle.verify(
