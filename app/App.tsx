@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import useYProvider from "y-partyserver/react";
 import * as Y from "yjs";
 import { Doc } from "yjs";
@@ -10,7 +10,7 @@ import { postEvent } from "./api/postEvent";
 import { serverUrl } from "./api/serverUrl";
 import { AppFooter } from "./AppFooter";
 import { AppHeader } from "./AppHeader";
-import { initializeEventMap } from "./shared-data";
+import { getEventMap, initializeEventMap } from "./shared-data";
 import { Container } from "./ui/Container";
 import { CreateEventForm } from "./ui/CreateEventForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
@@ -63,6 +63,10 @@ function Routes({
 
   useEffect(() => {
     if (!eventId) return;
+    if (getEventMap(yDoc).get("id") === eventId) {
+      setPreflight({ status: "live" });
+      return;
+    }
     setPreflight({ status: "loading" });
     getEvent(eventId)
       .then((json) => {
@@ -77,7 +81,13 @@ function Routes({
       .catch(() => {
         setPreflight({ status: "not-found" });
       });
-  }, [eventId]);
+  }, [eventId, yDoc]);
+
+  const hydratedDoc = useMemo(
+    () =>
+      preflight.status === "expired" ? hydrateDocFromJson(preflight.json) : null,
+    [preflight],
+  );
 
   if (!eventId) {
     return (
@@ -105,8 +115,7 @@ function Routes({
     return <NotFoundBox />;
   }
 
-  if (preflight.status === "expired") {
-    const hydratedDoc = hydrateDocFromJson(preflight.json);
+  if (preflight.status === "expired" && hydratedDoc) {
     const expiredDate = new Date(preflight.json.expiredAt!).toLocaleDateString(
       undefined,
       { day: "numeric", month: "long", timeZone: "UTC", year: "numeric" },

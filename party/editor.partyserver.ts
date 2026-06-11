@@ -87,11 +87,11 @@ export class EditorPartyServer extends YServer<EditorEnv> {
   ): Promise<void> {
     const expiredAt = await this.ctx.storage.get<number>("expiredAt");
     if (expiredAt != null) {
+      // Expired rooms are read-only archives; a reconnecting stale client must
+      // not resurrect them. Event-less rooms stay connectable on purpose: the
+      // creator's optimistic navigation relies on Yjs sync to deliver the event
+      // when the create POST is slow or fails.
       connection.close(4410, "event expired");
-      return;
-    }
-    if (!hasCalendarEvent(this.document)) {
-      connection.close(4404, "event not found");
       return;
     }
     await super.onConnect(connection, ctx);
