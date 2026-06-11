@@ -716,3 +716,44 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
 
   await secondPage.close();
 });
+
+test("shows an error when event creation fails", async ({ page }) => {
+  await page.route("**/parties/main/*", (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({ json: { error: "invalid event" }, status: 400 })
+      : route.fallback(),
+  );
+
+  await page.goto("/");
+
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+
+  const eventName = `error test event ${Math.random().toString(36).slice(2)}`;
+
+  await page.getByLabel("Name your event").fill(eventName);
+
+  await page.getByRole("button", { name: "next month" }).click();
+
+  const today = new Date();
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString("en-US", {
+    month: "long",
+  });
+
+  await expect(page.getByText(nextMonthName)).toBeVisible();
+
+  const START_DAY = 6;
+  const END_DAY = 12;
+
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
+    .click();
+  await page
+    .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
+    .click();
+
+  await page.getByText("Create Event").click();
+
+  await expect(page.getByRole("alert")).toContainText("creating event failed");
+  expect(new URL(page.url()).searchParams.get("id")).toBeNull();
+});
