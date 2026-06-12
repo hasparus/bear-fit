@@ -9,7 +9,7 @@ import {
 } from "unique-names-generator";
 
 import { getUserId } from "../getUserId";
-import { type CalendarEvent } from "../schemas";
+import { type CalendarEvent, startOfTodayUtc } from "../schemas";
 import { Container } from "./Container";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
@@ -76,7 +76,7 @@ export function CreateEventForm({
           />
         </div>
         <EventDatesPicker
-          fixedRangeProps={{ disabled: { before: new Date() } }}
+          fixedRangeProps={{ disabled: { before: startOfTodayUtc() } }}
           name="calendar-mode"
           onChange={setDates}
           value={dates}

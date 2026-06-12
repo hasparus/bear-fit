@@ -2,7 +2,11 @@ import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 import { type DateRange } from "react-day-picker";
 
-import { type CalendarEvent, resolveEventDates } from "../schemas";
+import {
+  type CalendarEvent,
+  resolveEventDates,
+  startOfTodayUtc,
+} from "../schemas";
 import { type EventDatesPatch } from "../shared-data";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import {
@@ -30,7 +34,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     }),
   );
 
-  const today = new Date();
+  const today = startOfTodayUtc();
   const earliestDate = seedStart && seedStart < today ? seedStart : today;
   const initialRange: DateRange | undefined =
     seedStart && seedEnd ? { from: seedStart, to: seedEnd } : undefined;
