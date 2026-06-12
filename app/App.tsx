@@ -14,7 +14,7 @@ import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
-import { YDocContext } from "./useYDoc";
+import { YDocContext, YProviderContext } from "./useYDoc";
 import "./styles.css";
 
 export function App() {
@@ -82,7 +82,7 @@ function YProvider({
 }) {
   // This needs to be a separate component, because the `.room` option is immutable in
   // `useYProvider`, and we don't know the room until we create the event.
-  const _yProvider = useYProvider({
+  const yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,
     room,
@@ -92,5 +92,11 @@ function YProvider({
     },
   });
 
-  return <YDocContext.Provider value={yDoc}>{children}</YDocContext.Provider>;
+  return (
+    <YDocContext.Provider value={yDoc}>
+      <YProviderContext.Provider value={yProvider}>
+        {children}
+      </YProviderContext.Provider>
+    </YDocContext.Provider>
+  );
 }

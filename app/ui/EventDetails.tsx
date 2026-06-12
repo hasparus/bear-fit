@@ -16,6 +16,7 @@ import { getUserId } from "../getUserId";
 import {
   type AvailabilitySet,
   type CalendarEvent,
+  formatIsoDate,
   IsoDate,
   isoDate,
   resolveEventDates,
@@ -52,6 +53,7 @@ import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { RollingWindowIndicator } from "./RollingWindowIndicator";
+import { SyncIndicator } from "./SaveStatus";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
@@ -130,7 +132,7 @@ export function EventDetails({
     endDate ? new Date(endDate) : new Date(),
   ).reduce(
     (acc, day) => {
-      const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
+      const monthKey = `${day.getUTCFullYear()}-${day.getUTCMonth()}`;
       if (!acc[monthKey]) {
         acc[monthKey] = [];
       }
@@ -275,13 +277,9 @@ export function EventDetails({
               <p aria-busy={!startDate} className="mb-4 leading-[1.3333]">
                 {startDate && endDate ? (
                   <>
-                    <time dateTime={startDate}>
-                      {new Date(startDate).toLocaleDateString()}
-                    </time>
+                    <time dateTime={startDate}>{formatIsoDate(startDate)}</time>
                     {" - "}
-                    <time dateTime={endDate}>
-                      {new Date(endDate).toLocaleDateString()}
-                    </time>
+                    <time dateTime={endDate}>{formatIsoDate(endDate)}</time>
                     {event.rolling && (
                       <RollingWindowIndicator days={event.rolling} />
                     )}
@@ -353,6 +351,7 @@ export function EventDetails({
                     <div className="mb-2 mt-4 first:mt-2">
                       {monthDays[0].toLocaleDateString("en-US", {
                         month: "long",
+                        timeZone: "UTC",
                       })}
                     </div>
                     <div className="grid grid-cols-7 gap-1 relative">
@@ -602,6 +601,7 @@ function EventDetailsFooter({
         isLoading && "cursor-progress *:pointer-events-none",
       )}
     >
+      <SyncIndicator className="mr-auto self-center" />
       <span
         className="contents"
         style={{ visibility: nerdMode ? "visible" : "hidden" }}

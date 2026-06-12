@@ -1,7 +1,7 @@
 import { use } from "react";
 
 import { getPublicRoomInfo } from "./api/getRoomCount";
-import { resolveEventDates } from "./schemas";
+import { formatIsoDate, resolveEventDates } from "./schemas";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
@@ -55,11 +55,11 @@ export function AppFooter({
                         <span>
                           (
                           <time dateTime={startDate}>
-                            {new Date(startDate).toLocaleDateString()}
+                            {formatIsoDate(startDate)}
                           </time>
                           {" - "}
                           <time dateTime={endDate}>
-                            {new Date(endDate).toLocaleDateString()}
+                            {formatIsoDate(endDate)}
                           </time>
                           {event.rolling && ", rolling"})
                         </span>

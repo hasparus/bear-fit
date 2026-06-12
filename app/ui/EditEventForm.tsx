@@ -1,10 +1,14 @@
 import Clarity from "@microsoft/clarity";
 import { useState } from "react";
-import { type DateRange } from "react-day-picker";
 
-import { type CalendarEvent, resolveEventDates } from "../schemas";
+import {
+  type CalendarEvent,
+  resolveEventDates,
+  startOfTodayUtc,
+} from "../schemas";
 import { type EventDatesPatch } from "../shared-data";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
+import { eachDayOfInterval } from "./eachDayOfInterval";
 import {
   defaultEventDatesValue,
   EventDatesPicker,
@@ -30,10 +34,8 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     }),
   );
 
-  const today = new Date();
+  const today = startOfTodayUtc();
   const earliestDate = seedStart && seedStart < today ? seedStart : today;
-  const initialRange: DateRange | undefined =
-    seedStart && seedEnd ? { from: seedStart, to: seedEnd } : undefined;
 
   return (
     <form
@@ -56,7 +58,10 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
             disabled: { before: earliestDate },
             modifiersClassNames: { initial: "*:bg-neutral-100" },
             modifiers: {
-              initial: initialRange ? unfoldDateRange(initialRange) : [],
+              initial:
+                seedStart && seedEnd
+                  ? eachDayOfInterval(seedStart, seedEnd)
+                  : [],
             },
           }}
         />
@@ -73,16 +78,3 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
   );
 }
 
-function unfoldDateRange(range: DateRange): Date[] {
-  const { from, to } = range;
-  if (!from || !to) return [];
-  const dates: Date[] = [];
-  for (
-    let date = new Date(from);
-    date <= to;
-    date.setDate(date.getDate() + 1)
-  ) {
-    dates.push(new Date(date));
-  }
-  return dates;
-}

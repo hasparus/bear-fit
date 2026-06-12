@@ -8,8 +8,6 @@ import { AvailabilityKey, type IsoDate, type UserId } from "./schemas";
 import { YDocJsonSchema, yDocToJson } from "./shared-data";
 import { getUpdatesFromUint8Array } from "./ui/EventHistory/getUpdatesFromUint8Array";
 
-const CLOCK_ICON_PATH =
-  "M19 3H5v2H3v14h2v2h14v-2h2V5h-2V3zm0 2v14H5V5h14zm-8 2h2v6h4v2h-6V7z";
 const CREATOR_NAME = "Alice";
 const CREATOR_START_DAY = 6;
 const CREATOR_END_DAY = 11;
