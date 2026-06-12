@@ -11,7 +11,7 @@ test("creates a rolling event and shows today through the resolved end date", as
 
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
-  const eventName = `rolling test ${Math.random().toString(36).slice(2)}`;
+  const eventName = "rolling test";
   await page.getByLabel("Name your event").fill(eventName);
 
   const today = startOfTodayUtc();
@@ -52,12 +52,10 @@ test("creates a rolling event and shows today through the resolved end date", as
   const todayIso = isoDate(today);
   const sevenDaysLaterIso = isoDate(sevenDaysLater);
   // Format expected dates in the browser context so they match the UI's
-  // toLocaleDateString() output (which depends on the page's locale/timezone,
-  // not Node's).
   const [todayDisplay, sevenDaysLaterDisplay] = await page.evaluate(
     ([t, s]) => [
-      new Date(t).toLocaleDateString(),
-      new Date(s).toLocaleDateString(),
+      new Date(t).toLocaleDateString(undefined, { timeZone: "UTC" }),
+      new Date(s).toLocaleDateString(undefined, { timeZone: "UTC" }),
     ],
     [todayIso, sevenDaysLaterIso] as const,
   );

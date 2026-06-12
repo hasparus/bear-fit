@@ -14,6 +14,9 @@ export type IsoDate = typeof IsoDate.infer;
 export const isoDate = (date: Date): IsoDate =>
   date.toISOString().split("T")[0] as IsoDate;
 
+export const formatIsoDate = (date: IsoDate): string =>
+  new Date(date).toLocaleDateString(undefined, { timeZone: "UTC" });
+
 export const UserId = type("string").brand("UserId");
 export type UserId = typeof UserId.infer;
 
