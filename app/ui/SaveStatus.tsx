@@ -16,7 +16,6 @@ type SyncStatus = "offline" | "reconnecting" | "saved" | "saving";
 function getStatus(provider: YPartyKitProvider): SyncStatus {
   if (!navigator.onLine) return "offline";
   if (provider.wsconnected) return provider.synced ? "saved" : "saving";
-  if (provider.wsconnecting) return "saving";
   return "reconnecting";
 }
 
