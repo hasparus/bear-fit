@@ -11,12 +11,12 @@ import {
 import { YProviderContext } from "../useYDoc";
 import { cn } from "./cn";
 
-type SyncStatus = "offline" | "reconnecting" | "saved" | "saving";
+type SyncStatus = "connecting" | "offline" | "saved" | "saving";
 
 function getStatus(provider: YPartyKitProvider): SyncStatus {
   if (!navigator.onLine) return "offline";
   if (provider.wsconnected) return provider.synced ? "saved" : "saving";
-  return "reconnecting";
+  return "connecting";
 }
 
 function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
@@ -43,8 +43,8 @@ function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
 }
 
 const LABEL = {
+  connecting: "connecting…",
   offline: "offline",
-  reconnecting: "reconnecting…",
   saved: "saved",
   saving: "saving…",
 } as const;
@@ -90,7 +90,7 @@ export function SyncIndicator({ className }: { className?: string }) {
       data-sync-status={status}
       className={cn(
         "group relative font-mono text-xs select-none",
-        status === "offline" || status === "reconnecting"
+        status === "offline" || status === "connecting"
           ? "text-danger"
           : "text-neutral-500",
         className,
@@ -109,8 +109,8 @@ export function SyncIndicator({ className }: { className?: string }) {
       >
         {status === "offline"
           ? "will sync when you're back online"
-          : status === "reconnecting"
-            ? "saved on this device, reconnecting to sync"
+          : status === "connecting"
+            ? "saved on this device, connecting to sync"
             : "bear fit saves automatically"}
       </span>
       {LABEL[status]}
