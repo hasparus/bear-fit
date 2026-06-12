@@ -42,13 +42,6 @@ function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
   );
 }
 
-const LABEL = {
-  connecting: "connecting…",
-  offline: "offline",
-  saved: "saved",
-  saving: "saving…",
-} as const;
-
 /**
  * True for ~2.5s after the last Cmd/Ctrl+S, to flash the autosave toast.
  * Swallows the browser's Save dialog. Capture phase so we run before the
@@ -113,7 +106,7 @@ export function SyncIndicator({ className }: { className?: string }) {
             ? "saved on this device, connecting to sync"
             : "bear fit saves automatically"}
       </span>
-      {LABEL[status]}
+      {status}
     </span>
   );
 }
