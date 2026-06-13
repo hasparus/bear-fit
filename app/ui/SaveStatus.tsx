@@ -83,9 +83,7 @@ export function SyncIndicator({ className }: { className?: string }) {
       data-sync-status={status}
       className={cn(
         "group relative font-mono text-xs select-none",
-        status === "offline" || status === "connecting"
-          ? "text-danger"
-          : "text-neutral-500",
+        status === "offline" ? "text-danger" : "text-neutral-500",
         className,
       )}
     >
