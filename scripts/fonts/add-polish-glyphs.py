@@ -49,9 +49,12 @@ lc_acute(0x0144,"n",333.5,667)   # ń
 lc_acute(0x015B,"s",291.0,581)   # ś
 lc_acute(0x017A,"z",337.5,675)   # ź
 
-# uppercase acute: target center = cap_center + 42.5 (lean from Oacute)
+# uppercase acute: use the chunky native acute (not the thin cap one),
+# raised above cap height. Also override Ó so all caps match.
+CAP_DY = 132     # native acute bottom 633 -> ~765 (just above cap top 750)
 def uc_acute(cp, base, bc, w):
-    make(cp, base, "acute.cap", (bc+42.5)-CAP_ACUTE_C, 0, w)
+    make(cp, base, "acute", (bc+46.5)-NAT_ACUTE_C, CAP_DY, w)
+uc_acute(0x00D3,"O",333.5,667)   # Ó (override thin original)
 uc_acute(0x0106,"C",348.5,667)   # Ć
 uc_acute(0x0143,"N",375.5,750)   # Ń
 uc_acute(0x015A,"S",291.5,581)   # Ś
