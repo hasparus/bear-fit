@@ -3,16 +3,28 @@ import fontforge, psMat, os
 
 f = fontforge.open("/tmp/fontpatch/orig/ChicagoFLF.woff")
 
-# --- reshape acute into a triangular wedge: wide at top-right, point bottom-left ---
-# original acute was a uniform slanted bar (357,800)(274,800)(133,633)(216,633)
+# --- reshape acute into a "cut" triangle (comma-like wedge) ---
+# original acute was a uniform slanted bar (357,800)(274,800)(133,633)(216,633).
+# A plain triangle tapered to a thin point; cut the tip into a short flat foot
+# so it reads like the font's comma.
 a = f["acute"]
 a.clear()
 pen = a.glyphPen()
-pen.moveTo((357, 800)); pen.lineTo((216, 800)); pen.lineTo((133, 633))
+pen.moveTo((357, 800)); pen.lineTo((210, 800))   # wide top edge
+pen.lineTo((133, 633)); pen.lineTo((190, 633))    # cut foot (flat, not a point)
 pen.closePath()
 pen = None
 a.correctDirection()
-NAT_ACUTE_C = (133 + 357) / 2.0   # keep slot center for placement math
+
+# --- smaller dot for ż/Ż (the native dotaccent was too chunky on caps) ---
+dot = f.createChar(-1, "dot.sm")
+dot.clear()
+pen = dot.glyphPen()                               # 112-square, centered x170, sits on baseline
+pen.moveTo((112,0)); pen.lineTo((224,0)); pen.lineTo((224,112)); pen.lineTo((112,112))
+pen.closePath()
+pen = None
+dot.correctDirection()
+DOTSM_C = 168.0   # x-center of dot.sm
 
 # encode existing lstroke outlines
 for cp,nm in [(0x142,"lslash"),(0x141,"Lslash")]:
@@ -50,9 +62,9 @@ uc_acute(0x0143,"N",375.5,750)   # Ń
 uc_acute(0x015A,"S",291.5,581)   # Ś
 uc_acute(0x0179,"Z",337.5,675)   # Ź
 
-# dotaccent: ż lowercase, Ż raised to cap height (bottom ~785 like cap acute)
-make(0x017C,"z","dotaccent",337.5-DOT_C,-51,675)   # ż  dot at acute height (bottom~633)
-make(0x017B,"Z","dotaccent",337.5-DOT_C,67,675)    # Ż  dot at cap-acute height (bottom~751)
+# smaller dot for ż/Ż, centered over z, placed just above the letter
+make(0x017C,"z","dot.sm",337.5-DOTSM_C,648,675)    # ż  dot at 648-760 (above x-height 583)
+make(0x017B,"Z","dot.sm",337.5-DOTSM_C,772,675)    # Ż  dot at 772-884 (above cap 750)
 
 # ogonek (bottom-right), targets to verify visually
 make(0x0105,"a","ogonek",440-OGO_C,0,667)  # ą
