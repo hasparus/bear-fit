@@ -32,18 +32,22 @@ def acute_lc(g, leftcol):              # 3px staircase, bottom row 8 (y512)
     px(g, leftcol, 8); px(g, leftcol+1, 9); px(g, leftcol+2, 10)
 def acute_uc(g, leftcol):              # 2px staircase, bottom row 10 (y640) — matches native Ó
     px(g, leftcol, 10); px(g, leftcol+1, 11)
+def acute_lc_short(g, leftcol):        # 2px staircase (shorter), bottom row 8
+    px(g, leftcol, 8); px(g, leftcol+1, 9)
 
-# --- lowercase acute (matches native ó: leftcol 1, rows 8-10) ---
-for cp, base, lc in [(0x0107,"c",1),(0x0144,"n",1),(0x015B,"s",1),(0x017A,"z",1)]:
+# --- lowercase acute: ć ń full (3px, matches native ó); ś ź shorter (2px) ---
+for cp, base, lc in [(0x0107,"c",1),(0x0144,"n",1)]:
     g = newglyph(cp, base); acute_lc(g, lc)
+for cp, base, lc in [(0x015B,"s",1),(0x017A,"z",1)]:
+    g = newglyph(cp, base); acute_lc_short(g, lc)
 
 # --- uppercase acute (matches native Ó: 2px, leftcol 2 for 6px-wide caps) ---
 for cp, base, lc in [(0x0106,"C",2),(0x0143,"N",3),(0x015A,"S",2),(0x0179,"Z",2)]:
     g = newglyph(cp, base); acute_uc(g, lc)
 
-# --- dot above (ż / Ż): 1px-wide, 1px-tall block, 1px gap above the letter ---
-gz = newglyph(0x017C, "z"); px(gz, 3, 8)          # over z (cols 0-5), col3, row8
-gZ = newglyph(0x017B, "Z"); px(gZ, 3, 10)         # over Z, row10 (above cap)
+# --- dot above (ż / Ż): 1px block, moved one pixel left (col2), 1px gap above ---
+gz = newglyph(0x017C, "z"); px(gz, 2, 8)          # over z (cols 0-5), col2, row8
+gZ = newglyph(0x017B, "Z"); px(gZ, 2, 10)         # over Z, row10 (above cap)
 
 # --- ogonek below-right (ą ę Ą Ę): small 2px hook hanging under the right side ---
 def ogonek(g, col):
