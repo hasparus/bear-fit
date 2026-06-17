@@ -43,9 +43,9 @@ for cp, base, lc in [(0x0107,"c",2),(0x0144,"n",2),(0x015B,"s",2),(0x017A,"z",2)
 for cp, base, lc in [(0x0106,"C",2),(0x0143,"N",4),(0x015A,"S",2),(0x0179,"Z",2),(0x00D3,"O",3)]:
     g = newglyph(cp, base); acute_uc(g, lc)
 
-# --- dot above (ż / Ż): 1px block, moved one pixel left (col2), 1px gap above ---
-gz = newglyph(0x017C, "z"); px(gz, 2, 8)          # over z (cols 0-5), col2, row8
-gZ = newglyph(0x017B, "Z"); px(gZ, 2, 10)         # over Z, row10 (above cap)
+# --- dot above (ż / Ż): 2x2 block (matches the font's period/dieresis), centered ---
+gz = newglyph(0x017C, "z"); px(gz, 2, 8, 2, 2)    # over z (cols 0-5), cols2-3, rows8-9
+gZ = newglyph(0x017B, "Z"); px(gZ, 2, 10, 2, 2)   # over Z, rows10-11 (above cap)
 
 # --- ogonek below-right (ą ę Ą Ę): curved hook (drops, then curls right) ---
 def ogonek(g, col):
