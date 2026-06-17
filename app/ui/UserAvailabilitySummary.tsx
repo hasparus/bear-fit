@@ -65,8 +65,7 @@ export function UserAvailabilitySummary({
   );
 }
 
-interface UserAvailabilitySummaryItemProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface UserAvailabilitySummaryItemProps extends React.HTMLAttributes<HTMLDivElement> {
   dates: IsoDate[];
   isCreator: boolean;
   isCurrentUser: boolean;

@@ -3,11 +3,7 @@ import type { Map as YMap } from "yjs";
 
 import { type } from "arktype";
 
-import {
-  CalendarEvent,
-  type EventDatesPatch,
-  UserId,
-} from "./schemas";
+import { CalendarEvent, type EventDatesPatch, UserId } from "./schemas";
 
 export const getEventMap = (doc: Doc) => {
   return doc.getMap("event");

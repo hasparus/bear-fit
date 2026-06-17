@@ -34,9 +34,7 @@ test("creates a rolling event and shows today through the resolved end date", as
     return `${month} ${day}${suffix}`;
   };
 
-  await page
-    .getByRole("button", { name: formatCalendarDay(today) })
-    .click();
+  await page.getByRole("button", { name: formatCalendarDay(today) }).click();
   await page
     .getByRole("button", { name: formatCalendarDay(sevenDaysLater) })
     .click();

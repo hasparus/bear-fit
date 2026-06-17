@@ -77,4 +77,3 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
     </form>
   );
 }
-

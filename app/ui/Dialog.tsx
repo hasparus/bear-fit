@@ -27,8 +27,10 @@ const context = createContext<DialogsContext>({
   },
 });
 
-export interface DialogRootProps
-  extends Omit<ComponentPropsWithoutRef<typeof BaseDialog.Root>, "open"> {
+export interface DialogRootProps extends Omit<
+  ComponentPropsWithoutRef<typeof BaseDialog.Root>,
+  "open"
+> {
   id: DialogId;
 }
 
