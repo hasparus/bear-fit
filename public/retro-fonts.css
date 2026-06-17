@@ -1,25 +1,25 @@
 /* Retro fonts — loaded via <link> to bypass esbuild bundling */
 
 @font-face {
-  font-family: Czikago;
+  font-family: "Czikago";
   src: url("/fonts/Czikago.woff") format("woff");
   src: url("/fonts/Czikago.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: Monaco;
+  font-family: "Monaco";
   src: url("/fonts/monaco.woff") format("woff");
   src: url("/fonts/monaco.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: CziKareChodz3;
+  font-family: "CziKareChodz3";
   src: url("/fonts/CziKareChodz3.woff") format("woff");
   src: url("/fonts/CziKareChodz3.woff2") format("woff2");
 }
 
 @font-face {
-  font-family: Geneva_9;
+  font-family: "Geneva_9";
   src: url("/fonts/FindersKeepers.woff") format("woff");
   src: url("/fonts/FindersKeepers.woff2") format("woff2");
 }
