@@ -35,10 +35,9 @@ def acute_uc(g, leftcol):              # 2px staircase, bottom row 10 (y640) —
 def acute_lc_short(g, leftcol):        # 2px staircase (shorter), bottom row 8
     px(g, leftcol, 8); px(g, leftcol+1, 9)
 
-# --- lowercase acute: ć ń full (3px, matches native ó); ś ź shorter (2px) ---
-for cp, base, lc in [(0x0107,"c",1),(0x0144,"n",1)]:
-    g = newglyph(cp, base); acute_lc(g, lc)
-for cp, base, lc in [(0x015B,"s",1),(0x017A,"z",1)]:
+# --- lowercase acute: all 2px (shortened) and moved 1px right (leftcol 1 -> 2) ---
+# includes ó (override native, which was a taller 3px accent) so they all match
+for cp, base, lc in [(0x0107,"c",2),(0x0144,"n",2),(0x015B,"s",2),(0x017A,"z",2),(0x00F3,"o",2)]:
     g = newglyph(cp, base); acute_lc_short(g, lc)
 
 # --- uppercase acute (matches native Ó: 2px, leftcol 2 for 6px-wide caps) ---
