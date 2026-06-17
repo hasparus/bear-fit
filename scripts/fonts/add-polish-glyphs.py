@@ -44,8 +44,9 @@ def make(cp, base, accent, dx, dy, width):
     return g
 
 # lowercase acute: target center = base_center + 46.5 (designer lean from oacute)
+LC_DY = 30   # small extra gap between accent and letter
 def lc_acute(cp, base, bc, w):
-    make(cp, base, "acute", (bc+46.5)-NAT_ACUTE_C, 0, w)
+    make(cp, base, "acute", (bc+46.5)-NAT_ACUTE_C, LC_DY, w)
 lc_acute(0x0107,"c",294.5,588)   # ć
 lc_acute(0x0144,"n",333.5,667)   # ń
 lc_acute(0x015B,"s",291.0,581)   # ś
@@ -53,7 +54,7 @@ lc_acute(0x017A,"z",337.5,675)   # ź
 
 # uppercase acute: use the chunky native acute (not the thin cap one),
 # raised above cap height. Also override Ó so all caps match.
-CAP_DY = 132     # native acute bottom 633 -> ~765 (just above cap top 750)
+CAP_DY = 162     # native acute bottom 633 -> ~795 (a bit more gap above cap top 750)
 def uc_acute(cp, base, bc, w):
     make(cp, base, "acute", (bc+46.5)-NAT_ACUTE_C, CAP_DY, w)
 uc_acute(0x00D3,"O",333.5,667)   # Ó (override thin original)
@@ -63,8 +64,8 @@ uc_acute(0x015A,"S",291.5,581)   # Ś
 uc_acute(0x0179,"Z",337.5,675)   # Ź
 
 # smaller dot for ż/Ż, centered over z, placed just above the letter
-make(0x017C,"z","dot.sm",337.5-DOTSM_C,648,675)    # ż  dot at 648-760 (above x-height 583)
-make(0x017B,"Z","dot.sm",337.5-DOTSM_C,772,675)    # Ż  dot at 772-884 (above cap 750)
+make(0x017C,"z","dot.sm",337.5-DOTSM_C,678,675)    # ż  dot at 678-790 (a bit more gap above x-height)
+make(0x017B,"Z","dot.sm",337.5-DOTSM_C,802,675)    # Ż  dot at 802-914 (a bit more gap above cap)
 
 # ogonek (bottom-right), targets to verify visually
 make(0x0105,"a","ogonek",440-OGO_C,0,667)  # ą
