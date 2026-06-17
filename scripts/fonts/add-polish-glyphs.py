@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+# Patches the public-domain ChicagoFLF font with Polish diacritics and renames
+# it to "Czikago". Run from the repo root:
+#   fontforge -lang=py -script scripts/fonts/add-polish-glyphs.py
 import fontforge, psMat, os
 
-f = fontforge.open("/tmp/fontpatch/orig/ChicagoFLF.woff")
+f = fontforge.open("scripts/fonts/ChicagoFLF-original.woff")
 
 # --- reshape acute into a "cut" triangle (comma-like wedge) ---
 # original acute was a uniform slanted bar (357,800)(274,800)(133,633)(216,633).
@@ -74,8 +77,22 @@ make(0x0104,"A","ogonek",450-OGO_C,0,667)  # Ą
 make(0x0118,"E","ogonek",380-OGO_C,0,583)  # Ę
 
 f.selection.all(); f.unlinkReferences(); f.round()
-# remove helper from final cmap (it's unencoded already)
+
+# rename: it speaks Polish now
+f.familyname = "Czikago"
+f.fontname   = "Czikago"
+f.fullname   = "Czikago"
+for key in ("Family", "Fullname", "PostScriptName", "Preferred Family"):
+    f.appendSFNTName("English (US)", key, "Czikago")
+# the original file carried a stale "All Rights Reserved" string; replace it with
+# the actually-accepted provenance (Casady's ChicagoFLF is released as public domain)
+f.copyright = ("Czikago: ChicagoFLF (Robin Casady, public domain), a revival of "
+               "Chicago by Susan Kare, extended with Polish diacritics.")
+f.appendSFNTName("English (US)", "License",
+                 "Public domain, per Robin Casady's ChicagoFLF release.")
+
+for ext in ("woff", "woff2"):
+    f.generate("public/fonts/Czikago.%s" % ext)
 os.makedirs("/tmp/fontpatch/out", exist_ok=True)
-for ext in ("ttf","woff","woff2"):
-    f.generate("/tmp/fontpatch/out/ChicagoFLF.%s" % ext)
+f.generate("/tmp/fontpatch/out/Czikago.ttf")   # for previews only
 f.close(); print("DONE")

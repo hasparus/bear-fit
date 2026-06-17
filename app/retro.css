@@ -117,7 +117,7 @@
   .heading,
   h1,
   h2 {
-    font-family: Chicago;
+    font-family: Czikago;
   }
 
   h2 {
@@ -253,7 +253,7 @@
     background-color: #fff;
     border: 0.1em solid #000;
     flex-direction: column;
-    font-family: Inconsolata, Menlo, Chicago, Geneva;
+    font-family: Inconsolata, Menlo, Czikago, Geneva;
     margin: 1rem;
     min-width: 320px;
     overflow: hidden;
@@ -524,7 +524,7 @@
   }
 
   form {
-    font-family: Inconsolata, Menlo, Chicago, Geneva;
+    font-family: Inconsolata, Menlo, Czikago, Geneva;
     font-size: 14px;
   }
 
