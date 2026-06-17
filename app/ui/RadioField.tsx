@@ -1,7 +1,6 @@
 import { cn } from "./cn";
 
-export interface RadioFieldProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export interface RadioFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 /**
  * A single radio option styled by the global system.css rules in retro.css.

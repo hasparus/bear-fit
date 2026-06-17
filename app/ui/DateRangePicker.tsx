@@ -4,11 +4,10 @@ import { DayPicker } from "react-day-picker";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import "./react-day-picker.css";
 
-export interface DateRangePickerProps
-  extends Pick<
-    DayPickerProps,
-    "disabled" | "modifiers" | "modifiersClassNames" | "modifiersStyles"
-  > {
+export interface DateRangePickerProps extends Pick<
+  DayPickerProps,
+  "disabled" | "modifiers" | "modifiersClassNames" | "modifiersStyles"
+> {
   onSelect: (range: DateRange) => void;
   selected: DateRange;
 }

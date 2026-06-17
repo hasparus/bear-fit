@@ -42,7 +42,6 @@ Bear-Fit currently operates with minimal security controls:
 ### Short-term Approach (Client-side Validation)
 
 1. **YDoc Change Validation**:
-
    - Implement `handleYDocChange(doc)` to validate and potentially revert
      unauthorized changes
    - Track original state and compare with changed state to identify
@@ -69,7 +68,6 @@ Bear-Fit currently operates with minimal security controls:
    ```
 
 2. **Change Tracking**:
-
    - Observe YDoc changes using Y.js observing APIs
    - Maintain a log of changes for audit purposes
    - Show history of changes
@@ -83,7 +81,6 @@ Bear-Fit currently operates with minimal security controls:
 ### Medium-term Approach (Server-side Validation)
 
 1. **YDoc Update Middleware**:
-
    - Implement middleware that validates YDoc updates before they're applied
    - Reject operations that violate permission rules
 
@@ -93,7 +90,6 @@ Bear-Fit currently operates with minimal security controls:
 ### Long-term Approach (Full Authentication)
 
 1. **User Authentication**:
-
    - Implement proper authentication using PartyKit's authentication
      capabilities
    - Use JWT tokens for verifying user identity
@@ -123,7 +119,6 @@ Bear-Fit currently operates with minimal security controls:
    ```
 
 2. **Login-gated Access Controls**:
-
    - Define clear roles (creator, participant)
    - Implement permission checks for all operations
    - Store role information in the YDoc
@@ -134,12 +129,10 @@ For an approach that aligns with "non-paying anonymous users can have full write
 access to events they have IDs for":
 
 1. **Phase 1 - Basic Protection**:
-
    - Add event import validation to protect against data corruption
    - Improve UI to clearly show when modifications occur
 
 2. **Phase 2 - Enhanced Visibility**:
-
    - Add audit logging of all changes
    - Implement change highlighting to show modifications by other users
    - Add conflict resolution for simultaneous edits

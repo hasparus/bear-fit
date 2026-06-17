@@ -6,8 +6,10 @@ import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
 
-export interface ImportEventJsonProps
-  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "children"> {
+export interface ImportEventJsonProps extends Omit<
+  React.HTMLAttributes<HTMLLabelElement>,
+  "children"
+> {
   children?:
     | ((input: RefObject<HTMLInputElement | null>) => React.ReactNode)
     | React.ReactNode;

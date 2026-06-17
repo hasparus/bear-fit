@@ -2,8 +2,7 @@ import type { UserId } from "../schemas";
 
 import { cn } from "./cn";
 
-export interface AvailabilityGridCellProps
-  extends React.HTMLAttributes<HTMLButtonElement> {
+export interface AvailabilityGridCellProps extends React.HTMLAttributes<HTMLButtonElement> {
   availableUsers: UserId[];
   className?: string;
   day: Date;
