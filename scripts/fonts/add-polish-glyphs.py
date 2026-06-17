@@ -1,28 +1,18 @@
 # -*- coding: utf-8 -*-
 import fontforge, psMat, os
 
-f = fontforge.open("public/fonts/ChicagoFLF.woff")
+f = fontforge.open("/tmp/fontpatch/orig/ChicagoFLF.woff")
 
-# --- make a capital-sized acute by extracting it from Oacute ---
-def extract_top(srcname, newname, ymin_keep):
-    f.selection.none()
-    g = f.createChar(-1, newname)
-    g.clear()
-    src = f[srcname]
-    src.foreground  # ensure loaded
-    import fontforge as ff
-    pen = g.glyphPen()
-    # copy contours whose max-y is above threshold (the accent), drop the base letter
-    layer = src.foreground.dup()
-    keep = fontforge.layer()
-    keep.is_quadratic = layer.is_quadratic
-    for c in layer:
-        if max(p.y for p in c) > ymin_keep:
-            keep += c
-    g.foreground = keep
-    g.width = src.width
-    return g
-extract_top("Oacute", "acute.cap", 760)   # cap acute: y 785-877, center ~376
+# --- reshape acute into a triangular wedge: wide at top-right, point bottom-left ---
+# original acute was a uniform slanted bar (357,800)(274,800)(133,633)(216,633)
+a = f["acute"]
+a.clear()
+pen = a.glyphPen()
+pen.moveTo((357, 800)); pen.lineTo((216, 800)); pen.lineTo((133, 633))
+pen.closePath()
+pen = None
+a.correctDirection()
+NAT_ACUTE_C = (133 + 357) / 2.0   # keep slot center for placement math
 
 # encode existing lstroke outlines
 for cp,nm in [(0x142,"lslash"),(0x141,"Lslash")]:
