@@ -47,9 +47,9 @@ for cp, base, lc in [(0x0106,"C",2),(0x0143,"N",4),(0x015A,"S",2),(0x0179,"Z",2)
 gz = newglyph(0x017C, "z"); px(gz, 2, 8)          # over z (cols 0-5), col2, row8
 gZ = newglyph(0x017B, "Z"); px(gZ, 2, 10)         # over Z, row10 (above cap)
 
-# --- ogonek below-right (ą ę Ą Ę): small 2px hook hanging under the right side ---
+# --- ogonek below-right (ą ę Ą Ę): curved hook (drops, then curls left) ---
 def ogonek(g, col):
-    px(g, col, -1); px(g, col-1, -2)              # diagonal tail going down-left
+    px(g, col, -1); px(g, col, -2); px(g, col-1, -2)   # vertical then curl => curvy hook
 ogonek(newglyph(0x0105,"a"), 4)   # ą
 ogonek(newglyph(0x0119,"e"), 4)   # ę
 ogonek(newglyph(0x0104,"A"), 4)   # Ą
