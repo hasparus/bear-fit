@@ -2,15 +2,17 @@
 # Patches the public-domain ChicagoFLF font with Polish diacritics and renames
 # it to "Czikago". Run from the repo root:
 #   fontforge -lang=py -script scripts/fonts/add-polish-glyphs.py
-import fontforge, psMat, os
+import fontforge, psMat, os, tempfile
 
 f = fontforge.open("scripts/fonts/ChicagoFLF-original.woff")
+changed = set()   # only glyphs we create/modify get flattened & rounded
 
 # --- reshape acute into a "cut" triangle (comma-like wedge) ---
 # original acute was a uniform slanted bar (357,800)(274,800)(133,633)(216,633).
 # A plain triangle tapered to a thin point; cut the tip into a short flat foot
 # so it reads like the font's comma.
 a = f["acute"]
+changed.add("acute")
 a.clear()
 pen = a.glyphPen()
 pen.moveTo((357, 800)); pen.lineTo((210, 800))   # wide top edge
@@ -21,6 +23,7 @@ a.correctDirection()
 
 # --- smaller dot for ż/Ż (the native dotaccent was too chunky on caps) ---
 dot = f.createChar(-1, "dot.sm")
+changed.add("dot.sm")
 dot.clear()
 pen = dot.glyphPen()                               # 112-square, centered x170, sits on baseline
 pen.moveTo((112,0)); pen.lineTo((224,0)); pen.lineTo((224,112)); pen.lineTo((112,112))
@@ -31,7 +34,7 @@ DOTSM_C = 168.0   # x-center of dot.sm
 
 # encode existing lstroke outlines
 for cp,nm in [(0x142,"lslash"),(0x141,"Lslash")]:
-    if nm in f: f[nm].unicode = cp
+    if nm in f: f[nm].unicode = cp; changed.add(nm)
 
 NAT_ACUTE_C = 245.0     # native lowercase acute center
 CAP_ACUTE_C = 376.0     # acute.cap center (as positioned in Oacute)
@@ -40,6 +43,7 @@ OGO_C = 179.0           # native ogonek center
 
 def make(cp, base, accent, dx, dy, width):
     g = f.createChar(cp)
+    changed.add(g.glyphname)
     g.clear()
     g.addReference(base, psMat.translate(0,0))
     g.addReference(accent, psMat.translate(dx,dy))
@@ -76,7 +80,12 @@ make(0x0119,"e","ogonek",420-OGO_C,0,665)  # ę
 make(0x0104,"A","ogonek",450-OGO_C,0,667)  # Ą
 make(0x0118,"E","ogonek",380-OGO_C,0,583)  # Ę
 
-f.selection.all(); f.unlinkReferences(); f.round()
+# flatten/round only the glyphs we touched, leaving the rest of the font intact
+f.selection.none()
+for name in changed:
+    f.selection.select(("more",), name)
+f.unlinkReferences()
+f.round()
 
 # rename: it speaks Polish now
 f.familyname = "Czikago"
@@ -93,6 +102,9 @@ f.appendSFNTName("English (US)", "License",
 
 for ext in ("woff", "woff2"):
     f.generate("public/fonts/Czikago.%s" % ext)
-os.makedirs("/tmp/fontpatch/out", exist_ok=True)
-f.generate("/tmp/fontpatch/out/Czikago.ttf")   # for previews only
+# preview .ttf in the system temp dir (override with FONTPATCH_PREVIEW_DIR)
+preview_dir = os.environ.get("FONTPATCH_PREVIEW_DIR",
+                             os.path.join(tempfile.gettempdir(), "fontpatch", "out"))
+os.makedirs(preview_dir, exist_ok=True)
+f.generate(os.path.join(preview_dir, "Czikago.ttf"))
 f.close(); print("DONE")

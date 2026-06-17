@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 # Patches the CC-BY ChiKareGo2 font (Giles Booth) with Polish diacritics and
-# renames it to "CziKareDawaj3". ChiKareGo2 is a strict 64-unit pixel grid; the
+# renames it to "CziKareChodz3". ChiKareGo2 is a strict 64-unit pixel grid; the
 # acute is a small staircase, and ogonek/dot/l-stroke are drawn as pixels.
 # Run from the repo root:
 #   fontforge -lang=py -script scripts/fonts/chikarego2-polish.py
-import fontforge, psMat, os
+import fontforge, psMat, os, tempfile
 
 PX = 64
 f = fontforge.open("scripts/fonts/ChiKareGo2-original.woff")
+changed = set()   # only glyphs we create get welded & rounded
 
 def px(g, col, row, w=1, h=1):
     """Draw a filled w*h pixel block with bottom-left at (col,row) in pixels."""
@@ -18,6 +19,7 @@ def px(g, col, row, w=1, h=1):
 
 def newglyph(cp, base=None, width=None):
     g = f.createChar(cp)
+    changed.add(g.glyphname)
     g.clear()
     if base:
         g.addReference(base)
@@ -61,8 +63,10 @@ def lstroke(g):
 g_l = newglyph(0x0142, "l"); lstroke(g_l)
 g_L = newglyph(0x0141, "L"); lstroke(g_L)
 
-# flatten references to outlines, weld overlapping pixels, snap to grid
-f.selection.all()
+# flatten references, weld overlapping pixels, snap to grid — only our new glyphs
+f.selection.none()
+for name in changed:
+    f.selection.select(("more",), name)
 f.unlinkReferences()
 f.removeOverlap()
 f.round()
@@ -84,6 +88,9 @@ f.appendSFNTName("English (US)", "License URL",
 
 for ext in ("woff", "woff2"):
     f.generate("public/fonts/CziKareChodz3.%s" % ext)
-os.makedirs("/tmp/fontpatch/out", exist_ok=True)
-f.generate("/tmp/fontpatch/out/CziKareChodz3.ttf")   # for previews
+# preview .ttf in the system temp dir (override with FONTPATCH_PREVIEW_DIR)
+preview_dir = os.environ.get("FONTPATCH_PREVIEW_DIR",
+                             os.path.join(tempfile.gettempdir(), "fontpatch", "out"))
+os.makedirs(preview_dir, exist_ok=True)
+f.generate(os.path.join(preview_dir, "CziKareChodz3.ttf"))
 f.close(); print("DONE")
