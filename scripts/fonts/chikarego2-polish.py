@@ -35,13 +35,13 @@ def acute_uc(g, leftcol):              # 2px staircase, bottom row 10 (y640) —
 def acute_lc_short(g, leftcol):        # 2px staircase (shorter), bottom row 8
     px(g, leftcol, 8); px(g, leftcol+1, 9)
 
-# --- lowercase acute: all 2px (shortened) and moved 1px right (leftcol 1 -> 2) ---
-# includes ó (override native, which was a taller 3px accent) so they all match
-for cp, base, lc in [(0x0107,"c",2),(0x0144,"n",2),(0x015B,"s",2),(0x017A,"z",2),(0x00F3,"o",2)]:
+# --- lowercase acute: 2px, leftcol picked to center on each letter's ink box ---
+# (measured: 6px-wide n/z/o center at col2; 5px-wide c/s center best at col1)
+for cp, base, lc in [(0x0107,"c",1),(0x0144,"n",2),(0x015B,"s",1),(0x017A,"z",2),(0x00F3,"o",2)]:
     g = newglyph(cp, base); acute_lc_short(g, lc)
 
-# --- uppercase acute (matches native Ó: 2px, leftcol 2 for 6px-wide caps) ---
-for cp, base, lc in [(0x0106,"C",2),(0x0143,"N",3),(0x015A,"S",2),(0x0179,"Z",2)]:
+# --- uppercase acute (2px, leftcol centered per letter; S is 5px -> col1) ---
+for cp, base, lc in [(0x0106,"C",2),(0x0143,"N",3),(0x015A,"S",1),(0x0179,"Z",2)]:
     g = newglyph(cp, base); acute_uc(g, lc)
 
 # --- dot above (ż / Ż): 1px block, moved one pixel left (col2), 1px gap above ---
