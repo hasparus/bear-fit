@@ -7,6 +7,11 @@ if (ALWAYS_PROD) {
   console.log("🏠 Running against the local server.");
 }
 
-export const serverUrl = ALWAYS_PROD
-  ? "https://bear-fit.hasparus.partykit.dev"
-  : `${window.location.protocol}//${window.location.host}`;
+const sameOrigin = `${window.location.protocol}//${window.location.host}`;
+
+const PROD_SERVER_URL =
+  typeof __PROD_SERVER_URL__ === "string" && __PROD_SERVER_URL__
+    ? __PROD_SERVER_URL__
+    : sameOrigin;
+
+export const serverUrl = ALWAYS_PROD ? PROD_SERVER_URL : sameOrigin;

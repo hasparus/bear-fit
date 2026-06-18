@@ -145,6 +145,100 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   expect(copiedJson).toBe(downloadedJson);
 });
 
+test("creator imports a JSON file to overwrite the event doc", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+
+  const eventName = `import overwrite ${Math.random().toString(36).slice(2)}`;
+
+  await page.getByLabel("Name your event").fill(eventName);
+
+  await page.getByRole("button", { name: "next month" }).click();
+
+  const today = new Date();
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonthName = nextMonth.toLocaleDateString("en-US", {
+    month: "long",
+  });
+
+  await expect(page.getByText(nextMonthName)).toBeVisible();
+
+  await page.getByRole("button", { name: `${nextMonthName} 5th` }).click();
+  await page.getByRole("button", { name: `${nextMonthName} 9th` }).click();
+
+  await page.getByText("Create Event").click();
+
+  await expect(page).toHaveURL(/\?id=/);
+  await page.getByText("Event dates").waitFor({ state: "visible" });
+
+  await page.getByLabel("Your name").fill("Alice");
+
+  const year = nextMonth.getFullYear();
+  const month = (nextMonth.getMonth() + 1).toString().padStart(2, "0");
+
+  const originalStartIso = `${year}-${month}-05`;
+  await expect(
+    page.locator(`time[dateTime="${originalStartIso}"]`).first(),
+  ).toBeVisible();
+
+  const importedName = `imported ${Math.random().toString(36).slice(2)}`;
+  const importedStartIso = `${year}-${month}-12` as IsoDate;
+  const importedEndIso = `${year}-${month}-16` as IsoDate;
+  const importedDateIso = `${year}-${month}-14` as IsoDate;
+  const foreignUserId = "imported-user-id" as UserId;
+
+  const payload = {
+    availability: {
+      [AvailabilityKey(foreignUserId, importedDateIso)]: true,
+    },
+    event: {
+      id: "imported-event-id",
+      creator: foreignUserId,
+      endDate: importedEndIso,
+      name: importedName,
+      startDate: importedStartIso,
+    },
+    names: {
+      [foreignUserId]: "Imported User",
+    },
+  };
+  YDocJsonSchema.assert(payload);
+
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.getByText("Nerd Mode").click();
+
+  await page.locator("#import-json").first().setInputFiles({
+    buffer: Buffer.from(JSON.stringify(payload)),
+    mimeType: "application/json",
+    name: "imported-event.json",
+  });
+
+  await expect(page.getByRole("heading").first()).toHaveText(importedName);
+
+  const eventDates = page
+    .locator("p")
+    .filter({ has: page.locator("time") })
+    .first();
+  await expect(
+    eventDates.locator(`time[dateTime="${importedStartIso}"]`),
+  ).toBeVisible();
+  await expect(
+    eventDates.locator(`time[dateTime="${importedEndIso}"]`),
+  ).toBeVisible();
+  await expect(
+    eventDates.locator(`time[dateTime="${originalStartIso}"]`),
+  ).toHaveCount(0);
+
+  const importedUserRow = page
+    .locator("dl div")
+    .filter({ hasText: /Imported User/ })
+    .first();
+  await expect(importedUserRow).toContainText("1 date");
+});
+
 test("creates an event with a generated name using calendar keyboard navigation", async ({
   page,
 }) => {

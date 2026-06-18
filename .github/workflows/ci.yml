@@ -24,6 +24,10 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
@@ -32,11 +36,30 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      # Split system deps from the browser download: the combined
+      # `--with-deps` wedges on the interactive `needrestart` apt prompt.
+      - name: Install Playwright system deps
+        run: pnpm exec playwright install-deps chromium firefox
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium firefox
+        timeout-minutes: 5
+
+      # playwright.config.ts writes the committed test public key to .dev.vars,
+      # which @cloudflare/vite-plugin loads into the Worker for dashboard auth.
+      - name: Test
+        run: pnpm test
+
       - name: Deploy
         run: pnpm release
         env:
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: hasparus
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
       - name: Create GitHub Preview Deployment

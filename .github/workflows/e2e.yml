@@ -25,9 +25,16 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      # Dashboard.spec.ts signs the auth message with `bun .ssh/sign-message.tsx`.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Split system deps from the browser download: the combined
+      # `--with-deps` wedges on the interactive `needrestart` apt prompt.
       - name: Install Playwright system deps
         run: pnpm exec playwright install-deps chromium firefox
         timeout-minutes: 5
@@ -39,8 +46,10 @@ jobs:
         run: pnpm exec playwright install chromium firefox
         timeout-minutes: 5
 
+      # `pnpm test` builds the app first, then runs Playwright against the
+      # built output served by `vite preview`.
       - name: Run Playwright tests
-        run: pnpm exec playwright test
+        run: pnpm test
 
       - name: Generate coverage report
         if:

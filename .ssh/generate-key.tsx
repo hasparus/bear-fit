@@ -1,19 +1,24 @@
 #! /usr/bin/env bun
 
+// usage: bun .ssh/generate-key.tsx [outDir]
+// example: bun .ssh/generate-key.tsx ./test
+
+const outDir = process.argv[2] || ".";
+
 const key = await crypto.subtle.generateKey("Ed25519", true, [
   "sign",
   "verify",
 ]);
 
 const privateFile = await Bun.write(
-  new URL("./id_ed25519", import.meta.url),
+  new URL(`${outDir}/id_ed25519`, import.meta.url),
   Buffer.from(await crypto.subtle.exportKey("pkcs8", key.privateKey)).toString(
     "base64",
   ),
 );
 
 const publicFile = await Bun.write(
-  new URL("./id_ed25519.pub", import.meta.url),
+  new URL(`${outDir}/id_ed25519.pub`, import.meta.url),
   Buffer.from(await crypto.subtle.exportKey("raw", key.publicKey)).toString(
     "base64",
   ),
