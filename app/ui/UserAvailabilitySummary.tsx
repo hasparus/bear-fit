@@ -1,5 +1,4 @@
 import React from "react";
-import { unsafeKeys } from "unsafe-keys";
 
 import type { IsoDate, UserId } from "../schemas";
 
@@ -22,7 +21,7 @@ export function UserAvailabilitySummary({
   selectedUsers: Readonly<Record<UserId, boolean>>;
   userId: UserId | null;
 }) {
-  const userIds = unsafeKeys(availabilityForUsers);
+  const userIds = Object.keys(availabilityForUsers) as UserId[];
 
   const currentUserDidNotSelectYet = !userId || !availabilityForUsers[userId];
   const allUsersCount = userIds.length + (currentUserDidNotSelectYet ? 1 : 0);
