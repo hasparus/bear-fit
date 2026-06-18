@@ -1,15 +1,21 @@
 #! /usr/bin/env bun
 
-// usage: bun .ssh/sign-message.tsx <message> [outDir]
-// example: bun .ssh/sign-message.tsx "my message" ./test
 
-const message = process.argv[2];
-const outDir = process.argv[3] || ".";
+import { AUTH_MESSAGE_PREFIX } from "../party/rooms";
 
-if (!message) {
-  console.error("Message is required. Usage: bun sign-message.tsx <message>");
+const outDir = process.argv[2] || ".";
+const timestampArg = process.argv[3];
+
+const timestamp = timestampArg ? Number(timestampArg) : Date.now();
+
+if (!Number.isSafeInteger(timestamp)) {
+  console.error(
+    `Invalid timestamp "${timestampArg}". Usage: bun sign-message.tsx [outDir] [timestamp]`,
+  );
   process.exit(1);
 }
+
+const message = `${AUTH_MESSAGE_PREFIX}${timestamp}`;
 
 const file = await Bun.file(
   new URL(`${outDir}/id_ed25519`, import.meta.url),
@@ -26,6 +32,6 @@ const signature = await crypto.subtle.sign(
   new TextEncoder().encode(message),
 );
 
-console.log(Buffer.from(signature).toString("base64"));
+console.log(`${timestamp}.${Buffer.from(signature).toString("base64")}`);
 
 export {};

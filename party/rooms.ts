@@ -5,7 +5,8 @@ type ConnectionsCount = number;
 export type Rooms = Record<RoomId, ConnectionsCount>;
 
 // we could use a jwt with iat and exp, but this is fine for now
-export const HARDCODED_AUTH_MESSAGE_NOT_SMART = "dashboard";
+export const AUTH_MESSAGE_PREFIX = "dashboard:";
+export const AUTH_MESSAGE_MAX_AGE = 1000 * 60 * 5;
 export const AUTHORIZATION_EXPIRATION_TIME = 1000 * 60 * 60 * 24 * 1; // 1 day
 
 export const UpdateFromRoom = type({ count: "number", room: "string" });
@@ -15,6 +16,7 @@ export const ClientMessage = type({
   type: "'auth'",
   payload: {
     signature: "string",
+    timestamp: "number",
   },
 });
 export type ClientMessage = typeof ClientMessage.infer;
