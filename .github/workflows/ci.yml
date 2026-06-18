@@ -37,6 +37,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Unit tests
+        run: pnpm test:unit
+
       # Split system deps from the browser download: the combined
       # `--with-deps` wedges on the interactive `needrestart` apt prompt.
       - name: Install Playwright system deps
