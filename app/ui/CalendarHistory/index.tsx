@@ -17,7 +17,7 @@ import { ClockIcon } from "../ClockIcon";
 import { cn } from "../cn";
 import { Dialog, useDialogs } from "../Dialog";
 import { useUserState } from "../UserStateContext";
-import { getUpdatesFromUint8Array } from "./getUpdatesFromUint8Array";
+import { decodeHistoryUpdates } from "../../decodeHistoryUpdates";
 
 declare module "../Dialog" {
   export interface DialogIds {
@@ -127,18 +127,11 @@ function CalendarHistoryContent({
     index = latestVersion;
   }
 
-  // We fetch history on render, because it's not exposed in a websocket
-  // and we'd have to rebuild the document model a bit to make it so.
-  // (Maybe even go for event sourcing.)
-  // Fortunately, YPartyKit allows us to access the history of the document,
-  // event if we don't design it that way.
   useEffect(() => {
     if (calendarId) {
       void getHistory(calendarId)
         .then((updates) => {
-          const parsedUpdates = getUpdatesFromUint8Array(
-            new Uint8Array(updates),
-          );
+          const parsedUpdates = decodeHistoryUpdates(new Uint8Array(updates));
           setUpdates(parsedUpdates);
         })
         .catch((error) => {
@@ -220,7 +213,7 @@ function CalendarHistoryContent({
               )}
             </div>
 
-            {/* todo: style the input */}
+            {}
             <input
               type="range"
               className="w-full"

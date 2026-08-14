@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { decodeHistoryUpdates, encodeHistoryUpdates } from "./historyUpdates";
+import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
+import { encodeHistoryUpdates } from "./encodeHistoryUpdates";
 
 test("history framing preserves arbitrary binary update values", () => {
   const updates = [

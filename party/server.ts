@@ -4,7 +4,7 @@ import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
 import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
-import { encodeHistoryUpdates } from "../app/historyUpdates";
+import { encodeHistoryUpdates } from "../app/encodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
 import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";

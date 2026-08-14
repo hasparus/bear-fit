@@ -6,7 +6,7 @@ import * as Y from "yjs";
 import { expect, test } from "../test";
 import { AvailabilityKey, type IsoDate, type UserId } from "./schemas";
 import { YDocJsonSchema, yDocToJson } from "./shared-data";
-import { getUpdatesFromUint8Array } from "./ui/CalendarHistory/getUpdatesFromUint8Array";
+import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
 
 const CREATOR_NAME = "Alice";
 const CREATOR_START_DAY = 6;
@@ -169,7 +169,7 @@ test("creator can restore an event version", async ({ page: alice }) => {
   }
   const historyBuffer = new Uint8Array(await historyResponse.arrayBuffer());
 
-  const updates = getUpdatesFromUint8Array(historyBuffer);
+  const updates = decodeHistoryUpdates(historyBuffer);
   const restoreIndex = (() => {
     const doc = new Y.Doc();
     let candidate = -1;
