@@ -4,6 +4,7 @@ import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
 import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
+import { encodeHistoryUpdates } from "../app/historyUpdates";
 import { CalendarEvent } from "../app/schemas";
 import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
@@ -107,12 +108,20 @@ export default class EditorServer implements Party.Server {
       if (url.pathname === `/parties/main/${this.room.id}/history`) {
         const updates = await getLevelUpdates(this.room.storage, this.room.id);
 
-        return new Response(encodeUpdatesToOneUint8Array(updates) as BodyInit, {
-          headers: {
-            ...headers,
-            "Content-Type": "application/octet-stream",
+        return new Response(
+          encodeHistoryUpdates(
+            updates.map((update) => ({
+              clock: `${update.key[3] ?? "sv"}`,
+              value: update.value,
+            })),
+          ) as BodyInit,
+          {
+            headers: {
+              ...headers,
+              "Content-Type": "application/octet-stream",
+            },
           },
-        });
+        );
       }
 
       if (url.pathname === "/parties/main/status") {
@@ -178,27 +187,3 @@ function createDocumentUpdateKey(
 
 const BINARY_BITS_32 = 0xffffffff;
 // #endregion
-
-function encodeUpdatesToOneUint8Array(updates: Datum[]): Uint8Array {
-  const textEncoder = new TextEncoder();
-  const separator = textEncoder.encode("\n\n");
-  const parts: Uint8Array[] = [];
-
-  for (const update of updates) {
-    const clock = update.key[3] ?? "sv";
-    parts.push(textEncoder.encode(`${clock}`));
-    parts.push(separator);
-    parts.push(update.value);
-    parts.push(separator);
-  }
-
-  const totalSize = parts.reduce((acc, part) => acc + part.length, 0);
-  const body = new Uint8Array(totalSize);
-  let offset = 0;
-  for (const part of parts) {
-    body.set(part, offset);
-    offset += part.length;
-  }
-
-  return body;
-}

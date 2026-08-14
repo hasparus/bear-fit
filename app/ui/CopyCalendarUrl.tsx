@@ -21,17 +21,20 @@ export function CopyCalendarUrl({ calendarId, ...rest }: CopyCalendarUrlProps) {
       throw new Error("No calendar ID provided");
     }
 
-    const calendarUrl = `${window.location.origin}${window.location.pathname}?id=${calendarId}`;
-    navigator.clipboard.writeText(calendarUrl);
-
     if (!navigator.clipboard) {
       alert("Clipboard not supported");
+      return;
     }
 
-    navigator.clipboard.writeText(calendarUrl);
-
-    setShowTooltip(true);
-    setTimeout(() => setShowTooltip(false), 2000);
+    void navigator.clipboard.writeText(calendarUrl).then(
+      () => {
+        setShowTooltip(true);
+        setTimeout(() => setShowTooltip(false), 2000);
+      },
+      () => {
+        alert("Clipboard not supported");
+      },
+    );
   };
 
   return (

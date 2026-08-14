@@ -34,7 +34,6 @@ jobs:
         run: pnpm typecheck
       - name: Deploy
         id: deploy
-        continue-on-error: ${{ github.ref_name != 'main' }}
         run: pnpm release
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
