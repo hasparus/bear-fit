@@ -29,7 +29,7 @@ async function createEvent(page: Page) {
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await page.getByRole("button", { name: "Create Event" }).click();
+  await page.getByRole("button", { name: "Create Calendar" }).click();
   await expect(page).toHaveURL(/\?id=/);
   await expect(page.getByRole("heading", { name: eventName })).toBeVisible();
 

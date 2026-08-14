@@ -27,7 +27,7 @@ async function createEventAsCreator(page: Page) {
   await page.getByRole("button", { name: `${nextMonthName} 5th` }).click();
   await page.getByRole("button", { name: `${nextMonthName} 10th` }).click();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page.getByRole("heading").first()).toHaveText(eventName);
   await page.getByLabel("Your name").fill("Alice");

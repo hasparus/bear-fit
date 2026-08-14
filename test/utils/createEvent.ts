@@ -43,7 +43,7 @@ export async function createEvent(
   await page
     .getByRole("button", { name: `${nextMonthName} ${ordinal(endDay)}` })
     .click();
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
   await page.getByText("Event dates").waitFor({ state: "visible" });

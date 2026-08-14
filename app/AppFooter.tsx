@@ -154,7 +154,7 @@ function Stats({ className }: { className?: string }) {
   return (
     <dl className={cn("font-sans", className)}>
       <div className="flex gap-2 flex-row-reverse justify-center items-center">
-        <dt>Event{rooms === 1 ? "" : "s"} created</dt>
+        <dt>Calendar{rooms === 1 ? "" : "s"} created</dt>
         <dd className="text-2xl">{rooms}</dd>
       </div>
     </dl>

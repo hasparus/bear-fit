@@ -34,9 +34,7 @@ test("creates a rolling event and shows today through the resolved end date", as
     return `${month} ${day}${suffix}`;
   };
 
-  await page
-    .getByRole("button", { name: formatCalendarDay(today) })
-    .click();
+  await page.getByRole("button", { name: formatCalendarDay(today) }).click();
   await page
     .getByRole("button", { name: formatCalendarDay(sevenDaysLater) })
     .click();
@@ -44,7 +42,7 @@ test("creates a rolling event and shows today through the resolved end date", as
   await page.getByText("Rolling window", { exact: true }).click();
   await expect(page.getByLabel("Rolling window")).toBeChecked();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
   await expect(page.getByRole("heading", { name: eventName })).toBeVisible();

@@ -90,7 +90,7 @@ export function CreateEventForm({
             event.currentTarget.textContent = "Creating...";
           }}
         >
-          {isSubmitting ? "Creating..." : "Create Event"}
+          {isSubmitting ? "Creating..." : "Create Calendar"}
         </button>
       </form>
     </Container>

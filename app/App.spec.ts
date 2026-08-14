@@ -40,7 +40,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await alice.getByText("Create Event").click();
+  await alice.getByText("Create Calendar").click();
 
   // Verify we're redirected to the event page
   await expect(alice.getByRole("heading").first()).toHaveText(eventName);
@@ -186,7 +186,9 @@ test("creates an event with a generated name using calendar keyboard navigation"
   await endDayButton.focus();
   await page.keyboard.press("Enter");
 
-  const createEventButton = page.getByRole("button", { name: "Create Event" });
+  const createEventButton = page.getByRole("button", {
+    name: "Create Calendar",
+  });
   await expect(createEventButton).toBeEnabled();
   await createEventButton.focus();
   await page.keyboard.press("Enter");
@@ -250,7 +252,7 @@ test("edits event dates and preserves user availability", async ({
     .getByRole("button", { name: `${nextMonthName} ${INITIAL_END_DAY}th` })
     .click();
 
-  await alice.getByText("Create Event").click();
+  await alice.getByText("Create Calendar").click();
 
   // Verify we're redirected to the event page
   await expect(alice.getByRole("heading").first()).toHaveText(eventName);
@@ -405,7 +407,7 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await page.getByLabel("Your name").fill("Alice");
 
@@ -500,7 +502,7 @@ test("toggles availability with keyboard navigation", async ({ page }) => {
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await page.getByLabel("Your name").fill("Alice");
 
@@ -568,7 +570,7 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
   await page.getByText("Event dates").waitFor({ state: "visible" });
