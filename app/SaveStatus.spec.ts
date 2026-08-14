@@ -1,17 +1,17 @@
 import { type Page } from "@playwright/test";
 
 import { expect, test } from "../test";
-import { createEvent as createEventBase } from "../test/utils/createEvent";
+import { createCalendar as createCalendarBase } from "../test/utils/createCalendar";
 
 test.setTimeout(60_000);
 
-const createEvent = (page: Page) =>
-  createEventBase(page, { name: "sync status test" });
+const createCalendar = (page: Page) =>
+  createCalendarBase(page, { name: "sync status test" });
 
 test("reflects online, offline, and reconnected sync state", async ({
   page,
 }) => {
-  await createEvent(page);
+  await createCalendar(page);
 
   const indicator = page.locator("[data-sync-status]");
 
@@ -52,7 +52,7 @@ test("the indicator hides on the create screen (nothing to save yet)", async ({
 test("Cmd/Ctrl+S pops the auto-save toast above the status indicator", async ({
   page,
 }) => {
-  await createEvent(page);
+  await createCalendar(page);
 
   const toast = page.getByText("bear fit saves automatically");
   await expect(toast).toHaveAttribute("data-show", "false");
@@ -70,7 +70,7 @@ test("Cmd/Ctrl+S pops the auto-save toast above the status indicator", async ({
 test("hovering the status reveals the toast with no JS (CSS only)", async ({
   page,
 }) => {
-  await createEvent(page);
+  await createCalendar(page);
 
   const toast = page.getByText("bear fit saves automatically");
   await expect(toast).toHaveCSS("opacity", "0");

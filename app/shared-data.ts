@@ -3,41 +3,45 @@ import type { Map as YMap } from "yjs";
 
 import { type } from "arktype";
 
-import { CalendarEvent, type EventDatesPatch, UserId } from "./schemas";
+import {
+  type CalendarDatesPatch,
+  CalendarEvent,
+  UserId,
+} from "./schemas";
 
-export const getEventMap = (doc: Doc) => {
+export const getCalendarMap = (doc: Doc) => {
   return doc.getMap("event");
 };
 
 export const hasCalendarEvent = (doc: Doc) => {
-  return getEventMap(doc).has("id");
+  return getCalendarMap(doc).has("id");
 };
 
-export const applyEventDates = (
-  eventMap: YMap<unknown>,
-  patch: EventDatesPatch,
+export const applyCalendarDates = (
+  calendarMap: YMap<unknown>,
+  patch: CalendarDatesPatch,
 ) => {
   if ("rolling" in patch) {
-    eventMap.set("rolling", patch.rolling);
-    eventMap.delete("startDate");
-    eventMap.delete("endDate");
+    calendarMap.set("rolling", patch.rolling);
+    calendarMap.delete("startDate");
+    calendarMap.delete("endDate");
   } else {
-    eventMap.set("startDate", patch.startDate);
-    eventMap.set("endDate", patch.endDate);
-    eventMap.delete("rolling");
+    calendarMap.set("startDate", patch.startDate);
+    calendarMap.set("endDate", patch.endDate);
+    calendarMap.delete("rolling");
   }
 };
 
-export const initializeEventMap = (doc: Doc, event: CalendarEvent) => {
-  const eventMap = getEventMap(doc);
+export const initializeCalendarMap = (doc: Doc, event: CalendarEvent) => {
+  const calendarMap = getCalendarMap(doc);
 
-  eventMap.set("id", event.id);
-  eventMap.set("name", event.name);
-  eventMap.set("creator", event.creator);
+  calendarMap.set("id", event.id);
+  calendarMap.set("name", event.name);
+  calendarMap.set("creator", event.creator);
   if (event.rolling) {
-    applyEventDates(eventMap, { rolling: event.rolling });
+    applyCalendarDates(calendarMap, { rolling: event.rolling });
   } else {
-    applyEventDates(eventMap, {
+    applyCalendarDates(calendarMap, {
       endDate: event.endDate!,
       startDate: event.startDate!,
     });
@@ -60,4 +64,4 @@ export const YDocJsonSchema = type({
 
 export type YDocJson = typeof YDocJsonSchema.infer;
 
-export type { EventDatesPatch };
+export type { CalendarDatesPatch };

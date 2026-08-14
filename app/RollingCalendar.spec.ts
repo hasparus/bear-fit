@@ -42,14 +42,13 @@ test("creates a rolling event and shows today through the resolved end date", as
   await page.getByText("Rolling window", { exact: true }).click();
   await expect(page.getByLabel("Rolling window")).toBeChecked();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
   await expect(page.getByRole("heading", { name: eventName })).toBeVisible();
 
   const todayIso = isoDate(today);
   const sevenDaysLaterIso = isoDate(sevenDaysLater);
-  // Format expected dates in the browser context so they match the UI's
   const [todayDisplay, sevenDaysLaterDisplay] = await page.evaluate(
     ([t, s]) => [
       new Date(t).toLocaleDateString(undefined, { timeZone: "UTC" }),
@@ -57,11 +56,11 @@ test("creates a rolling event and shows today through the resolved end date", as
     ],
     [todayIso, sevenDaysLaterIso] as const,
   );
-  const eventDateRange = page.getByText("Event dates").locator("+ p");
+  const calendarDateRange = page.getByText("Dates", { exact: true }).locator("+ p");
 
-  await expect(eventDateRange).toContainText(todayDisplay);
-  await expect(eventDateRange).toContainText(sevenDaysLaterDisplay);
-  await expect(eventDateRange.getByText("Rolling: 7 days")).toBeVisible();
+  await expect(calendarDateRange).toContainText(todayDisplay);
+  await expect(calendarDateRange).toContainText(sevenDaysLaterDisplay);
+  await expect(calendarDateRange.getByText("Rolling: 7 days")).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.getByText("Nerd Mode").click();
@@ -69,7 +68,7 @@ test("creates a rolling event and shows today through the resolved end date", as
   await page
     .getByRole("heading", { name: eventName })
     .dispatchEvent("contextmenu");
-  await page.getByRole("menuitem", { name: "Copy event JSON" }).click();
+  await page.getByRole("menuitem", { name: "Copy calendar JSON" }).click();
 
   const copiedJson = await page.evaluate(() => navigator.clipboard.readText());
   const exported = YDocJsonSchema.assert(JSON.parse(copiedJson));

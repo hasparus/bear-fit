@@ -9,15 +9,15 @@ function ordinal(day: number) {
 }
 
 /**
- * Creates an event in next month and lands on its page. The canonical helper —
+ * Creates a calendar in next month and lands on its page. The canonical helper —
  * specs that need different dates or assertions pass options instead of
  * copy-pasting the flow.
  */
-export async function createEvent(
+export async function createCalendar(
   page: Page,
   {
     endDay = 12,
-    name = "test event",
+    name = "test calendar",
     startDay = 6,
   }: { endDay?: number; name?: string; startDay?: number } = {},
 ) {
@@ -43,8 +43,8 @@ export async function createEvent(
   await page
     .getByRole("button", { name: `${nextMonthName} ${ordinal(endDay)}` })
     .click();
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
-  await page.getByText("Event dates").waitFor({ state: "visible" });
+  await page.getByText("Dates", { exact: true }).waitFor({ state: "visible" });
 }

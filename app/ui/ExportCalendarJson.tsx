@@ -2,18 +2,18 @@ import type { Doc } from "yjs";
 
 import React, { useState } from "react";
 
-import { getEventMap, yDocToJson } from "../shared-data";
+import { getCalendarMap, yDocToJson } from "../shared-data";
 import { cn } from "./cn";
 import { DownloadIcon } from "./DownloadIcon";
 import { TooltipContent } from "./TooltipContent";
 
-export function exportEventJson(yDoc: Doc) {
+export function exportCalendarJson(yDoc: Doc) {
   const data = yDocToJson(yDoc);
-  const eventMap = getEventMap(yDoc);
-  const eventName = eventMap.get("name");
+  const calendarMap = getCalendarMap(yDoc);
+  const calendarName = calendarMap.get("name");
 
-  if (!eventName) {
-    throw new Error("No event name provided");
+  if (!calendarName) {
+    throw new Error("No calendar name provided");
   }
 
   const jsonString = JSON.stringify(data, null, 2);
@@ -22,22 +22,22 @@ export function exportEventJson(yDoc: Doc) {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${eventName}.json`;
+  a.download = `${calendarName}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-interface ExportEventJsonProps extends React.HTMLAttributes<HTMLButtonElement> {
+interface ExportCalendarJsonProps extends React.HTMLAttributes<HTMLButtonElement> {
   yDoc: Doc;
 }
 
-export function ExportEventJson({
+export function ExportCalendarJson({
   className,
   yDoc,
   ...rest
-}: ExportEventJsonProps) {
+}: ExportCalendarJsonProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
@@ -50,7 +50,7 @@ export function ExportEventJson({
       )}
       onClick={() => {
         setShowTooltip(true);
-        exportEventJson(yDoc);
+        exportCalendarJson(yDoc);
         setTimeout(() => setShowTooltip(false), 2000);
       }}
       {...rest}

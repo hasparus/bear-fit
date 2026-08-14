@@ -19,14 +19,15 @@ import {
   formatIsoDate,
   IsoDate,
   isoDate,
-  resolveEventDates,
+  resolveCalendarDates,
   type UserId,
 } from "../schemas";
 import { AvailabilityKey } from "../schemas";
-import { getEventMap, yDocToJson } from "../shared-data";
+import { getCalendarMap, yDocToJson } from "../shared-data";
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import { useYDoc } from "../useYDoc";
 import { AvailabilityGridCell } from "./AvailabilityGridCell";
+import { CalendarHistory } from "./CalendarHistory";
 import { ClockIcon } from "./ClockIcon";
 import { cn } from "./cn";
 import { Container } from "./Container";
@@ -37,18 +38,17 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "./ContextMenu";
-import { CopyEventUrl } from "./CopyEventUrl";
+import { CopyCalendarUrl } from "./CopyCalendarUrl";
 import { CopyIcon } from "./CopyIcon";
 import { useDialogs } from "./Dialog";
 import { DownloadIcon } from "./DownloadIcon";
 import { eachDayOfInterval } from "./eachDayOfInterval";
-import { EditEventDialog } from "./EditEventDialog";
+import { EditCalendarDialog } from "./EditCalendarDialog";
 import { EditIcon } from "./EditIcon";
-import { EventHistory } from "./EventHistory";
-import { exportEventJson, ExportEventJson } from "./ExportEventJson";
+import { exportCalendarJson, ExportCalendarJson } from "./ExportCalendarJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
-import { ImportEventJson, useImportEventJson } from "./ImportEventJson";
+import { ImportCalendarJson, useImportCalendarJson } from "./ImportCalendarJson";
 import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
@@ -62,7 +62,7 @@ import { useUserDispatch, useUserState } from "./UserStateContext";
 
 const userId = getUserId();
 
-export function EventDetails({
+export function CalendarDetails({
   className,
   disabled,
 }: {
@@ -71,9 +71,9 @@ export function EventDetails({
 }) {
   const yDoc = useYDoc();
 
-  const eventMap = getEventMap(yDoc);
-  const event = useY(eventMap) as Partial<CalendarEvent>;
-  const { endDate, startDate } = resolveEventDates(event);
+  const calendarMap = getCalendarMap(yDoc);
+  const event = useY(calendarMap) as Partial<CalendarEvent>;
+  const { endDate, startDate } = resolveCalendarDates(event);
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -82,7 +82,7 @@ export function EventDetails({
     }
   }, [event.id, event.name]);
 
-  useRememberEvent(event);
+  useRememberCalendar(event);
 
   const namesMap = yDoc.getMap("names");
   const names = useY(namesMap) as Record<UserId, string>;
@@ -254,11 +254,11 @@ export function EventDetails({
 
   const monthCount = Object.keys(groupedDays).length;
 
-  const eventIsWide = monthCount > 1;
+  const calendarIsWide = monthCount > 1;
 
   return (
     <ContextMenu>
-      <Container wide={eventIsWide} className={className}>
+      <Container wide={calendarIsWide} className={className}>
         <ContextMenuTrigger>
           <form
             onSubmit={(e) => e.preventDefault()}
@@ -273,7 +273,7 @@ export function EventDetails({
               <h1 className="mb-4 leading-[1.3333]">
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
-              <p className="block font-mono text-sm">Event dates</p>
+              <p className="block font-mono text-sm">Dates</p>
               <p aria-busy={!startDate} className="mb-4 leading-[1.3333]">
                 {startDate && endDate ? (
                   <>
@@ -335,7 +335,7 @@ export function EventDetails({
                   />
                 )}
               </div>
-              <CopyEventUrl className="max-lg:hidden" eventId={event.id} />
+              <CopyCalendarUrl calendarId={event.id} className="max-lg:hidden" />
             </div>
             <div className="w-px bg-neutral-200 max-lg:hidden" />
             <div
@@ -482,12 +482,12 @@ export function EventDetails({
                   </React.Fragment>
                 ))}
             </div>
-            <CopyEventUrl className="lg:hidden" eventId={event.id} />
+            <CopyCalendarUrl calendarId={event.id} className="lg:hidden" />
           </form>
 
-          <EventDetailsFooter
-            eventIsWide={eventIsWide}
-            eventId={event.id}
+          <CalendarDetailsFooter
+            calendarIsWide={calendarIsWide}
+            calendarId={event.id}
             isCreator={isCreator}
             isLoading={!event.name}
             yDoc={yDoc}
@@ -577,21 +577,21 @@ interface HoveredCellData {
   date: IsoDate;
 }
 
-interface EventDetailsFooterProps {
-  eventIsWide: boolean;
-  eventId: string | undefined;
+interface CalendarDetailsFooterProps {
+  calendarIsWide: boolean;
+  calendarId: string | undefined;
   isCreator: boolean;
   isLoading: boolean;
   yDoc: Doc;
 }
 
-function EventDetailsFooter({
-  eventIsWide,
-  eventId,
+function CalendarDetailsFooter({
+  calendarIsWide,
+  calendarId,
   isCreator,
   isLoading,
   yDoc,
-}: EventDetailsFooterProps) {
+}: CalendarDetailsFooterProps) {
   const { nerdMode } = useUserState();
 
   return (
@@ -606,11 +606,11 @@ function EventDetailsFooter({
         className="contents"
         style={{ visibility: nerdMode ? "visible" : "hidden" }}
       >
-        {isCreator && <EditEventDialog />}
-        <EventHistory
-          eventIsWide={eventIsWide}
+        {isCreator && <EditCalendarDialog />}
+        <CalendarHistory
+          calendarIsWide={calendarIsWide}
+          calendarId={calendarId}
           canRestore={isCreator}
-          eventId={eventId}
           onRestoreVersion={
             isCreator
               ? (doc) => {
@@ -619,8 +619,8 @@ function EventDetailsFooter({
               : undefined
           }
         />
-        {isCreator && <ImportEventJson />}
-        <ExportEventJson yDoc={yDoc} />
+        {isCreator && <ImportCalendarJson />}
+        <ExportCalendarJson yDoc={yDoc} />
       </span>
       <MoreButton />
     </footer>
@@ -643,12 +643,12 @@ function useSupportsHover() {
   );
 }
 
-function useRememberEvent(event: Partial<CalendarEvent>) {
+function useRememberCalendar(event: Partial<CalendarEvent>) {
   const dispatch = useUserDispatch();
 
   useEffect(() => {
     if (event.id) {
-      dispatch({ type: "remember-event", payload: event as CalendarEvent });
+      dispatch({ type: "remember-calendar", payload: event as CalendarEvent });
     }
   }, [event]);
 }
@@ -696,12 +696,12 @@ function EventContextMenu({
   isCreator: boolean;
   yDoc: Doc;
 }) {
-  const importEventJson = useImportEventJson();
+  const importCalendarJson = useImportCalendarJson();
   const dialogs = useDialogs();
 
   return (
     <>
-      {importEventJson.hiddenInputElement}
+      {importCalendarJson.hiddenInputElement}
       <ContextMenuContent>
         <ContextMenuItem
           onClick={() => {
@@ -709,22 +709,22 @@ function EventContextMenu({
           }}
         >
           <ClockIcon className="size-4 mr-1.5" />
-          Event history
+          Version history
         </ContextMenuItem>
         {isCreator && (
           <ContextMenuItem onClick={() => dialogs.set("edit-event", true)}>
             <EditIcon className="size-4 mr-1.5" />
-            Edit event dates
+            Edit dates
           </ContextMenuItem>
         )}
-        <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
+        <ContextMenuItem onClick={() => exportCalendarJson(yDoc)}>
           <DownloadIcon className="size-4 mr-1.5" />
           Export to JSON file
         </ContextMenuItem>
         {isCreator && (
           <ContextMenuItem
             onClick={() => {
-              importEventJson.openFileDialog();
+              importCalendarJson.openFileDialog();
             }}
           >
             <UploadIcon className="size-4 mr-1.5" />
@@ -738,7 +738,7 @@ function EventContextMenu({
           }}
         >
           <CopyIcon className="size-4 mr-1.5" />
-          Copy event JSON
+          Copy calendar JSON
         </ContextMenuItem>
         {isCreator && (
           <ContextMenuItem

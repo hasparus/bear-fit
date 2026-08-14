@@ -23,7 +23,7 @@
 
 ## Coding Style & Naming Conventions
 
-- Components and hooks stay PascalCase or camelCase (`CreateEventForm`,
+- Components and hooks stay PascalCase or camelCase (`CreateCalendarForm`,
   `useSearchParams`), while constants use upper snake case (`APP_VERSION`).
 - Lint auto-fixes handle import/key ordering via `eslint-plugin-perfectionist`;
   avoid manual reorderings.

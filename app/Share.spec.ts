@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { expect, test } from "../test";
 
-async function createEvent(page: Page) {
+async function createCalendar(page: Page) {
   await page.goto("/");
 
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
@@ -29,20 +29,20 @@ async function createEvent(page: Page) {
     .getByRole("button", { name: `${nextMonthName} ${END_DAY}th` })
     .click();
 
-  await page.getByRole("button", { name: "Create Event" }).click();
+  await page.getByRole("button", { name: "Create Calendar" }).click();
   await expect(page).toHaveURL(/\?id=/);
   await expect(page.getByRole("heading", { name: eventName })).toBeVisible();
 
-  return { eventName, eventUrl: page.url() };
+  return { calendarUrl: page.url(), eventName };
 }
 
-test("copies the event URL from the desktop sharing panel", async ({
+test("copies the calendar URL from the desktop sharing panel", async ({
   page,
 }) => {
-  const { eventUrl } = await createEvent(page);
+  const { calendarUrl } = await createCalendar(page);
 
-  const urlInput = page.getByLabel("Event URL").first();
-  await expect(urlInput).toHaveValue(eventUrl);
+  const urlInput = page.getByLabel("Calendar URL").first();
+  await expect(urlInput).toHaveValue(calendarUrl);
 
   await page.evaluate(() => navigator.clipboard.writeText(""));
 
@@ -51,14 +51,14 @@ test("copies the event URL from the desktop sharing panel", async ({
 
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toBe(eventUrl);
+    .toBe(calendarUrl);
 });
 
 test.describe("touch layout sharing UI", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("opens the touch menu and copies event JSON", async ({ page }) => {
-    const { eventName, eventUrl } = await createEvent(page);
+  test("opens the touch menu and copies calendar JSON", async ({ page }) => {
+    const { calendarUrl, eventName } = await createCalendar(page);
 
     await page.evaluate(() => navigator.clipboard.writeText(""));
 
@@ -69,7 +69,7 @@ test.describe("touch layout sharing UI", () => {
     await expect(page.getByText("Copied to clipboard")).toBeVisible();
     await expect
       .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-      .toBe(eventUrl);
+      .toBe(calendarUrl);
 
     await page.evaluate(() =>
       window.scrollTo({ top: document.body.scrollHeight }),
@@ -79,7 +79,7 @@ test.describe("touch layout sharing UI", () => {
     await moreButton.click();
 
     const copyEventJson = page.getByRole("menuitem", {
-      name: "Copy event JSON",
+      name: "Copy calendar JSON",
     });
     await expect(copyEventJson).toBeVisible();
 

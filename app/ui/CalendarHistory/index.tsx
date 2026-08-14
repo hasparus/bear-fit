@@ -11,13 +11,13 @@ import * as Y from "yjs";
 import { getHistory } from "../../api/getHistory";
 import { yDocToJson } from "../../shared-data";
 import { YDocContext } from "../../useYDoc";
+import { CalendarDetails } from "../CalendarDetails";
 import { CheckboxField } from "../CheckboxField";
 import { ClockIcon } from "../ClockIcon";
 import { cn } from "../cn";
 import { Dialog, useDialogs } from "../Dialog";
-import { EventDetails } from "../EventDetails";
 import { useUserState } from "../UserStateContext";
-import { getUpdatesFromUint8Array } from "./getUpdatesFromUint8Array";
+import { decodeHistoryUpdates } from "../../decodeHistoryUpdates";
 
 declare module "../Dialog" {
   export interface DialogIds {
@@ -25,22 +25,22 @@ declare module "../Dialog" {
   }
 }
 
-const EventHistoryContext = createContext<boolean>(false);
+const CalendarHistoryContext = createContext<boolean>(false);
 
-export interface EventHistoryProps {
-  eventIsWide: boolean;
+export interface CalendarHistoryProps {
+  calendarIsWide: boolean;
+  calendarId: string | undefined;
   canRestore: boolean;
-  eventId: string | undefined;
   onRestoreVersion?: (doc: Y.Doc) => void;
 }
 
-export function EventHistory({
-  eventIsWide,
+export function CalendarHistory({
+  calendarIsWide,
+  calendarId,
   canRestore,
-  eventId,
   onRestoreVersion,
-}: EventHistoryProps) {
-  const isHistoricalAlready = useContext(EventHistoryContext);
+}: CalendarHistoryProps) {
+  const isHistoricalAlready = useContext(CalendarHistoryContext);
   const dialogs = useDialogs();
 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -62,12 +62,12 @@ export function EventHistory({
         <Dialog.Popup
           className={cn(
             "grid fixed max-w-[var(--max-width-for-real)] left-[calc(50vw-var(--max-width-for-real)/2)] max-h-screen inset-0 sm:[place-items:center_end] pointer-events-none",
-            !eventIsWide &&
+            !calendarIsWide &&
               "[@media(width>=1120px)]:[grid-template-columns:1fr_var(--container-width)_1fr] [@media(width>=1120px)]:[place-items:center_start]",
           )}
         >
           <section className="window max-sm:m-0 animate-content-show -col-end-1 pointer-events-auto">
-            <EventHistoryContext.Provider value={true}>
+            <CalendarHistoryContext.Provider value={true}>
               <div className="title-bar">
                 <Dialog.Close
                   aria-label="Close"
@@ -79,14 +79,14 @@ export function EventHistory({
                   Inspect the history of the event.
                 </Dialog.Description>
               </div>
-              <EventHistoryContent
+              <CalendarHistoryContent
+                calendarId={calendarId}
                 canRestore={canRestore}
                 closeButtonRef={closeButtonRef}
-                eventId={eventId}
                 onRestoreVersion={onRestoreVersion}
                 open={dialogs.isOpen("event-history")}
               />
-            </EventHistoryContext.Provider>
+            </CalendarHistoryContext.Provider>
           </section>
         </Dialog.Popup>
       </Dialog.Portal>
@@ -94,22 +94,22 @@ export function EventHistory({
   );
 }
 
-interface EventHistoryContentProps extends React.HTMLAttributes<HTMLElement> {
+interface CalendarHistoryContentProps extends React.HTMLAttributes<HTMLElement> {
+  calendarId: string | undefined;
   canRestore: boolean;
   closeButtonRef: React.RefObject<HTMLButtonElement | null>;
-  eventId: string | undefined;
   onRestoreVersion?: (doc: Y.Doc) => void;
   open: boolean;
 }
 
-function EventHistoryContent({
+function CalendarHistoryContent({
+  calendarId,
   canRestore,
   closeButtonRef,
-  eventId,
   onRestoreVersion,
   open,
   ...rest
-}: EventHistoryContentProps) {
+}: CalendarHistoryContentProps) {
   const [error, setError] = useState<Error | undefined>(undefined);
   const [updates, setUpdates] = useState<
     { clock: string; value: Uint8Array }[] | undefined
@@ -127,18 +127,11 @@ function EventHistoryContent({
     index = latestVersion;
   }
 
-  // We fetch history on render, because it's not exposed in a websocket
-  // and we'd have to rebuild the document model a bit to make it so.
-  // (Maybe even go for event sourcing.)
-  // Fortunately, YPartyKit allows us to access the history of the document,
-  // event if we don't design it that way.
   useEffect(() => {
-    if (eventId) {
-      void getHistory(eventId)
+    if (calendarId) {
+      void getHistory(calendarId)
         .then((updates) => {
-          const parsedUpdates = getUpdatesFromUint8Array(
-            new Uint8Array(updates),
-          );
+          const parsedUpdates = decodeHistoryUpdates(new Uint8Array(updates));
           setUpdates(parsedUpdates);
         })
         .catch((error) => {
@@ -146,7 +139,7 @@ function EventHistoryContent({
           setError(error);
         });
     }
-  }, [eventId]);
+  }, [calendarId]);
 
   // TODO: We don't have to build a new Y.Doc when we scroll to the right.
   const historicalDoc = useMemo(() => {
@@ -220,7 +213,7 @@ function EventHistoryContent({
               )}
             </div>
 
-            {/* todo: style the input */}
+            {}
             <input
               type="range"
               className="w-full"
@@ -242,13 +235,13 @@ function EventHistoryContent({
             </>
           ) : updates ? (
             <YDocContext.Provider value={historicalDoc}>
-              <EventDetails
+              <CalendarDetails
                 className="shadow-none shrink max-sm:m-0 max-sm:w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 border-x-0 rounded-none"
                 disabled
               />
             </YDocContext.Provider>
           ) : (
-            <EventDetails
+            <CalendarDetails
               className="shadow-none shrink max-sm:m-0 max-sm:w-full overflow-y-scroll [scrollbar-gutter:stable] -mx-1 sm:-mx-2 border-x-0 rounded-none"
               disabled
             />

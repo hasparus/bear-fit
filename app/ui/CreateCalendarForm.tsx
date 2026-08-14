@@ -10,24 +10,24 @@ import {
 
 import { getUserId } from "../getUserId";
 import { type CalendarEvent, startOfTodayUtc } from "../schemas";
+import {
+  CalendarDatesPicker,
+  type CalendarDatesValue,
+  calendarDatesValueToPatch,
+  defaultCalendarDatesValue,
+  isCalendarDatesValueValid,
+} from "./CalendarDatesPicker";
 import { Container } from "./Container";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
-import {
-  defaultEventDatesValue,
-  EventDatesPicker,
-  type EventDatesValue,
-  eventDatesValueToPatch,
-  isEventDatesValueValid,
-} from "./EventDatesPicker";
 
-export function CreateEventForm({
+export function CreateCalendarForm({
   onSubmit,
 }: {
   onSubmit: (event: CalendarEvent) => Promise<void>;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dates, setDates] = useState<EventDatesValue>(() =>
-    defaultEventDatesValue(),
+  const [dates, setDates] = useState<CalendarDatesValue>(() =>
+    defaultCalendarDatesValue(),
   );
 
   return (
@@ -49,7 +49,7 @@ export function CreateEventForm({
               style: "capital",
             });
 
-          const patch = eventDatesValueToPatch(dates);
+          const patch = calendarDatesValueToPatch(dates);
           const base = { id: nanoid(), creator: getUserId(), name };
           const calendarEvent: CalendarEvent = { ...base, ...patch };
 
@@ -75,7 +75,7 @@ export function CreateEventForm({
             className="w-full border pt-2 pr-2 pb-2 pl-[5px]"
           />
         </div>
-        <EventDatesPicker
+        <CalendarDatesPicker
           fixedRangeProps={{ disabled: { before: startOfTodayUtc() } }}
           name="calendar-mode"
           onChange={setDates}
@@ -84,13 +84,13 @@ export function CreateEventForm({
         <button
           type="submit"
           className="btn btn-default w-full"
-          disabled={!isEventDatesValueValid(dates)}
+          disabled={!isCalendarDatesValueValid(dates)}
           style={{ borderWidth: "0.5em" }}
           onClick={(event) => {
             event.currentTarget.textContent = "Creating...";
           }}
         >
-          {isSubmitting ? "Creating..." : "Create Event"}
+          {isSubmitting ? "Creating..." : "Create Calendar"}
         </button>
       </form>
     </Container>

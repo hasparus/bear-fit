@@ -4,13 +4,13 @@ import { useY } from "react-yjs";
 
 import { CalendarEvent } from "../schemas";
 import {
-  applyEventDates,
-  type EventDatesPatch,
-  getEventMap,
+  applyCalendarDates,
+  type CalendarDatesPatch,
+  getCalendarMap,
 } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
-import { EditEventForm } from "./EditEventForm";
+import { EditCalendarForm } from "./EditCalendarForm";
 import { EditIcon } from "./EditIcon";
 
 declare module "./Dialog" {
@@ -19,10 +19,10 @@ declare module "./Dialog" {
   }
 }
 
-export function EditEventDialog() {
+export function EditCalendarDialog() {
   const yDoc = useYDoc();
-  const eventMap = getEventMap(yDoc);
-  const event = useY(eventMap) as Partial<CalendarEvent>;
+  const calendarMap = getCalendarMap(yDoc);
+  const event = useY(calendarMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
   const isEditOpen = dialogs.isOpen("edit-event");
@@ -32,8 +32,8 @@ export function EditEventDialog() {
     }
   }, [isEditOpen]);
 
-  const handleSubmit = async (patch: EventDatesPatch) => {
-    applyEventDates(eventMap, patch);
+  const handleSubmit = async (patch: CalendarDatesPatch) => {
+    applyCalendarDates(calendarMap, patch);
     dialogs.set("edit-event", false);
   };
 
@@ -53,13 +53,13 @@ export function EditEventDialog() {
           <section className="window max-sm:m-0 animate-content-show -col-end-1 pointer-events-auto max-h-full flex flex-col">
             <div className="title-bar">
               <Dialog.Close aria-label="Close" className="close" />
-              <Dialog.Title className="title">Edit Event</Dialog.Title>
+              <Dialog.Title className="title">Edit Calendar</Dialog.Title>
               <Dialog.Description className="sr-only">
-                Change the date range for this event.
+                Change the date range for this calendar.
               </Dialog.Description>
             </div>
             <div className="p-1 sm:p-2 flex min-h-0 flex-1 flex-col">
-              <EditEventForm
+              <EditCalendarForm
                 event={event as CalendarEvent}
                 onSubmit={handleSubmit}
               />

@@ -4,8 +4,9 @@ import { onConnect, unstable_getYDoc, type YPartyKitOptions } from "y-partykit";
 import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
+import { encodeHistoryUpdates } from "../app/encodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
-import { initializeEventMap, yDocToJson } from "../app/shared-data";
+import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
 const VERBOSE = process.env.NODE_ENV === "development";
@@ -16,9 +17,6 @@ export default class EditorServer implements Party.Server {
   event: CalendarEvent | null = null;
 
   // TODO: Test how it affects the server. May cause problems with Yjs.
-  // options = {
-  //   hibernate: true,
-  // };
 
   constructor(public room: Party.Room) {}
 
@@ -70,8 +68,6 @@ export default class EditorServer implements Party.Server {
   async onRequest(req: Party.Request) {
     const url = new URL(req.url);
 
-    // We only allow CORS requests in development and tests.
-    // In prod, the server is deployed together with the client.
     const headers = process.env.NODE_ENV !== "production" ? CORS : undefined;
 
     if (req.method === "OPTIONS") {
@@ -89,11 +85,11 @@ export default class EditorServer implements Party.Server {
 
         if (this.event) {
           return Response.json(
-            { error: "event already created" },
+            { error: "calendar already created" },
             { headers, status: 403 },
           );
         } else {
-          initializeEventMap(
+          initializeCalendarMap(
             await unstable_getYDoc(this.room, this.yPartyKitOptions),
             event,
           );
@@ -102,7 +98,7 @@ export default class EditorServer implements Party.Server {
       } catch (error) {
         console.error(error);
         return Response.json(
-          { error: "invalid event" },
+          { error: "invalid calendar" },
           { headers, status: 400 },
         );
       }
@@ -112,12 +108,20 @@ export default class EditorServer implements Party.Server {
       if (url.pathname === `/parties/main/${this.room.id}/history`) {
         const updates = await getLevelUpdates(this.room.storage, this.room.id);
 
-        return new Response(encodeUpdatesToOneUint8Array(updates) as BodyInit, {
-          headers: {
-            ...headers,
-            "Content-Type": "application/octet-stream",
+        return new Response(
+          encodeHistoryUpdates(
+            updates.map((update) => ({
+              clock: `${update.key[3] ?? "sv"}`,
+              value: update.value,
+            })),
+          ) as BodyInit,
+          {
+            headers: {
+              ...headers,
+              "Content-Type": "application/octet-stream",
+            },
           },
-        });
+        );
       }
 
       if (url.pathname === "/parties/main/status") {
@@ -183,27 +187,3 @@ function createDocumentUpdateKey(
 
 const BINARY_BITS_32 = 0xffffffff;
 // #endregion
-
-function encodeUpdatesToOneUint8Array(updates: Datum[]): Uint8Array {
-  const textEncoder = new TextEncoder();
-  const separator = textEncoder.encode("\n\n");
-  const parts: Uint8Array[] = [];
-
-  for (const update of updates) {
-    const clock = update.key[3] ?? "sv"; // we either have a clock number or it's state vector
-    parts.push(textEncoder.encode(`${clock}`));
-    parts.push(separator);
-    parts.push(update.value);
-    parts.push(separator); // if it's the last update, we end the file with LF
-  }
-
-  const totalSize = parts.reduce((acc, part) => acc + part.length, 0);
-  const body = new Uint8Array(totalSize);
-  let offset = 0;
-  for (const part of parts) {
-    body.set(part, offset);
-    offset += part.length;
-  }
-
-  return body;
-}

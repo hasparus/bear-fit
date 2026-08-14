@@ -6,7 +6,7 @@ import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
 import { TooltipContent } from "./TooltipContent";
 import { UploadIcon } from "./UploadIcon";
 
-export interface ImportEventJsonProps extends Omit<
+export interface ImportCalendarJsonProps extends Omit<
   React.HTMLAttributes<HTMLLabelElement>,
   "children"
 > {
@@ -15,17 +15,17 @@ export interface ImportEventJsonProps extends Omit<
     | React.ReactNode;
 }
 
-export function ImportEventJson({
+export function ImportCalendarJson({
   children,
   className,
   ...rest
-}: ImportEventJsonProps) {
+}: ImportCalendarJsonProps) {
   const {
     hiddenInputElement: inputElement,
     fileInputRef,
     showTooltip,
     tooltipMessage,
-  } = useImportEventJson();
+  } = useImportCalendarJson();
 
   return (
     <>
@@ -58,7 +58,7 @@ export function ImportEventJson({
   );
 }
 
-export function useImportEventJson() {
+export function useImportCalendarJson() {
   const yDoc = useYDoc();
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipMessage, setTooltipMessage] = useState("");

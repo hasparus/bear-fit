@@ -2,8 +2,8 @@ import { type DateRange } from "react-day-picker";
 
 import {
   addDays,
+  type CalendarDatesPatch,
   diffDays,
-  type EventDatesPatch,
   isoDate,
   startOfTodayUtc,
 } from "../schemas";
@@ -13,20 +13,20 @@ import { isValidDateRange, requireValidDateRange } from "./dateRangeValidation";
 
 const DEFAULT_ROLLING_DAYS = 14;
 
-export interface EventDatesValue {
+export interface CalendarDatesValue {
   isRolling: boolean;
   range: DateRange;
 }
 
-export const defaultEventDatesValue = (
-  partial?: Partial<EventDatesValue>,
-): EventDatesValue => ({
+export const defaultCalendarDatesValue = (
+  partial?: Partial<CalendarDatesValue>,
+): CalendarDatesValue => ({
   isRolling: false,
   range: { from: undefined, to: undefined },
   ...partial,
 });
 
-export const isEventDatesValueValid = (value: EventDatesValue): boolean => {
+export const isCalendarDatesValueValid = (value: CalendarDatesValue): boolean => {
   if (value.isRolling) {
     const today = startOfTodayUtc();
     return isValidDateRange({ from: today, to: value.range.to });
@@ -34,9 +34,9 @@ export const isEventDatesValueValid = (value: EventDatesValue): boolean => {
   return isValidDateRange(value.range);
 };
 
-export const eventDatesValueToPatch = (
-  value: EventDatesValue,
-): EventDatesPatch => {
+export const calendarDatesValueToPatch = (
+  value: CalendarDatesValue,
+): CalendarDatesPatch => {
   if (value.isRolling) {
     const today = startOfTodayUtc();
     const { to } = requireValidDateRange({ from: today, to: value.range.to });
@@ -46,24 +46,24 @@ export const eventDatesValueToPatch = (
   return { endDate: isoDate(to), startDate: isoDate(from) };
 };
 
-export interface EventDatesPickerProps {
+export interface CalendarDatesPickerProps {
   fixedRangeLabel?: string;
   name: string;
-  onChange: (value: EventDatesValue) => void;
-  value: EventDatesValue;
+  onChange: (value: CalendarDatesValue) => void;
+  value: CalendarDatesValue;
   fixedRangeProps?: Pick<
     DateRangePickerProps,
     "disabled" | "modifiers" | "modifiersClassNames"
   >;
 }
 
-export function EventDatesPicker({
+export function CalendarDatesPicker({
   fixedRangeLabel = "Choose a date range",
   fixedRangeProps,
   name,
   onChange,
   value,
-}: EventDatesPickerProps) {
+}: CalendarDatesPickerProps) {
   const today = startOfTodayUtc();
   const selected = value.isRolling
     ? { from: today, to: value.range.to }
@@ -138,4 +138,4 @@ export function EventDatesPicker({
   );
 }
 
-export type { EventDatesPatch };
+export type { CalendarDatesPatch };

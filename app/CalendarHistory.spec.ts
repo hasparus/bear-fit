@@ -6,7 +6,7 @@ import * as Y from "yjs";
 import { expect, test } from "../test";
 import { AvailabilityKey, type IsoDate, type UserId } from "./schemas";
 import { YDocJsonSchema, yDocToJson } from "./shared-data";
-import { getUpdatesFromUint8Array } from "./ui/EventHistory/getUpdatesFromUint8Array";
+import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
 
 const CREATOR_NAME = "Alice";
 const CREATOR_START_DAY = 6;
@@ -15,7 +15,7 @@ const TARGET_DAY = 9;
 
 test.describe.configure({ mode: "serial" });
 
-async function createEvent(page: Page) {
+async function createCalendar(page: Page) {
   await page.goto("/");
 
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
@@ -39,7 +39,7 @@ async function createEvent(page: Page) {
     .getByRole("button", { name: `${nextMonthName} ${CREATOR_END_DAY}th` })
     .click();
 
-  await page.getByText("Create Event").click();
+  await page.getByText("Create Calendar").click();
 
   await expect(page.getByRole("heading").first()).toHaveText(eventName);
   await expect(page).toHaveURL(/\?id=/);
@@ -47,9 +47,9 @@ async function createEvent(page: Page) {
   await page.getByLabel("Your name").fill(CREATOR_NAME);
 
   const url = new URL(page.url());
-  const eventId = url.searchParams.get("id");
+  const calendarId = url.searchParams.get("id");
 
-  if (!eventId) {
+  if (!calendarId) {
     throw new Error("Event ID missing from URL");
   }
 
@@ -59,7 +59,7 @@ async function createEvent(page: Page) {
     `${year}-${month}-${TARGET_DAY.toString().padStart(2, "0")}` as IsoDate;
 
   return {
-    eventId,
+    calendarId,
     eventName,
     nextMonth,
     targetIsoDate,
@@ -74,7 +74,7 @@ async function enableNerdMode(page: Page) {
   ).toBeVisible();
 }
 
-async function exportEventJson(page: Page) {
+async function exportCalendarJson(page: Page) {
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export to JSON" }).click();
   const download = await downloadPromise;
@@ -113,7 +113,7 @@ async function availabilityFill(page: Page, date: Date) {
   return cell.evaluate((node) => getComputedStyle(node).backgroundColor);
 }
 
-async function openEventHistory(page: Page) {
+async function openCalendarHistory(page: Page) {
   const trigger = page.getByRole("button", { name: "Open version history" });
 
   await expect(trigger).toBeVisible();
@@ -125,11 +125,11 @@ async function openEventHistory(page: Page) {
 }
 
 test("creator can restore an event version", async ({ page: alice }) => {
-  const { nextMonth, targetIsoDate } = await createEvent(alice);
+  const { nextMonth, targetIsoDate } = await createCalendar(alice);
 
   await enableNerdMode(alice);
 
-  const initialJson = await exportEventJson(alice);
+  const initialJson = await exportCalendarJson(alice);
   const initialData = YDocJsonSchema.assert(JSON.parse(initialJson));
 
   const targetDate = new Date(
@@ -154,7 +154,7 @@ test("creator can restore an event version", async ({ page: alice }) => {
   const changedFill = await availabilityFill(alice, targetDate);
   expect(changedFill).not.toBe(initialFill);
 
-  const changedJson = await exportEventJson(alice);
+  const changedJson = await exportCalendarJson(alice);
   const changedData = YDocJsonSchema.assert(JSON.parse(changedJson));
 
   const creatorId = changedData.event.creator as UserId;
@@ -169,7 +169,7 @@ test("creator can restore an event version", async ({ page: alice }) => {
   }
   const historyBuffer = new Uint8Array(await historyResponse.arrayBuffer());
 
-  const updates = getUpdatesFromUint8Array(historyBuffer);
+  const updates = decodeHistoryUpdates(historyBuffer);
   const restoreIndex = (() => {
     const doc = new Y.Doc();
     let candidate = -1;
@@ -193,7 +193,7 @@ test("creator can restore an event version", async ({ page: alice }) => {
     );
   }
 
-  const historyDialog = await openEventHistory(alice);
+  const historyDialog = await openCalendarHistory(alice);
   const slider = historyDialog.locator('input[type="range"]');
   await slider.waitFor();
   await expect(slider).toBeEnabled();
@@ -255,7 +255,7 @@ test("creator can restore an event version", async ({ page: alice }) => {
 
   await alice.waitForTimeout(500);
 
-  const restoredJson = await exportEventJson(alice);
+  const restoredJson = await exportCalendarJson(alice);
   const restoredData = YDocJsonSchema.assert(JSON.parse(restoredJson));
 
   expect(restoredData.availability[availabilityKey]).toBeUndefined();
@@ -269,7 +269,7 @@ test("non-creator cannot restore an event version", async ({
   browser,
   page: alice,
 }) => {
-  const { eventId, nextMonth, targetIsoDate } = await createEvent(alice);
+  const { calendarId, nextMonth, targetIsoDate } = await createCalendar(alice);
 
   await enableNerdMode(alice);
 
@@ -282,7 +282,7 @@ test("non-creator cannot restore an event version", async ({
 
   await alice.waitForTimeout(200);
 
-  const afterChangeJson = await exportEventJson(alice);
+  const afterChangeJson = await exportCalendarJson(alice);
   const afterChangeData = YDocJsonSchema.assert(JSON.parse(afterChangeJson));
   const creatorId = afterChangeData.event.creator as UserId;
   const availabilityKey = AvailabilityKey(creatorId, targetIsoDate);
@@ -292,12 +292,12 @@ test("non-creator cannot restore an event version", async ({
   const bob = await bobContext.newPage();
 
   try {
-    await bob.goto(`/?id=${eventId}`);
+    await bob.goto(`/?id=${calendarId}`);
     await bob.getByLabel("name").fill("Bob");
 
     await enableNerdMode(bob);
 
-    const historyDialog = await openEventHistory(bob);
+    const historyDialog = await openCalendarHistory(bob);
     const restoreButtons = historyDialog.getByRole("button", {
       name: "Restore This Version",
     });
@@ -310,7 +310,7 @@ test("non-creator cannot restore an event version", async ({
 
   await alice.waitForTimeout(200);
 
-  const finalJson = await exportEventJson(alice);
+  const finalJson = await exportCalendarJson(alice);
   const finalData = YDocJsonSchema.assert(JSON.parse(finalJson));
   expect(finalData.availability[availabilityKey]).toBe(true);
 });

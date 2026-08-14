@@ -3,7 +3,7 @@ import { GitHubIcon } from "./ui/GitHubIcon";
 import { useUserState } from "./ui/UserStateContext";
 
 export function AppHeader({ className }: { className?: string }) {
-  const { events } = useUserState();
+  const { calendars } = useUserState();
 
   return (
     <header
@@ -19,12 +19,12 @@ export function AppHeader({ className }: { className?: string }) {
         bear fit
       </a>
       <nav className="flex items-center gap-2">
-        {events.length > 0 && (
+        {calendars.length > 0 && (
           <a
             className="font-mono text-xs text-neutral-500 hover:text-neutral-800 no-underline"
             href="#footer"
           >
-            [your events]
+            [your calendars]
           </a>
         )}
         <a

@@ -2,7 +2,7 @@ import type { CalendarEvent } from "../schemas";
 
 import { serverUrl } from "./serverUrl";
 
-export async function postEvent(
+export async function postCalendar(
   calendarEvent: CalendarEvent,
 ): Promise<unknown> {
   const res = await fetch(`${serverUrl}/parties/main/${calendarEvent.id}`, {

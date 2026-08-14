@@ -2,15 +2,15 @@ import { Suspense, useRef } from "react";
 import useYProvider from "y-partykit/react";
 import { Doc } from "yjs";
 
-import { postEvent } from "./api/postEvent";
+import { postCalendar } from "./api/postCalendar";
 import { serverUrl } from "./api/serverUrl";
 import { AppFooter } from "./AppFooter";
 import { AppHeader } from "./AppHeader";
-import { initializeEventMap } from "./shared-data";
-import { CreateEventForm } from "./ui/CreateEventForm";
+import { initializeCalendarMap } from "./shared-data";
+import { CalendarDetails } from "./ui/CalendarDetails";
+import { CreateCalendarForm } from "./ui/CreateCalendarForm";
 import { CursorPartyScript } from "./ui/CursorPartyScript";
 import { DialogsProvider } from "./ui/Dialog";
-import { EventDetails } from "./ui/EventDetails";
 import { Loading } from "./ui/Loading";
 import { PreferencesProvider } from "./ui/UserStateContext";
 import { useSearchParams } from "./useSearchParams";
@@ -32,7 +32,7 @@ export function App() {
         <div className="min-h-[89vh] flex items-center mt-2">
           <Routes params={params} yDoc={yDoc.current} />
         </div>
-        <AppFooter className="mt-8" currentEventId={params.get("id")} />
+        <AppFooter className="mt-8" currentCalendarId={params.get("id")} />
         <CursorPartyScript />
       </DialogsProvider>
     </PreferencesProvider>
@@ -46,22 +46,22 @@ function Routes({
   params: ReturnType<typeof useSearchParams>;
   yDoc: Doc;
 }) {
-  const eventId = params.get("id");
+  const calendarId = params.get("id");
 
-  return eventId ? (
+  return calendarId ? (
     <Suspense fallback={<Loading />}>
-      <YProvider room={eventId} yDoc={yDoc}>
-        <EventDetails />
+      <YProvider room={calendarId} yDoc={yDoc}>
+        <CalendarDetails />
       </YProvider>
     </Suspense>
   ) : (
-    <CreateEventForm
+    <CreateCalendarForm
       onSubmit={(calendarEvent) => {
-        initializeEventMap(yDoc, calendarEvent);
+        initializeCalendarMap(yDoc, calendarEvent);
 
-        return postEvent(calendarEvent)
+        return postCalendar(calendarEvent)
           .catch((error) => {
-            console.error("creating event failed", error);
+            console.error("creating calendar failed", error);
           })
           .then(() => {
             params.set("id", calendarEvent.id);
@@ -80,8 +80,6 @@ function YProvider({
   room: string;
   yDoc: Doc;
 }) {
-  // This needs to be a separate component, because the `.room` option is immutable in
-  // `useYProvider`, and we don't know the room until we create the event.
   const yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,
