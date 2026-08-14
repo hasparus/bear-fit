@@ -24,7 +24,7 @@ export function AppHeader({ className }: { className?: string }) {
             className="font-mono text-xs text-neutral-500 hover:text-neutral-800 no-underline"
             href="#footer"
           >
-            [your events]
+            [your calendars]
           </a>
         )}
         <a

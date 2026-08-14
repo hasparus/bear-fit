@@ -36,12 +36,12 @@ async function createEvent(page: Page) {
   return { eventName, eventUrl: page.url() };
 }
 
-test("copies the event URL from the desktop sharing panel", async ({
+test("copies the calendar URL from the desktop sharing panel", async ({
   page,
 }) => {
   const { eventUrl } = await createEvent(page);
 
-  const urlInput = page.getByLabel("Event URL").first();
+  const urlInput = page.getByLabel("Calendar URL").first();
   await expect(urlInput).toHaveValue(eventUrl);
 
   await page.evaluate(() => navigator.clipboard.writeText(""));
@@ -57,7 +57,7 @@ test("copies the event URL from the desktop sharing panel", async ({
 test.describe("touch layout sharing UI", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("opens the touch menu and copies event JSON", async ({ page }) => {
+  test("opens the touch menu and copies calendar JSON", async ({ page }) => {
     const { eventName, eventUrl } = await createEvent(page);
 
     await page.evaluate(() => navigator.clipboard.writeText(""));
@@ -79,7 +79,7 @@ test.describe("touch layout sharing UI", () => {
     await moreButton.click();
 
     const copyEventJson = page.getByRole("menuitem", {
-      name: "Copy event JSON",
+      name: "Copy calendar JSON",
     });
     await expect(copyEventJson).toBeVisible();
 

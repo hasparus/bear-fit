@@ -61,7 +61,7 @@ function Routes({
 
         return postEvent(calendarEvent)
           .catch((error) => {
-            console.error("creating event failed", error);
+            console.error("creating calendar failed", error);
           })
           .then(() => {
             params.set("id", calendarEvent.id);
@@ -80,8 +80,6 @@ function YProvider({
   room: string;
   yDoc: Doc;
 }) {
-  // This needs to be a separate component, because the `.room` option is immutable in
-  // `useYProvider`, and we don't know the room until we create the event.
   const yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,

@@ -32,7 +32,6 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   const END_DAY = 12;
   const CREATOR_NAME = "Alice";
 
-  // Select start and end dates
   await alice
     .getByRole("button", { name: `${nextMonthName} ${START_DAY}th` })
     .click();
@@ -42,15 +41,11 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
 
   await alice.getByText("Create Calendar").click();
 
-  // Verify we're redirected to the event page
   await expect(alice.getByRole("heading").first()).toHaveText(eventName);
-  await expect(alice.getByText("Event dates")).toBeVisible();
+  await expect(alice.getByText("Dates")).toBeVisible();
 
-  // Type creator name
   await alice.getByLabel("Your name").fill(CREATOR_NAME);
 
-  // select 6th, 8th, 10th and 11th
-  // (yeah, React Day Picker (above) is using custom date formatting for aria  labels, so we have some inconsistencies here)
   await alice
     .getByRole("button", { name: `${nextMonthName} ${START_DAY}` })
     .click();
@@ -58,11 +53,10 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await alice.getByRole("button", { name: `${nextMonthName} 10` }).click();
   await alice.getByRole("button", { name: `${nextMonthName} 11` }).click();
 
-  // Take note that there's no clipboard isolation, so this could technically  conflict with other tests.
   await alice.getByRole("button", { name: "Copy to clipboard" }).click();
   await expect(alice.getByText("Copied to clipboard")).toBeVisible();
 
-  const url = await alice.getByLabel("Event URL").first().inputValue();
+  const url = await alice.getByLabel("Calendar URL").first().inputValue();
   const eventId = new URL(url).searchParams.get("id");
   if (!eventId) {
     throw new Error("No event ID found");
@@ -84,7 +78,6 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await alice.getByRole("button", { name: "Export to JSON" }).click();
   const download = await downloadPromise;
 
-  // Wait for download to complete
   const path = await download.path();
   if (!path) {
     throw new Error("Download failed or path is null");
@@ -100,7 +93,6 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   const month = (nextMonth.getMonth() + 1).toString().padStart(2, "0");
 
   {
-    // Assert that event metadata matches what we selected in the UI
     expect(event.startDate).toBe(
       `${year}-${month}-${START_DAY.toString().padStart(2, "0")}`,
     );
@@ -122,7 +114,6 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   expect(creatorName).toBe(CREATOR_NAME);
 
   {
-    // Assert that both Alice and Bob are available on 11th.
     const eleventh = `${year}-${month}-11` as IsoDate;
 
     expect(
@@ -134,11 +125,10 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
     ).toBe(true);
   }
 
-  // Another user opens the page and copies the event to clipboard.
   const title = bob.getByRole("heading", { name: new RegExp(eventName) });
   title.dispatchEvent("contextmenu");
 
-  await bob.getByText("Copy event JSON").click();
+  await bob.getByText("Copy calendar JSON").click();
 
   const copiedJson = await bob.evaluate(() => navigator.clipboard.readText());
 
@@ -208,7 +198,7 @@ test("creates an event with a generated name using calendar keyboard navigation"
     expect(word).toMatch(/^[A-Z][a-z]+$/);
   }
 
-  const eventUrl = await page.getByLabel("Event URL").first().inputValue();
+  const eventUrl = await page.getByLabel("Calendar URL").first().inputValue();
   expect(eventUrl).toContain("?id=");
 });
 
@@ -234,17 +224,14 @@ test("edits event dates and preserves user availability", async ({
 
   await expect(alice.getByText(nextMonthName)).toBeVisible();
 
-  // Initial date range: 5th to 10th
   const INITIAL_START_DAY = 5;
   const INITIAL_END_DAY = 10;
 
-  // New date range after edit: 3rd to 15th (expanding the range)
   const NEW_START_DAY = 3;
   const NEW_END_DAY = 15;
 
   const CREATOR_NAME = "Alice";
 
-  // Select initial start and end dates
   await alice
     .getByRole("button", { name: `${nextMonthName} ${INITIAL_START_DAY}th` })
     .click();
@@ -254,19 +241,15 @@ test("edits event dates and preserves user availability", async ({
 
   await alice.getByText("Create Calendar").click();
 
-  // Verify we're redirected to the event page
   await expect(alice.getByRole("heading").first()).toHaveText(eventName);
-  await expect(alice.getByText("Event dates")).toBeVisible();
+  await expect(alice.getByText("Dates")).toBeVisible();
 
-  // Type creator name
   await alice.getByLabel("Your name").fill(CREATOR_NAME);
 
-  // Add some availability in the initial range (6th, 7th, 8th)
   await alice.getByRole("button", { name: `${nextMonthName} 6` }).click();
   await alice.getByRole("button", { name: `${nextMonthName} 7` }).click();
   await alice.getByRole("button", { name: `${nextMonthName} 8` }).click();
 
-  // Verify initial dates are displayed using time elements
   const year = nextMonth.getFullYear();
   const month = (nextMonth.getMonth() + 1).toString().padStart(2, "0");
   const initialStartDateIso = `${year}-${month}-${INITIAL_START_DAY.toString().padStart(2, "0")}`;
@@ -279,20 +262,17 @@ test("edits event dates and preserves user availability", async ({
     alice.locator(`time[dateTime="${initialEndDateIso}"]`).first(),
   ).toBeVisible();
 
-  // Enable Nerd Mode to access edit functionality
   await alice.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await alice.getByText("Nerd Mode").click();
 
-  await alice.getByText("Event dates").click({ button: "right" });
-  await alice.getByRole("menuitem", { name: "Edit event dates" }).click();
+  await alice.getByText("Dates").click({ button: "right" });
+  await alice.getByRole("menuitem", { name: "Edit dates" }).click();
 
-  // Verify edit dialog is open
-  await expect(alice.getByText("Edit Event")).toBeVisible();
+  await expect(alice.getByText("Edit Calendar")).toBeVisible();
   await expect(alice.getByText("Choose new range")).toBeVisible();
 
   await alice.getByRole("button", { name: "Go to the Next Month" }).click();
 
-  // Change the date
   await alice
     .getByRole("button", { name: `${nextMonthName} ${NEW_START_DAY}rd` })
     .click();
@@ -300,13 +280,10 @@ test("edits event dates and preserves user availability", async ({
     .getByRole("button", { name: `${nextMonthName} ${NEW_END_DAY}th` })
     .click();
 
-  // Save changes
   await alice.getByRole("button", { name: "Save Changes" }).click();
 
-  // Verify dialog is closed and new dates are displayed
-  await expect(alice.getByText("Edit Event")).not.toBeVisible();
+  await expect(alice.getByText("Edit Calendar")).not.toBeVisible();
 
-  // Verify that the new dates are visible in the calendar grid
   await expect(
     alice.getByRole("button", { name: `${nextMonthName} ${NEW_START_DAY}` }),
   ).toBeVisible();
@@ -314,7 +291,6 @@ test("edits event dates and preserves user availability", async ({
     alice.getByRole("button", { name: `${nextMonthName} ${NEW_END_DAY}` }),
   ).toBeVisible();
 
-  // Verify old availability is preserved (should still see filled 6th, 7th, 8th)
   const sixthButton = alice.getByRole("button", { name: `${nextMonthName} 6` });
   const seventhButton = alice.getByRole("button", {
     name: `${nextMonthName} 7`,
@@ -323,32 +299,26 @@ test("edits event dates and preserves user availability", async ({
     name: `${nextMonthName} 8`,
   });
 
-  // These should still be marked as available (have specific styling)
   await expect(sixthButton).toBeVisible();
   await expect(seventhButton).toBeVisible();
   await expect(eighthButton).toBeVisible();
 
-  // Get the event URL for Bob to join
-  const url = await alice.getByLabel("Event URL").first().inputValue();
+  const url = await alice.getByLabel("Calendar URL").first().inputValue();
   const eventId = new URL(url).searchParams.get("id");
   if (!eventId) {
     throw new Error("No event ID found");
   }
 
-  // Create second user (Bob) to test collaborative editing
   await using bobContext = await browser.newContext();
   await using bob = await bobContext.newPage();
 
   await bob.goto(`/?id=${eventId}`);
 
-  // Bob adds his name
   await bob.getByLabel("name").fill("Bob");
 
-  // Both Alice and Bob should see the new date range using time elements
   const newStartDateIso = `${year}-${month}-${NEW_START_DAY.toString().padStart(2, "0")}`;
   const newEndDateIso = `${year}-${month}-${NEW_END_DAY.toString().padStart(2, "0")}`;
 
-  // Verify Alice sees the new dates
   await expect(
     alice.locator(`time[dateTime="${newStartDateIso}"]`).first(),
   ).toBeVisible();
@@ -356,7 +326,6 @@ test("edits event dates and preserves user availability", async ({
     alice.locator(`time[dateTime="${newEndDateIso}"]`).first(),
   ).toBeVisible();
 
-  // Verify Bob sees the new dates
   await expect(
     bob.locator(`time[dateTime="${newStartDateIso}"]`).first(),
   ).toBeVisible();
@@ -364,7 +333,6 @@ test("edits event dates and preserves user availability", async ({
     bob.locator(`time[dateTime="${newEndDateIso}"]`).first(),
   ).toBeVisible();
 
-  // Verify both users can see the expanded calendar range
   await expect(
     alice.getByRole("button", { name: `${nextMonthName} ${NEW_START_DAY}` }),
   ).toBeVisible();
@@ -413,8 +381,6 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
 
   const summaryCount = page.getByRole("definition").first();
 
-  // Pick 3 consecutive weekdays in the same calendar row (Mon-Fri)
-  // to avoid drag crossing row boundaries and hitting extra cells
   const dragDays: number[] = [];
   for (let d = START_DAY; d <= END_DAY - 2; d++) {
     const dow = new Date(
@@ -422,7 +388,6 @@ test("allows dragging to paint and clear availability", async ({ page }) => {
       nextMonth.getMonth(),
       d,
     ).getDay();
-    // dow 1=Mon..4=Thu guarantees d, d+1, d+2 are Mon-Sat (same row)
     if (dow >= 1 && dow <= 4) {
       dragDays.push(d, d + 1, d + 2);
       break;
@@ -573,7 +538,7 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
   await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
-  await page.getByText("Event dates").waitFor({ state: "visible" });
+  await page.getByText("Dates").waitFor({ state: "visible" });
 
   await page.getByLabel("Your name").fill("Alice");
 
@@ -601,10 +566,10 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
   ).toBeVisible();
   await expect(importControl).toBeVisible();
 
-  const eventUrl = await page.getByLabel("Event URL").first().inputValue();
+  const eventUrl = await page.getByLabel("Calendar URL").first().inputValue();
 
   await page.reload();
-  await page.getByText("Event dates").waitFor({ state: "visible" });
+  await page.getByText("Dates").waitFor({ state: "visible" });
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
   await expect(page.getByLabel("Nerd Mode")).toBeChecked();
@@ -612,7 +577,7 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
 
   const secondPage = await page.context().newPage();
   await secondPage.goto(eventUrl);
-  await secondPage.getByText("Event dates").waitFor({ state: "visible" });
+  await secondPage.getByText("Dates").waitFor({ state: "visible" });
   await secondPage.evaluate(() =>
     window.scrollTo(0, document.body.scrollHeight),
   );

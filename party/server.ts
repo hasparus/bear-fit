@@ -16,9 +16,6 @@ export default class EditorServer implements Party.Server {
   event: CalendarEvent | null = null;
 
   // TODO: Test how it affects the server. May cause problems with Yjs.
-  // options = {
-  //   hibernate: true,
-  // };
 
   constructor(public room: Party.Room) {}
 
@@ -70,8 +67,6 @@ export default class EditorServer implements Party.Server {
   async onRequest(req: Party.Request) {
     const url = new URL(req.url);
 
-    // We only allow CORS requests in development and tests.
-    // In prod, the server is deployed together with the client.
     const headers = process.env.NODE_ENV !== "production" ? CORS : undefined;
 
     if (req.method === "OPTIONS") {
@@ -89,7 +84,7 @@ export default class EditorServer implements Party.Server {
 
         if (this.event) {
           return Response.json(
-            { error: "event already created" },
+            { error: "calendar already created" },
             { headers, status: 403 },
           );
         } else {
@@ -102,7 +97,7 @@ export default class EditorServer implements Party.Server {
       } catch (error) {
         console.error(error);
         return Response.json(
-          { error: "invalid event" },
+          { error: "invalid calendar" },
           { headers, status: 400 },
         );
       }
@@ -190,11 +185,11 @@ function encodeUpdatesToOneUint8Array(updates: Datum[]): Uint8Array {
   const parts: Uint8Array[] = [];
 
   for (const update of updates) {
-    const clock = update.key[3] ?? "sv"; // we either have a clock number or it's state vector
+    const clock = update.key[3] ?? "sv";
     parts.push(textEncoder.encode(`${clock}`));
     parts.push(separator);
     parts.push(update.value);
-    parts.push(separator); // if it's the last update, we end the file with LF
+    parts.push(separator);
   }
 
   const totalSize = parts.reduce((acc, part) => acc + part.length, 0);

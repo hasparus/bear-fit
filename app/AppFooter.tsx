@@ -34,7 +34,7 @@ export function AppFooter({
       <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:text-accent">
         {events.length > 0 && (
           <section className="mb-6">
-            <h3 className="font-sans mt-4">Your recent events</h3>
+            <h3 className="font-sans mt-4">Your recent calendars</h3>
             <ul className="mt-2">
               {events.map((event) => {
                 const { endDate, startDate } = resolveEventDates(event);

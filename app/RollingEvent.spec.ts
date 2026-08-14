@@ -49,7 +49,6 @@ test("creates a rolling event and shows today through the resolved end date", as
 
   const todayIso = isoDate(today);
   const sevenDaysLaterIso = isoDate(sevenDaysLater);
-  // Format expected dates in the browser context so they match the UI's
   const [todayDisplay, sevenDaysLaterDisplay] = await page.evaluate(
     ([t, s]) => [
       new Date(t).toLocaleDateString(undefined, { timeZone: "UTC" }),
@@ -57,7 +56,7 @@ test("creates a rolling event and shows today through the resolved end date", as
     ],
     [todayIso, sevenDaysLaterIso] as const,
   );
-  const eventDateRange = page.getByText("Event dates").locator("+ p");
+  const eventDateRange = page.getByText("Dates").locator("+ p");
 
   await expect(eventDateRange).toContainText(todayDisplay);
   await expect(eventDateRange).toContainText(sevenDaysLaterDisplay);
@@ -69,7 +68,7 @@ test("creates a rolling event and shows today through the resolved end date", as
   await page
     .getByRole("heading", { name: eventName })
     .dispatchEvent("contextmenu");
-  await page.getByRole("menuitem", { name: "Copy event JSON" }).click();
+  await page.getByRole("menuitem", { name: "Copy calendar JSON" }).click();
 
   const copiedJson = await page.evaluate(() => navigator.clipboard.readText());
   const exported = YDocJsonSchema.assert(JSON.parse(copiedJson));

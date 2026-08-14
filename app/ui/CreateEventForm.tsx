@@ -55,7 +55,7 @@ export function CreateEventForm({
 
           setIsSubmitting(true);
           onSubmit(calendarEvent).finally(() => {
-            Clarity.event("event-created");
+            Clarity.event("calendar-created");
             setIsSubmitting(false);
           });
         }}

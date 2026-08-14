@@ -273,7 +273,7 @@ export function EventDetails({
               <h1 className="mb-4 leading-[1.3333]">
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
-              <p className="block font-mono text-sm">Event dates</p>
+              <p className="block font-mono text-sm">Dates</p>
               <p aria-busy={!startDate} className="mb-4 leading-[1.3333]">
                 {startDate && endDate ? (
                   <>
@@ -709,12 +709,12 @@ function EventContextMenu({
           }}
         >
           <ClockIcon className="size-4 mr-1.5" />
-          Event history
+          Version history
         </ContextMenuItem>
         {isCreator && (
           <ContextMenuItem onClick={() => dialogs.set("edit-event", true)}>
             <EditIcon className="size-4 mr-1.5" />
-            Edit event dates
+            Edit dates
           </ContextMenuItem>
         )}
         <ContextMenuItem onClick={() => exportEventJson(yDoc)}>
@@ -738,7 +738,7 @@ function EventContextMenu({
           }}
         >
           <CopyIcon className="size-4 mr-1.5" />
-          Copy event JSON
+          Copy calendar JSON
         </ContextMenuItem>
         {isCreator && (
           <ContextMenuItem

@@ -38,7 +38,7 @@ export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
       className={cn("group relative mt-4 block cursor-copy", rest.className)}
       onClick={handleCopy}
     >
-      <span className="block">Event URL</span>
+      <span className="block">Calendar URL</span>
 
       {eventId ? (
         <>

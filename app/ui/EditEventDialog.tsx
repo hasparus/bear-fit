@@ -24,7 +24,7 @@ export function EditEventDialog() {
   const isEditOpen = dialogs.isOpen("edit-event");
   useEffect(() => {
     if (isEditOpen) {
-      Clarity.event("event-dates-edit-opened");
+      Clarity.event("calendar-dates-edit-opened");
     }
   }, [isEditOpen]);
 
@@ -49,9 +49,9 @@ export function EditEventDialog() {
           <section className="window max-sm:m-0 animate-content-show -col-end-1 pointer-events-auto max-h-full flex flex-col">
             <div className="title-bar">
               <Dialog.Close aria-label="Close" className="close" />
-              <Dialog.Title className="title">Edit Event</Dialog.Title>
+              <Dialog.Title className="title">Edit Calendar</Dialog.Title>
               <Dialog.Description className="sr-only">
-                Change the date range for this event.
+                Change the date range for this calendar.
               </Dialog.Description>
             </div>
             <div className="p-1 sm:p-2 flex min-h-0 flex-1 flex-col">

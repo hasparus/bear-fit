@@ -44,7 +44,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(eventDatesValueToPatch(dates)).finally(() => {
-          Clarity.event("event-dates-edited");
+          Clarity.event("calendar-dates-edited");
         });
       }}
     >

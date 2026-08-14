@@ -46,5 +46,5 @@ export async function createEvent(
   await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
-  await page.getByText("Event dates").waitFor({ state: "visible" });
+  await page.getByText("Dates").waitFor({ state: "visible" });
 }
