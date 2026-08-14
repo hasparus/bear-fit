@@ -51,18 +51,18 @@ export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
     }
   });
 
-  const eventMap = yDoc.getMap("event");
+  const calendarMap = yDoc.getMap("event");
   Object.entries(jsonData.event).forEach(([key, value]) => {
     if (key === "creator") {
       return;
     }
-    eventMap.set(key, value);
+    calendarMap.set(key, value);
   });
   if (jsonData.event.rolling) {
-    eventMap.delete("startDate");
-    eventMap.delete("endDate");
+    calendarMap.delete("startDate");
+    calendarMap.delete("endDate");
   } else {
-    eventMap.delete("rolling");
+    calendarMap.delete("rolling");
   }
 
   Object.entries(jsonData.names).forEach(([key, value]) => {

@@ -5,28 +5,28 @@ import { CopyIcon } from "./CopyIcon";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
-interface CopyEventUrlProps
+interface CopyCalendarUrlProps
   extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
-  eventId: string | undefined;
+  calendarId: string | undefined;
 }
 
-export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
-  const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
+export function CopyCalendarUrl({ calendarId, ...rest }: CopyCalendarUrlProps) {
+  const calendarUrl = `${window.location.origin}${window.location.pathname}?id=${calendarId}`;
   const [showTooltip, setShowTooltip] = useState(false);
 
   const handleCopy = () => {
-    if (!eventId) {
-      throw new Error("No event ID provided");
+    if (!calendarId) {
+      throw new Error("No calendar ID provided");
     }
 
-    const eventUrl = `${window.location.origin}${window.location.pathname}?id=${eventId}`;
-    navigator.clipboard.writeText(eventUrl);
+    const calendarUrl = `${window.location.origin}${window.location.pathname}?id=${calendarId}`;
+    navigator.clipboard.writeText(calendarUrl);
 
     if (!navigator.clipboard) {
       alert("Clipboard not supported");
     }
 
-    navigator.clipboard.writeText(eventUrl);
+    navigator.clipboard.writeText(calendarUrl);
 
     setShowTooltip(true);
     setTimeout(() => setShowTooltip(false), 2000);
@@ -40,13 +40,13 @@ export function CopyEventUrl({ eventId, ...rest }: CopyEventUrlProps) {
     >
       <span className="block">Calendar URL</span>
 
-      {eventId ? (
+      {calendarId ? (
         <>
           <input
-            id="eventUrl"
+            id="calendarUrl"
             className="block h-[46px] w-full cursor-copy rounded-sm p-2 pr-10 text-neutral-700 [direction:rtl] group-hover:text-neutral-900"
             readOnly
-            value={eventUrl}
+            value={calendarUrl}
           />
           <button
             type="button"

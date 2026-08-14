@@ -3,32 +3,32 @@ import { useState } from "react";
 
 import {
   type CalendarEvent,
-  resolveEventDates,
+  resolveCalendarDates,
   startOfTodayUtc,
 } from "../schemas";
-import { type EventDatesPatch } from "../shared-data";
+import { type CalendarDatesPatch } from "../shared-data";
+import {
+  CalendarDatesPicker,
+  type CalendarDatesValue,
+  calendarDatesValueToPatch,
+  defaultCalendarDatesValue,
+  isCalendarDatesValueValid,
+} from "./CalendarDatesPicker";
 import { handleCalendarArrowKeys } from "./DateRangePicker";
 import { eachDayOfInterval } from "./eachDayOfInterval";
-import {
-  defaultEventDatesValue,
-  EventDatesPicker,
-  type EventDatesValue,
-  eventDatesValueToPatch,
-  isEventDatesValueValid,
-} from "./EventDatesPicker";
 
-export interface EditEventFormProps {
+export interface EditCalendarFormProps {
   event: CalendarEvent;
-  onSubmit: (patch: EventDatesPatch) => Promise<void>;
+  onSubmit: (patch: CalendarDatesPatch) => Promise<void>;
 }
 
-export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
-  const { endDate, startDate } = resolveEventDates(event);
+export function EditCalendarForm({ event, onSubmit }: EditCalendarFormProps) {
+  const { endDate, startDate } = resolveCalendarDates(event);
   const seedStart = startDate ? new Date(startDate) : undefined;
   const seedEnd = endDate ? new Date(endDate) : undefined;
 
-  const [dates, setDates] = useState<EventDatesValue>(() =>
-    defaultEventDatesValue({
+  const [dates, setDates] = useState<CalendarDatesValue>(() =>
+    defaultCalendarDatesValue({
       isRolling: !!event.rolling,
       range: { from: seedStart, to: seedEnd },
     }),
@@ -43,13 +43,13 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
       onKeyDown={handleCalendarArrowKeys}
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(eventDatesValueToPatch(dates)).finally(() => {
-          Clarity.event("calendar-dates-edited");
+        onSubmit(calendarDatesValueToPatch(dates)).finally(() => {
+          Clarity.event("event-dates-edited");
         });
       }}
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <EventDatesPicker
+        <CalendarDatesPicker
           fixedRangeLabel="Choose new range"
           name="edit-calendar-mode"
           onChange={setDates}
@@ -69,7 +69,7 @@ export function EditEventForm({ event, onSubmit }: EditEventFormProps) {
       <button
         type="submit"
         className="btn btn-default w-full shrink-0"
-        disabled={!isEventDatesValueValid(dates)}
+        disabled={!isCalendarDatesValueValid(dates)}
         style={{ borderWidth: "0.5em" }}
       >
         Save Changes

@@ -1,7 +1,7 @@
 import { use } from "react";
 
 import { getPublicRoomInfo } from "./api/getRoomCount";
-import { formatIsoDate, resolveEventDates } from "./schemas";
+import { formatIsoDate, resolveCalendarDates } from "./schemas";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
@@ -9,16 +9,14 @@ import { useUserDispatch, useUserState } from "./ui/UserStateContext";
 
 export function AppFooter({
   className,
-  currentEventId,
+  currentCalendarId,
 }: {
   className?: string;
-  currentEventId: string | null;
+  currentCalendarId: string | null;
 }) {
-  const { events, nerdMode } = useUserState();
+  const { calendars, nerdMode } = useUserState();
   const dispatch = useUserDispatch();
 
-  // todo: the footer should only show on hover or drag from the bottom on mobile
-  // actually, let's ditch the footer and add menu icon that opens a modal
   return (
     <footer
       id="footer"
@@ -32,25 +30,25 @@ export function AppFooter({
       </div>
 
       <div className="max-w-[600px] text-sm mx-auto mt-8 text-pretty [&>:not(:first-child)_a]:hover:text-accent">
-        {events.length > 0 && (
+        {calendars.length > 0 && (
           <section className="mb-6">
             <h3 className="font-sans mt-4">Your recent calendars</h3>
             <ul className="mt-2">
-              {events.map((event) => {
-                const { endDate, startDate } = resolveEventDates(event);
+              {calendars.map((calendar) => {
+                const { endDate, startDate } = resolveCalendarDates(calendar);
                 return (
-                  <li key={event.id}>
+                  <li key={calendar.id}>
                     <a
                       className="rounded-sm px-1 py-0.5 -mx-1 hover:bg-neutral-100 text-neutral-500 hover:text-neutral-800 no-underline"
-                      href={`?id=${event.id}`}
+                      href={`?id=${calendar.id}`}
                       onClick={(e) => {
-                        if (event.id === currentEventId) {
+                        if (calendar.id === currentCalendarId) {
                           e.preventDefault();
                           document.body.scrollIntoView({ behavior: "smooth" });
                         }
                       }}
                     >
-                      {event.name}{" "}
+                      {calendar.name}{" "}
                       {startDate && endDate && (
                         <span>
                           (
@@ -61,10 +59,12 @@ export function AppFooter({
                           <time dateTime={endDate}>
                             {formatIsoDate(endDate)}
                           </time>
-                          {event.rolling && ", rolling"})
+                          {calendar.rolling && ", rolling"})
                         </span>
                       )}
-                      {event.id === currentEventId && <span> (current)</span>}
+                      {calendar.id === currentCalendarId && (
+                        <span> (current)</span>
+                      )}
                     </a>
                   </li>
                 );
@@ -132,7 +132,7 @@ export function AppFooter({
               }}
             >
               Nerd Mode
-              {/* todo: explain nerd mode, show last commit hash */}
+              {}
             </CheckboxField>
           </form>
         </section>
@@ -143,7 +143,6 @@ export function AppFooter({
 }
 
 const publicRoomInfo = getPublicRoomInfo().catch((err) => {
-  // this may be a CORS error if we're running `dev:prod`
   console.error("error fetching public room info", err);
   return { rooms: 0 };
 });

@@ -76,11 +76,11 @@ export const CalendarEvent = type({
 
 export type CalendarEvent = typeof CalendarEvent.infer;
 
-export type EventDatesPatch =
+export type CalendarDatesPatch =
   | { endDate: IsoDate; startDate: IsoDate }
   | { rolling: number };
 
-export const resolveEventDates = (
+export const resolveCalendarDates = (
   event: Pick<Partial<CalendarEvent>, "endDate" | "rolling" | "startDate">,
   today: Date = startOfTodayUtc(),
 ): { endDate: IsoDate | undefined; startDate: IsoDate | undefined } => {

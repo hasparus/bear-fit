@@ -12,10 +12,6 @@ import { UnreachableCaseError } from "./UnreachableCaseError";
 
 const LOCAL_STORAGE_KEY = "🐻👤state";
 
-/**
- * The preferences and user metadata are stored in localStorage.
- * We're later store this in the users DB.
- */
 interface UserStateContextValue {
   /**
    * In Nerd Mode, the user sees JSON import & export buttons, and change history.
@@ -24,7 +20,7 @@ interface UserStateContextValue {
   /**
    * Events the user interacted with.
    */
-  events: CalendarEvent[];
+  calendars: CalendarEvent[];
 }
 
 const UserStateContextValue = type({
@@ -33,7 +29,7 @@ const UserStateContextValue = type({
 });
 
 const DEFAULT_USER_STATE: UserStateContextValue = {
-  events: [],
+  calendars: [],
   nerdMode: false,
 };
 
@@ -63,14 +59,12 @@ export function useUserDispatch() {
 
 export type UserStateAction =
   | {
-      // we only store events you interacted with
-      type: "remember-event";
-      payload: CalendarEvent;
+      type: "forget-calendar";
+      payload: string;
     }
   | {
-      type: "forget-event";
-      /** event ID */
-      payload: string;
+      type: "remember-calendar";
+      payload: CalendarEvent;
     }
   | {
       type: "set-nerd-mode";
@@ -86,25 +80,27 @@ function userStateReducer(
   action: UserStateAction,
 ) {
   switch (action.type) {
-    case "forget-event": {
-      const newEvents = state.events.filter(
-        (event) => event.id !== action.payload,
+    case "forget-calendar": {
+      const calendars = state.calendars.filter(
+        (calendar) => calendar.id !== action.payload,
       );
 
-      if (newEvents.length === state.events.length) return state;
+      if (calendars.length === state.calendars.length) return state;
 
       return {
         ...state,
-        events: newEvents,
+        calendars,
       };
     }
-    case "remember-event":
-      if (state.events.some((event) => event.id === action.payload.id)) {
+    case "remember-calendar":
+      if (
+        state.calendars.some((calendar) => calendar.id === action.payload.id)
+      ) {
         return state;
       }
       return {
         ...state,
-        events: [action.payload, ...state.events].slice(0, 10),
+        calendars: [action.payload, ...state.calendars].slice(0, 10),
       };
     case "set-nerd-mode":
       return { ...state, nerdMode: action.payload };
@@ -118,7 +114,8 @@ function userStateReducer(
 let stateFromStorage: UserStateContextValue | null = null;
 try {
   const storage = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
-  stateFromStorage = UserStateContextValue.assert(storage);
+  const { events, nerdMode } = UserStateContextValue.assert(storage);
+  stateFromStorage = { calendars: events, nerdMode };
 } catch {
   // we don't care about the error here
 }
@@ -140,7 +137,10 @@ export function PreferencesProvider({
       return;
     }
 
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify({ events: state.calendars, nerdMode: state.nerdMode }),
+    );
   }, [state]);
 
   return (

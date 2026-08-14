@@ -15,7 +15,7 @@ export const useYDoc = (): Doc => {
 
 /**
  * The room's live Yjs provider (the websocket connection, not the doc).
- * Unlike YDocContext, this is never re-provided — EventHistory swaps in
+ * Unlike YDocContext, this is never re-provided — CalendarHistory swaps in
  * historical snapshot docs, but there is only ever one live connection.
  */
 export const YProviderContext = createContext<YPartyKitProvider | null>(null);

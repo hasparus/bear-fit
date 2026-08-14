@@ -4,7 +4,7 @@ import { expect, test } from "../test";
 
 test.use({ viewport: { width: 360, height: 400 } });
 
-async function createEventAsCreator(page: Page) {
+async function createCalendarAsCreator(page: Page) {
   await page.goto("/");
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
@@ -32,7 +32,7 @@ async function openEditDialog(page: Page) {
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.getByText("Nerd Mode").click();
 
-  await page.getByText("Dates").click({ button: "right" });
+  await page.getByText("Dates", { exact: true }).click({ button: "right" });
   await page.getByRole("menuitem", { name: "Edit dates" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Edit Calendar" });
@@ -45,7 +45,7 @@ test("edit dialog fits the viewport and stays usable on a small screen", async (
 }) => {
   const viewport = page.viewportSize()!;
 
-  await createEventAsCreator(page);
+  await createCalendarAsCreator(page);
   const dialog = await openEditDialog(page);
 
   await expect(dialog.getByText("Choose new range")).toBeVisible();

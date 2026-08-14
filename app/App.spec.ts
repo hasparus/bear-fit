@@ -6,7 +6,7 @@ test.setTimeout(60_000);
 import { AvailabilityKey, CalendarEvent, IsoDate, UserId } from "./schemas";
 import { YDocJsonSchema } from "./shared-data";
 
-test("creates a new event, fills dates, opens a new browser and fills more dates", async ({
+test("creates a new calendar, fills dates, opens a new browser and fills more dates", async ({
   browser,
   page: alice,
 }) => {
@@ -42,7 +42,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await alice.getByText("Create Calendar").click();
 
   await expect(alice.getByRole("heading").first()).toHaveText(eventName);
-  await expect(alice.getByText("Dates")).toBeVisible();
+  await expect(alice.getByText("Dates", { exact: true })).toBeVisible();
 
   await alice.getByLabel("Your name").fill(CREATOR_NAME);
 
@@ -57,15 +57,15 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   await expect(alice.getByText("Copied to clipboard")).toBeVisible();
 
   const url = await alice.getByLabel("Calendar URL").first().inputValue();
-  const eventId = new URL(url).searchParams.get("id");
-  if (!eventId) {
-    throw new Error("No event ID found");
+  const calendarId = new URL(url).searchParams.get("id");
+  if (!calendarId) {
+    throw new Error("No calendar ID found");
   }
 
   await using bobContext = await browser.newContext();
   await using bob = await bobContext.newPage();
 
-  await bob.goto(`/?id=${eventId}`);
+  await bob.goto(`/?id=${calendarId}`);
 
   await bob.getByLabel("name").fill("Bob");
   await bob.getByRole("button", { name: `${nextMonthName} 7` }).click();
@@ -135,7 +135,7 @@ test("creates a new event, fills dates, opens a new browser and fills more dates
   expect(copiedJson).toBe(downloadedJson);
 });
 
-test("creates an event with a generated name using calendar keyboard navigation", async ({
+test("creates a calendar with a generated name using calendar keyboard navigation", async ({
   page,
 }) => {
   await page.goto("/");
@@ -176,11 +176,11 @@ test("creates an event with a generated name using calendar keyboard navigation"
   await endDayButton.focus();
   await page.keyboard.press("Enter");
 
-  const createEventButton = page.getByRole("button", {
+  const createCalendarButton = page.getByRole("button", {
     name: "Create Calendar",
   });
-  await expect(createEventButton).toBeEnabled();
-  await createEventButton.focus();
+  await expect(createCalendarButton).toBeEnabled();
+  await createCalendarButton.focus();
   await page.keyboard.press("Enter");
 
   await expect(page).toHaveURL(/\?id=/);
@@ -198,8 +198,8 @@ test("creates an event with a generated name using calendar keyboard navigation"
     expect(word).toMatch(/^[A-Z][a-z]+$/);
   }
 
-  const eventUrl = await page.getByLabel("Calendar URL").first().inputValue();
-  expect(eventUrl).toContain("?id=");
+  const calendarUrl = await page.getByLabel("Calendar URL").first().inputValue();
+  expect(calendarUrl).toContain("?id=");
 });
 
 test("edits event dates and preserves user availability", async ({
@@ -242,7 +242,7 @@ test("edits event dates and preserves user availability", async ({
   await alice.getByText("Create Calendar").click();
 
   await expect(alice.getByRole("heading").first()).toHaveText(eventName);
-  await expect(alice.getByText("Dates")).toBeVisible();
+  await expect(alice.getByText("Dates", { exact: true })).toBeVisible();
 
   await alice.getByLabel("Your name").fill(CREATOR_NAME);
 
@@ -265,7 +265,7 @@ test("edits event dates and preserves user availability", async ({
   await alice.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await alice.getByText("Nerd Mode").click();
 
-  await alice.getByText("Dates").click({ button: "right" });
+  await alice.getByText("Dates", { exact: true }).click({ button: "right" });
   await alice.getByRole("menuitem", { name: "Edit dates" }).click();
 
   await expect(alice.getByText("Edit Calendar")).toBeVisible();
@@ -304,15 +304,15 @@ test("edits event dates and preserves user availability", async ({
   await expect(eighthButton).toBeVisible();
 
   const url = await alice.getByLabel("Calendar URL").first().inputValue();
-  const eventId = new URL(url).searchParams.get("id");
-  if (!eventId) {
-    throw new Error("No event ID found");
+  const calendarId = new URL(url).searchParams.get("id");
+  if (!calendarId) {
+    throw new Error("No calendar ID found");
   }
 
   await using bobContext = await browser.newContext();
   await using bob = await bobContext.newPage();
 
-  await bob.goto(`/?id=${eventId}`);
+  await bob.goto(`/?id=${calendarId}`);
 
   await bob.getByLabel("name").fill("Bob");
 
@@ -538,7 +538,7 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
   await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
-  await page.getByText("Dates").waitFor({ state: "visible" });
+  await page.getByText("Dates", { exact: true }).waitFor({ state: "visible" });
 
   await page.getByLabel("Your name").fill("Alice");
 
@@ -566,18 +566,18 @@ test("gates Nerd Mode tools and persists preference across reloads", async ({
   ).toBeVisible();
   await expect(importControl).toBeVisible();
 
-  const eventUrl = await page.getByLabel("Calendar URL").first().inputValue();
+  const calendarUrl = await page.getByLabel("Calendar URL").first().inputValue();
 
   await page.reload();
-  await page.getByText("Dates").waitFor({ state: "visible" });
+  await page.getByText("Dates", { exact: true }).waitFor({ state: "visible" });
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
   await expect(page.getByLabel("Nerd Mode")).toBeChecked();
   await expect(page.locator('button[title="Export to JSON"]')).toBeVisible();
 
   const secondPage = await page.context().newPage();
-  await secondPage.goto(eventUrl);
-  await secondPage.getByText("Dates").waitFor({ state: "visible" });
+  await secondPage.goto(calendarUrl);
+  await secondPage.getByText("Dates", { exact: true }).waitFor({ state: "visible" });
   await secondPage.evaluate(() =>
     window.scrollTo(0, document.body.scrollHeight),
   );

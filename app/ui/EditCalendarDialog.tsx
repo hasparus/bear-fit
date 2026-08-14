@@ -3,10 +3,10 @@ import { useEffect } from "react";
 import { useY } from "react-yjs";
 
 import { CalendarEvent } from "../schemas";
-import { applyEventDates, type EventDatesPatch, getEventMap } from "../shared-data";
+import { applyCalendarDates, type CalendarDatesPatch, getCalendarMap } from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
-import { EditEventForm } from "./EditEventForm";
+import { EditCalendarForm } from "./EditCalendarForm";
 import { EditIcon } from "./EditIcon";
 
 declare module "./Dialog" {
@@ -15,21 +15,21 @@ declare module "./Dialog" {
   }
 }
 
-export function EditEventDialog() {
+export function EditCalendarDialog() {
   const yDoc = useYDoc();
-  const eventMap = getEventMap(yDoc);
-  const event = useY(eventMap) as Partial<CalendarEvent>;
+  const calendarMap = getCalendarMap(yDoc);
+  const event = useY(calendarMap) as Partial<CalendarEvent>;
   const dialogs = useDialogs();
 
   const isEditOpen = dialogs.isOpen("edit-event");
   useEffect(() => {
     if (isEditOpen) {
-      Clarity.event("calendar-dates-edit-opened");
+      Clarity.event("event-dates-edit-opened");
     }
   }, [isEditOpen]);
 
-  const handleSubmit = async (patch: EventDatesPatch) => {
-    applyEventDates(eventMap, patch);
+  const handleSubmit = async (patch: CalendarDatesPatch) => {
+    applyCalendarDates(calendarMap, patch);
     dialogs.set("edit-event", false);
   };
 
@@ -55,7 +55,7 @@ export function EditEventDialog() {
               </Dialog.Description>
             </div>
             <div className="p-1 sm:p-2 flex min-h-0 flex-1 flex-col">
-              <EditEventForm
+              <EditCalendarForm
                 event={event as CalendarEvent}
                 onSubmit={handleSubmit}
               />

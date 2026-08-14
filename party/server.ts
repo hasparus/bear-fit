@@ -5,7 +5,7 @@ import { getLevelBulkData } from "y-partykit/storage";
 import { Doc } from "yjs";
 
 import { CalendarEvent } from "../app/schemas";
-import { initializeEventMap, yDocToJson } from "../app/shared-data";
+import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
 const VERBOSE = process.env.NODE_ENV === "development";
@@ -88,7 +88,7 @@ export default class EditorServer implements Party.Server {
             { headers, status: 403 },
           );
         } else {
-          initializeEventMap(
+          initializeCalendarMap(
             await unstable_getYDoc(this.room, this.yPartyKitOptions),
             event,
           );
@@ -97,7 +97,7 @@ export default class EditorServer implements Party.Server {
       } catch (error) {
         console.error(error);
         return Response.json(
-          { error: "invalid calendar" },
+          { error: "invalid event" },
           { headers, status: 400 },
         );
       }

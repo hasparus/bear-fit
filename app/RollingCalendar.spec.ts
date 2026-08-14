@@ -56,11 +56,11 @@ test("creates a rolling event and shows today through the resolved end date", as
     ],
     [todayIso, sevenDaysLaterIso] as const,
   );
-  const eventDateRange = page.getByText("Dates").locator("+ p");
+  const calendarDateRange = page.getByText("Dates", { exact: true }).locator("+ p");
 
-  await expect(eventDateRange).toContainText(todayDisplay);
-  await expect(eventDateRange).toContainText(sevenDaysLaterDisplay);
-  await expect(eventDateRange.getByText("Rolling: 7 days")).toBeVisible();
+  await expect(calendarDateRange).toContainText(todayDisplay);
+  await expect(calendarDateRange).toContainText(sevenDaysLaterDisplay);
+  await expect(calendarDateRange.getByText("Rolling: 7 days")).toBeVisible();
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.getByText("Nerd Mode").click();
