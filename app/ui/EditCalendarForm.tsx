@@ -77,4 +77,3 @@ export function EditCalendarForm({ event, onSubmit }: EditCalendarFormProps) {
     </form>
   );
 }
-

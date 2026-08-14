@@ -3,7 +3,11 @@ import { useEffect } from "react";
 import { useY } from "react-yjs";
 
 import { CalendarEvent } from "../schemas";
-import { applyCalendarDates, type CalendarDatesPatch, getCalendarMap } from "../shared-data";
+import {
+  applyCalendarDates,
+  type CalendarDatesPatch,
+  getCalendarMap,
+} from "../shared-data";
 import { useYDoc } from "../useYDoc";
 import { Dialog, useDialogs } from "./Dialog";
 import { EditCalendarForm } from "./EditCalendarForm";

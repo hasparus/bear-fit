@@ -2,8 +2,7 @@ import { forwardRef } from "react";
 
 import { cn } from "./cn";
 
-export interface TooltipContentProps
-  extends React.HTMLAttributes<HTMLSpanElement> {
+export interface TooltipContentProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
 }
 

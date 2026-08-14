@@ -8,7 +8,9 @@ test.setTimeout(60_000);
 const createCalendar = (page: Page) =>
   createCalendarBase(page, { name: "sync status test" });
 
-test("reflects online, offline, and reconnected sync state", async ({ page }) => {
+test("reflects online, offline, and reconnected sync state", async ({
+  page,
+}) => {
   await createCalendar(page);
 
   const indicator = page.locator("[data-sync-status]");

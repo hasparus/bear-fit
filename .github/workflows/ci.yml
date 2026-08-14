@@ -33,6 +33,8 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
       - name: Deploy
+        id: deploy
+        continue-on-error: ${{ github.ref_name != 'main' }}
         run: pnpm release
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
@@ -40,11 +42,10 @@ jobs:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
       - name: Create GitHub Preview Deployment
-        if: github.ref_name != 'main'
+        if: github.ref_name != 'main' && steps.deploy.outcome == 'success'
         uses: chrnorm/deployment-action@v2
         with:
           token: "${{ github.token }}"
-          # env.DEPLOYMENT_URL is set by ./scripts/deploy.sh
           environment-url: https://${{ env.DEPLOYMENT_URL }}
           environment: Preview
           production-environment: false

@@ -1,7 +1,6 @@
 import { cn } from "./cn";
 
-export interface CheckboxFieldProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export interface CheckboxFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 export function CheckboxField({
   id,

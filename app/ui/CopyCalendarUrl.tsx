@@ -5,8 +5,10 @@ import { CopyIcon } from "./CopyIcon";
 import { Skeleton } from "./Skeleton";
 import { TooltipContent } from "./TooltipContent";
 
-interface CopyCalendarUrlProps
-  extends Omit<React.HTMLAttributes<HTMLLabelElement>, "onClick"> {
+interface CopyCalendarUrlProps extends Omit<
+  React.HTMLAttributes<HTMLLabelElement>,
+  "onClick"
+> {
   calendarId: string | undefined;
 }
 
