@@ -97,7 +97,7 @@ export default class EditorServer implements Party.Server {
       } catch (error) {
         console.error(error);
         return Response.json(
-          { error: "invalid event" },
+          { error: "invalid calendar" },
           { headers, status: 400 },
         );
       }

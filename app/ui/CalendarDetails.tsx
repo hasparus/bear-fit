@@ -648,7 +648,7 @@ function useRememberCalendar(event: Partial<CalendarEvent>) {
 
   useEffect(() => {
     if (event.id) {
-      dispatch({ type: "remember-event", payload: event as CalendarEvent });
+      dispatch({ type: "remember-calendar", payload: event as CalendarEvent });
     }
   }, [event]);
 }

@@ -18,7 +18,7 @@ interface UserStateContextValue {
    */
   nerdMode: boolean;
   /**
-   * Events the user interacted with.
+   * Calendars the user interacted with.
    */
   calendars: CalendarEvent[];
 }
