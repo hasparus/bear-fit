@@ -1,5 +1,5 @@
 import { Suspense, useRef } from "react";
-import useYProvider from "y-partykit/react";
+import useYProvider from "y-partyserver/react";
 import { Doc } from "yjs";
 
 import { postCalendar } from "./api/postCalendar";
@@ -86,7 +86,10 @@ function YProvider({
     room,
     options: {
       connect: true,
-      protocol: process.env.NODE_ENV !== "production" ? "ws" : "wss",
+      protocol:
+        typeof window !== "undefined" && window.location.protocol === "https:"
+          ? "wss"
+          : "ws",
     },
   });
 

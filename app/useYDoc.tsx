@@ -1,4 +1,4 @@
-import type YPartyKitProvider from "y-partykit/provider";
+import type YProvider from "y-partyserver/provider";
 
 import { createContext, useContext } from "react";
 import { Doc } from "yjs";
@@ -18,4 +18,4 @@ export const useYDoc = (): Doc => {
  * Unlike YDocContext, this is never re-provided — CalendarHistory swaps in
  * historical snapshot docs, but there is only ever one live connection.
  */
-export const YProviderContext = createContext<YPartyKitProvider | null>(null);
+export const YProviderContext = createContext<YProvider | null>(null);

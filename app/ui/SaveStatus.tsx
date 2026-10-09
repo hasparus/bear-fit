@@ -1,4 +1,4 @@
-import type YPartyKitProvider from "y-partykit/provider";
+import type YProvider from "y-partyserver/provider";
 
 import {
   useCallback,
@@ -13,13 +13,13 @@ import { cn } from "./cn";
 
 type SyncStatus = "connecting" | "offline" | "saved" | "saving";
 
-function getStatus(provider: YPartyKitProvider): SyncStatus {
+function getStatus(provider: YProvider): SyncStatus {
   if (!navigator.onLine) return "offline";
   if (provider.wsconnected) return provider.synced ? "saved" : "saving";
   return "connecting";
 }
 
-function useSyncStatus(provider: YPartyKitProvider | null): SyncStatus | null {
+function useSyncStatus(provider: YProvider | null): SyncStatus | null {
   const subscribe = useCallback(
     (onChange: () => void) => {
       if (!provider) return () => undefined;
