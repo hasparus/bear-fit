@@ -2,18 +2,25 @@ import { type } from "arktype";
 import { type Connection, Server } from "partyserver";
 
 import {
+  AUTH_CHALLENGE_PREFIX,
+  AUTH_CHALLENGE_TTL,
   AUTHORIZATION_EXPIRATION_TIME,
   base64ToArrayBuffer,
   ClientMessage,
-  HARDCODED_AUTH_MESSAGE_NOT_SMART,
   makePublicRoomInfo,
   type Rooms,
+  type ServerMessage,
   textEncoder,
   UpdateFromRoom,
 } from "./rooms";
 
 interface OccupancyEnv {
   PUBLIC_KEY_B64: string;
+}
+
+interface ChallengeState {
+  challenge: string;
+  issuedAt: number;
 }
 
 export class OccupancyPartyServer extends Server<OccupancyEnv> {
@@ -35,7 +42,8 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
   }
 
   async onConnect(connection: Connection): Promise<void> {
-    connection.send(JSON.stringify(makePublicRoomInfo(this.rooms)));
+    send(connection, { type: "public", info: makePublicRoomInfo(this.rooms) });
+    this.issueChallenge(connection);
   }
 
   async onClose(
@@ -59,8 +67,18 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
     const parsed = ClientMessage.assert(JSON.parse(message));
 
     if (parsed.type === "auth") {
+      const state = connection.state as ChallengeState | null;
+      this.issueChallenge(connection);
+
+      if (!state || Date.now() - state.issuedAt > AUTH_CHALLENGE_TTL) {
+        return;
+      }
+
       try {
-        const verified = await this.verifySignature(parsed.payload.signature);
+        const verified = await this.verifySignature(
+          parsed.payload.signature,
+          state.challenge,
+        );
         if (verified) {
           this.authorizeConnection(connection);
         }
@@ -78,27 +96,38 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
       return Response.json(makePublicRoomInfo(this.rooms));
     }
 
-    if (request.method === "POST") {
-      const body = await request.json();
-      const validated = UpdateFromRoom(body);
-      if (validated instanceof type.errors) {
-        return Response.json({ error: validated.summary }, { status: 400 });
-      }
+    return Response.json({ error: "Method not allowed" }, { status: 405 });
+  }
 
-      if (validated.count === 0) {
-        Reflect.deleteProperty(this.rooms, validated.room);
-      } else {
-        this.rooms[validated.room] = validated.count;
-      }
-
-      await this.saveToStorage();
-      this.broadcast(JSON.stringify(makePublicRoomInfo(this.rooms)));
-      this.notifyAuthorizedConnections();
-
-      return Response.json({ ok: true });
+  async updateRoomCount(update: UpdateFromRoom): Promise<void> {
+    const validated = UpdateFromRoom(update);
+    if (validated instanceof type.errors) {
+      throw new Error(validated.summary);
     }
 
-    return Response.json({ error: "Method not allowed" }, { status: 405 });
+    if (validated.count === 0) {
+      Reflect.deleteProperty(this.rooms, validated.room);
+    } else {
+      this.rooms[validated.room] = validated.count;
+    }
+
+    await this.saveToStorage();
+
+    const publicInfo: ServerMessage = {
+      type: "public",
+      info: makePublicRoomInfo(this.rooms),
+    };
+    this.broadcast(JSON.stringify(publicInfo));
+    this.notifyAuthorizedConnections();
+  }
+
+  private issueChallenge(connection: Connection) {
+    const state: ChallengeState = {
+      challenge: crypto.randomUUID(),
+      issuedAt: Date.now(),
+    };
+    connection.setState(state);
+    send(connection, { type: "challenge", challenge: state.challenge });
   }
 
   private async loadFromStorage() {
@@ -136,9 +165,12 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
     );
   }
 
-  private async verifySignature(signatureB64: string): Promise<boolean> {
+  private async verifySignature(
+    signatureB64: string,
+    challenge: string,
+  ): Promise<boolean> {
     try {
-      const encoded = textEncoder.encode(HARDCODED_AUTH_MESSAGE_NOT_SMART);
+      const encoded = textEncoder.encode(AUTH_CHALLENGE_PREFIX + challenge);
       const signature = base64ToArrayBuffer(signatureB64);
       const publicKey = await this.publicKeyPromise;
       return crypto.subtle.verify(
@@ -154,7 +186,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
   }
 
   private authorizeConnection(connection: Connection) {
-    connection.send(JSON.stringify(this.rooms));
+    send(connection, { type: "rooms", rooms: this.rooms });
     this.authorizedConnections.set(
       connection.id,
       Date.now() + AUTHORIZATION_EXPIRATION_TIME,
@@ -162,7 +194,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
   }
 
   private notifyAuthorizedConnections() {
-    const payload = JSON.stringify(this.rooms);
+    const payload: ServerMessage = { type: "rooms", rooms: this.rooms };
     const now = Date.now();
 
     for (const [connectionId, expiresAt] of this.authorizedConnections) {
@@ -174,7 +206,7 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
       const target = this.getConnection(connectionId);
       if (target) {
         try {
-          target.send(payload);
+          send(target, payload);
         } catch (error) {
           console.error(
             "failed to send update to authorized connection",
@@ -184,4 +216,8 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
       }
     }
   }
+}
+
+function send(connection: Connection, message: ServerMessage) {
+  connection.send(JSON.stringify(message));
 }

@@ -238,11 +238,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
       );
       const count = Array.from(this.getConnections()).length;
-      await stub.fetch("https://occupancy.internal/update", {
-        body: JSON.stringify({ count, room: this.name }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
+      await stub.updateRoomCount({ count, room: this.name });
     } catch (error) {
       console.error("failed to notify occupancy server", error);
     }

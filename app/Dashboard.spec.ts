@@ -1,4 +1,4 @@
-import type { APIRequestContext } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -7,10 +7,11 @@ import { expect, test } from "../test";
 
 test.setTimeout(45_000);
 
-const AUTH_MESSAGE = "dashboard";
 const SIGN_SCRIPT = path.join(process.cwd(), ".ssh", "sign-message.tsx");
-const SIGNATURE = (() => {
-  const result = spawnSync("bun", [SIGN_SCRIPT, AUTH_MESSAGE, "./test"], {
+const OCCUPANCY_ENDPOINT = "/parties/rooms/index";
+
+function sign(message: string): string {
+  const result = spawnSync("bun", [SIGN_SCRIPT, message, "./test"], {
     cwd: process.cwd(),
     encoding: "utf-8",
   });
@@ -23,64 +24,97 @@ const SIGNATURE = (() => {
     );
   }
   return result.stdout.trim();
-})();
-const OCCUPANCY_ENDPOINT = "/parties/rooms/index";
-
-async function updateRoomCount(
-  request: APIRequestContext,
-  room: string,
-  count: number,
-) {
-  const response = await request.post(OCCUPANCY_ENDPOINT, {
-    data: { count, room },
-  });
-
-  if (!response.ok()) {
-    throw new Error(
-      `Failed to update room "${room}" to ${count}: ${response.status()} ${await response.text()}`,
-    );
-  }
 }
 
-test("dashboard only shows per-room details after successful authorization", async ({
+async function openDashboard(page: Page) {
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator(".bg-neutral-100 dl")).toBeVisible();
+  return page.locator("code");
+}
+
+async function connectToRoom(page: Page, room: string) {
+  await page.evaluate(async (roomId) => {
+    const protocol = location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(
+      `${protocol}://${location.host}/parties/main/${roomId}`,
+    );
+    const win = window as { __testSockets?: WebSocket[] };
+    win.__testSockets ??= [];
+    win.__testSockets.push(socket);
+    await new Promise<void>((resolve, reject) => {
+      socket.addEventListener("open", () => resolve());
+      socket.addEventListener("error", () =>
+        reject(new Error(`failed to connect to room ${roomId}`)),
+      );
+    });
+  }, room);
+}
+
+async function authorize(page: Page, signature: string) {
+  await page.getByPlaceholder("admin access key").fill(signature);
+  await page.getByRole("button", { name: "Authorize" }).click();
+}
+
+test("occupancy endpoint rejects public writes", async ({ request }) => {
+  const response = await request.post(OCCUPANCY_ENDPOINT, {
+    data: { count: 999, room: `forged-room-${Date.now()}` },
+  });
+  expect(response.status()).toBe(405);
+
+  const publicInfo = await request.get(OCCUPANCY_ENDPOINT);
+  expect(await publicInfo.json()).toEqual({
+    activeConnections: expect.any(Number),
+    rooms: expect.any(Number),
+  });
+});
+
+test("dashboard only shows per-room details after signing its challenge", async ({
   page,
-  request,
 }) => {
   const roomA = `room-a-${Date.now()}`;
   const roomB = `room-b-${Date.now()}`;
 
-  await updateRoomCount(request, roomA, 0);
-  await updateRoomCount(request, roomB, 0);
-  await updateRoomCount(request, roomA, 3);
-  await updateRoomCount(request, roomB, 5);
+  const challenge = await openDashboard(page);
+  await connectToRoom(page, roomA);
+  await connectToRoom(page, roomB);
 
-  await page.goto("/dashboard");
-  await expect(page).toHaveURL(/\/dashboard$/);
-
-  const summary = page.locator(".bg-neutral-100 dl");
-  await expect(summary).toBeVisible();
-  await expect(summary.getByText("Rooms:")).toBeVisible();
-  await expect(summary.getByText("Active connections:")).toBeVisible();
   await expect(page.locator(".bg-neutral-100 ul li")).toHaveCount(0);
 
-  await page.getByPlaceholder("admin access key").fill(SIGNATURE);
-  await page.getByRole("button", { name: "Authorize" }).click();
+  await authorize(page, sign(await challenge.innerText()));
 
   const roomList = page.locator(".bg-neutral-100 ul");
-  await expect(roomList).toBeVisible();
   await expect(
     roomList
       .getByRole("listitem")
-      .filter({ hasText: `${roomA}: 3 connections` }),
+      .filter({ hasText: `${roomA}: 1 connections` }),
   ).toBeVisible();
   await expect(
     roomList
       .getByRole("listitem")
-      .filter({ hasText: `${roomB}: 5 connections` }),
+      .filter({ hasText: `${roomB}: 1 connections` }),
   ).toBeVisible();
+  await expect(page.locator(".bg-neutral-100 dl")).toHaveCount(0);
+});
 
-  await expect(summary).toHaveCount(0);
+test("dashboard rejects replayed signatures", async ({ browser, page }) => {
+  const firstChallenge = await openDashboard(page);
+  const challengeText = await firstChallenge.innerText();
+  const signature = sign(challengeText);
 
-  await updateRoomCount(request, roomA, 0);
-  await updateRoomCount(request, roomB, 0);
+  await authorize(page, signature);
+  await expect(page.locator(".bg-neutral-100 ul")).toBeAttached();
+  await expect(firstChallenge).not.toHaveText(challengeText);
+
+  const otherPage = await browser.newPage();
+  const otherChallenge = await openDashboard(otherPage);
+  const otherChallengeText = await otherChallenge.innerText();
+  expect(otherChallengeText).not.toBe(challengeText);
+
+  await authorize(otherPage, signature);
+  await expect(otherChallenge).not.toHaveText(otherChallengeText);
+  await expect(otherPage.locator(".bg-neutral-100 dl")).toBeVisible();
+  await expect(otherPage.locator(".bg-neutral-100 ul")).not.toBeAttached();
+
+  await otherPage.close();
 });
