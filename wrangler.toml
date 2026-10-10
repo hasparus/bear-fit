@@ -4,6 +4,11 @@ compatibility_date = "2024-10-01"
 
 assets = { directory = "./public" }
 
+# .dev.vars overrides these locally with the test key (see playwright.config.ts).
+[vars]
+PUBLIC_KEY_B64 = "EOeE/T5LX+j95y0pZ8ThZBwyLL4RzlUDdpLcRQMHetE="
+LEGACY_PARTYKIT_ORIGIN = "https://bear-fit.hasparus.partykit.dev"
+
 [[durable_objects.bindings]]
 name = "main"
 class_name = "EditorPartyServer"
