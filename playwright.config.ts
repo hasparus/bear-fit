@@ -15,12 +15,10 @@ const TEST_PUBLIC_KEY_B64 = (() => {
 })();
 
 const PORT = Number(process.env.TEST_PORT ?? 1999);
-const LEGACY_PORT = PORT + 1;
 
 // @cloudflare/vite-plugin sources Worker vars from `.dev.vars`/`.env`. Dev
 const devVars = [
   `PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"`,
-  `LEGACY_PARTYKIT_ORIGIN="http://127.0.0.1:${LEGACY_PORT}"`,
   "",
 ].join("\n");
 for (const dir of [
@@ -77,11 +75,6 @@ export default defineConfig({
   },
 
   webServer: [
-    {
-      command: `bun test/legacyPartykitServer.ts ${LEGACY_PORT}`,
-      reuseExistingServer: !process.env.CI,
-      url: `http://127.0.0.1:${LEGACY_PORT}/status`,
-    },
     {
       command: `pnpm exec vite preview --port ${PORT} --strictPort`,
       reuseExistingServer: !process.env.CI,

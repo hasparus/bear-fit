@@ -6,7 +6,6 @@ import {
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";
 
-import { decodeHistoryUpdates } from "../app/decodeHistoryUpdates";
 import { encodeHistoryUpdates } from "../app/encodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
 import {
@@ -18,7 +17,6 @@ import { OccupancyPartyServer } from "./occupancy.partyserver";
 import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
 
 interface EditorEnv {
-  LEGACY_PARTYKIT_ORIGIN?: string;
   rooms: DurableObjectNamespace<OccupancyPartyServer>;
 }
 
@@ -73,11 +71,6 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     const state = row && blobToBytes(row.state);
     if (state) {
       Y.applyUpdate(this.document, state);
-      return;
-    }
-
-    if (this.env.LEGACY_PARTYKIT_ORIGIN) {
-      await this.importLegacyHistory(this.env.LEGACY_PARTYKIT_ORIGIN);
     }
   }
 
@@ -234,27 +227,6 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     }
   }
 
-  private async importLegacyHistory(origin: string) {
-    const url = new URL(
-      `/parties/main/${encodeURIComponent(this.name)}/history`,
-      origin,
-    );
-    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
-    if (!response.ok) {
-      throw new Error(`legacy history fetch failed: ${response.status}`);
-    }
-
-    const updates = decodeHistoryUpdates(
-      new Uint8Array(await response.arrayBuffer()),
-    );
-    if (updates.length === 0) return;
-
-    for (const { value } of updates) {
-      Y.applyUpdate(this.document, value);
-      this.persistIncrementalUpdate(value);
-    }
-    await this.onSave();
-  }
 
   /**
    * Reports run one at a time and read the connection count when they run, so
