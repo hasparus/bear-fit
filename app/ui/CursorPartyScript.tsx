@@ -49,6 +49,6 @@ export function CursorPartyScript() {
   if (!isMounted) return null;
 
   return (
-    <script async src="https://cursor-party.hasparus.partykit.dev/cursors.js" />
+    <script async src="https://cursor-party.hasparus.workers.dev/cursors.js" />
   );
 }
