@@ -5,16 +5,17 @@
 - `app/` contains the React UI, shared schemas, and Playwright specs (e.g.
   `App.spec.tsx`); browser entry points are `app/client.tsx` and
   `app/dashboard/index.tsx`.
-- `party/` owns PartyKit rooms and the server entry in `server.ts`, while
-  `public/` serves static files and `assets/` stores reference media.
+- `party/` owns the Cloudflare Worker (`worker.ts`) and its PartyServer Durable
+  Objects (`editor.partyserver.ts`, `occupancy.partyserver.ts`), while `public/`
+  serves static files and `assets/` stores README media.
 - Tooling lives beside the code: `test/` holds Playwright artifacts and helpers,
-  `scripts/` includes deployment automation, and `esbuild-postcss-plugin.cjs`
-  wires Tailwind 4 into the build.
+  `scripts/` includes deployment automation, and Vite with
+  `@cloudflare/vite-plugin` builds both the client and the Worker.
 
 ## Build, Test, and Development Commands
 
-- `pnpm dev` (or `pnpm dev:prod` to run against prod server) serves the PartyKit
-  app with live reload on `http://127.0.0.1:1999`.
+- `pnpm dev` (or `pnpm dev:prod` to run against the prod server) runs the app
+  and the Worker locally through Vite.
 - `pnpm typecheck` and `pnpm lint` keep strict TypeScript and ESLint
   (perfectionist sorting) happy; follow with `pnpm format` before committing.
 - `pnpm test` runs the Playwright suite headlessly, `pnpm test:ui` opens the
@@ -44,11 +45,3 @@
 - Mirror the existing imperative commit voice (`Improve grid cell tooltip`).
 - Add UI screenshots or clips when layout shifts, link related issues, and list
   any follow-up work so reviewers can track it.
-
----
-
-# Current Focus
-
-We're migrating from Partykit to PartyServer.
-
-But first, we need a full end-to-end coverage.
