@@ -88,7 +88,7 @@ export class OccupancyPartyServer extends Server<Env> {
         info: makePublicRoomInfo(this.rooms),
       } satisfies ServerMessage),
     );
-    this.notifyAdmins();
+    this.notifyAdmins({ type: "rooms", rooms: this.rooms });
   }
 
   async registerCalendar(calendar: RegisteredCalendar): Promise<void> {
@@ -98,7 +98,9 @@ export class OccupancyPartyServer extends Server<Env> {
       id,
       createdAt,
     );
-    if (rowsWritten > 0) this.notifyAdmins();
+    if (rowsWritten > 0) {
+      this.notifyAdmins({ type: "calendar", calendar: { id, createdAt } });
+    }
   }
 
   private issueChallenge(connection: DashboardConnection) {
@@ -142,9 +144,7 @@ export class OccupancyPartyServer extends Server<Env> {
     } satisfies ServerMessage);
   }
 
-  private notifyAdmins() {
-    let message: string | undefined;
-
+  private notifyAdmins(message: ServerMessage) {
     for (const connection of this.getConnections<DashboardState>()) {
       const { state } = connection;
       if (!state || !("authorizedUntil" in state)) continue;
@@ -152,7 +152,7 @@ export class OccupancyPartyServer extends Server<Env> {
       if (state.authorizedUntil < Date.now()) {
         this.issueChallenge(connection);
       } else {
-        connection.send((message ??= this.adminMessage()));
+        send(connection, message);
       }
     }
   }

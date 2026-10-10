@@ -30,8 +30,10 @@ export type ClientMessage = typeof ClientMessage.infer;
 
 export type ServerMessage =
   | { type: "admin"; calendars: RegisteredCalendar[]; rooms: Rooms }
+  | { type: "calendar"; calendar: RegisteredCalendar }
   | { type: "challenge"; challenge: string }
-  | { type: "public"; info: PublicRoomInfo };
+  | { type: "public"; info: PublicRoomInfo }
+  | { type: "rooms"; rooms: Rooms };
 
 export function makePublicRoomInfo(rooms: Rooms) {
   return {

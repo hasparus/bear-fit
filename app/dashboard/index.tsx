@@ -11,7 +11,7 @@ import {
   type PublicRoomInfo,
   type ServerMessage,
 } from "../../party/rooms";
-import { serverUrl } from "../api/serverUrl";
+import { serverUrl, socketProtocol } from "../api/serverUrl";
 import "../styles.css";
 
 createRoot(document.getElementById("app")!).render(<Dashboard />);
@@ -30,6 +30,7 @@ function Dashboard() {
   const ws = usePartySocket({
     host: serverUrl,
     party: "rooms",
+    protocol: socketProtocol,
     room: OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
     onClose() {
       setConnectionState("disconnected");
@@ -45,6 +46,16 @@ function Dashboard() {
         setAdmin(null);
       } else if (data.type === "admin") {
         setAdmin({ calendars: data.calendars, rooms: data.rooms });
+      } else if (data.type === "rooms") {
+        setAdmin((admin) => admin && { ...admin, rooms: data.rooms });
+      } else if (data.type === "calendar") {
+        setAdmin(
+          (admin) =>
+            admin && {
+              ...admin,
+              calendars: [data.calendar, ...admin.calendars],
+            },
+        );
       } else {
         setPublicInfo(data.info);
       }

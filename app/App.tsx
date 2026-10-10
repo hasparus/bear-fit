@@ -3,7 +3,7 @@ import useYProvider from "y-partyserver/react";
 import { Doc } from "yjs";
 
 import { postCalendar } from "./api/postCalendar";
-import { serverUrl } from "./api/serverUrl";
+import { serverUrl, socketProtocol } from "./api/serverUrl";
 import { AppFooter } from "./AppFooter";
 import { AppHeader } from "./AppHeader";
 import { initializeCalendarMap } from "./shared-data";
@@ -83,7 +83,7 @@ function YProvider({
   const yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,
-    options: { connect: true },
+    options: { connect: true, protocol: socketProtocol },
     room,
   });
 
