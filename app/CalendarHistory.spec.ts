@@ -161,13 +161,13 @@ test("creator can restore an event version", async ({ page: alice }) => {
   const availabilityKey = AvailabilityKey(creatorId, targetIsoDate);
   expect(changedData.availability[availabilityKey]).toBe(true);
 
-  const historyResponse = await fetch(
-    `http://127.0.0.1:1999/parties/main/${changedData.event.id}/history`,
+  const historyResponse = await alice.request.get(
+    `/parties/main/${changedData.event.id}/history`,
   );
-  if (!historyResponse.ok) {
-    throw new Error(`Failed to fetch history: ${historyResponse.status}`);
+  if (!historyResponse.ok()) {
+    throw new Error(`Failed to fetch history: ${historyResponse.status()}`);
   }
-  const historyBuffer = new Uint8Array(await historyResponse.arrayBuffer());
+  const historyBuffer = new Uint8Array(await historyResponse.body());
 
   const updates = decodeHistoryUpdates(historyBuffer);
   const restoreIndex = (() => {

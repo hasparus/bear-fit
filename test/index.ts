@@ -28,12 +28,18 @@ export const test = base.extend<CoverageFixtures>({
       const coverageDir = path.join(process.cwd(), "test/coverage");
       await fs.mkdir(coverageDir, { recursive: true });
 
+      const { testId } = test.info();
+
       await Promise.all(
         coverage.map(async (entry) => {
-          // Extract the filename from the URL (e.g., "client.js" from "http://127.0.0.1:1999/dist/client.js")
-          const filename = path.basename(entry.url);
-          // Map to the actual file location in public/dist/
-          const filepath = path.join(process.cwd(), "public", "dist", filename);
+          let pathname: string;
+          try {
+            pathname = new URL(entry.url).pathname;
+          } catch {
+            return;
+          }
+          const filepath = path.join(process.cwd(), "dist", "client", pathname);
+          const filename = path.basename(pathname);
 
           const isExternalScript = await fs
             .access(filepath)
@@ -50,7 +56,7 @@ export const test = base.extend<CoverageFixtures>({
           await converter.load();
           converter.applyCoverage(entry.functions);
           await fs.writeFile(
-            path.join(coverageDir, filename + ".json"),
+            path.join(coverageDir, `${filename}.${testId}.json`),
             JSON.stringify(converter.toIstanbul()),
             "utf-8",
           );

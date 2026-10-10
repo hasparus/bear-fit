@@ -99,6 +99,11 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+.dev.vars
+.dev.vars.*
+
+# Cloudflare Workers local state / cache
+.wrangler
 
 # parcel-bundler cache (https://parceljs.org/)
 

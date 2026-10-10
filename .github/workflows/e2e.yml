@@ -25,9 +25,17 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      # Specs sign dashboard challenges with `bun .ssh/sign-message.tsx` and
+      # serve a stand-in PartyKit deployment with `bun test/legacyPartykitServer.ts`.
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.2"
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Split system deps from the browser download: the combined
+      # `--with-deps` wedges on the interactive `needrestart` apt prompt.
       - name: Install Playwright system deps
         run: pnpm exec playwright install-deps chromium firefox
         timeout-minutes: 5
@@ -39,8 +47,10 @@ jobs:
         run: pnpm exec playwright install chromium firefox
         timeout-minutes: 5
 
+      # `pnpm test` builds the app first, then runs Playwright against the
+      # built output served by `vite preview`.
       - name: Run Playwright tests
-        run: pnpm exec playwright test
+        run: pnpm test
 
       - name: Generate coverage report
         if:

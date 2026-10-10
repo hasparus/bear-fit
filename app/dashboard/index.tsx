@@ -4,9 +4,16 @@ import usePartySocket from "partysocket/react";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import type { ClientMessage, PublicRoomInfo, Rooms } from "../../party/rooms";
-
+import {
+  AUTH_CHALLENGE_PREFIX,
+  type ClientMessage,
+  type PublicRoomInfo,
+  type Rooms,
+  type ServerMessage,
+} from "../../party/rooms";
 import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "../../party/shared";
+import { serverUrl } from "../api/serverUrl";
+import "../styles.css";
 
 createRoot(document.getElementById("app")!).render(<Dashboard />);
 
@@ -16,9 +23,10 @@ function Dashboard() {
   >("connecting");
   const [error, setError] = useState<string | null>(null);
   const [rooms, setRooms] = useState<PublicRoomInfo | Rooms | null>(null);
+  const [challenge, setChallenge] = useState<string | null>(null);
 
   const ws = usePartySocket({
-    host: PARTYKIT_HOST,
+    host: serverUrl,
     party: "rooms",
     room: OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
     onClose() {
@@ -28,11 +36,16 @@ function Dashboard() {
       setError(JSON.stringify(event));
     },
     onMessage(event) {
-      const data = JSON.parse(event.data);
-      if ("rooms" in data && rooms && !("rooms" in rooms)) {
-        // Don't accept PublicRoomInfo if we already have Rooms
+      const data = JSON.parse(event.data) as ServerMessage;
+      if (data.type === "challenge") {
+        setChallenge(data.challenge);
+      } else if (data.type === "rooms") {
+        setRooms(data.rooms);
       } else {
-        setRooms(data);
+        // Don't accept PublicRoomInfo if we already have Rooms
+        setRooms((prev) =>
+          prev && !("activeConnections" in prev) ? prev : data.info,
+        );
       }
     },
     onOpen() {
@@ -76,6 +89,16 @@ function Dashboard() {
             }
           })()}
         </div>
+        {challenge && (
+          <p className="mb-2">
+            Sign{" "}
+            <code>
+              {AUTH_CHALLENGE_PREFIX}
+              {challenge}
+            </code>{" "}
+            with the admin key.
+          </p>
+        )}
         <form
           className="flex gap-2"
           onSubmit={(event) => {
