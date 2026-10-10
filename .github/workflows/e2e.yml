@@ -25,8 +25,7 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
-      # Specs sign dashboard challenges with `bun .ssh/sign-message.tsx` and
-      # serve a stand-in PartyKit deployment with `bun test/legacyPartykitServer.ts`.
+      # Specs sign dashboard challenges with `bun .ssh/sign-message.tsx`.
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: "1.4.2"
