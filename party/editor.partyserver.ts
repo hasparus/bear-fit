@@ -37,6 +37,7 @@ interface HistoryRow extends Record<string, SqlStorageValue> {
 export class EditorPartyServer extends YServer<Env> {
   #historyLength = 0;
   #occupancyReport = Promise.resolve();
+  #registered = false;
 
   async onStart(): Promise<void> {
     migrateStorage(this.ctx.storage);
@@ -49,11 +50,10 @@ export class EditorPartyServer extends YServer<Env> {
         console.error("failed to persist update, resetting", error);
         this.ctx.abort("failed to persist update");
       }
+      this.registerCalendar(Date.now());
     });
 
-    if (hasCalendarEvent(this.document)) {
-      void this.registerCalendar(null);
-    }
+    this.registerCalendar(null);
   }
 
   async onLoad(): Promise<void> {
@@ -98,7 +98,6 @@ export class EditorPartyServer extends YServer<Env> {
       }
 
       initializeCalendarMap(this.document, event);
-      await this.registerCalendar(Date.now());
       return Response.json({ message: "created" });
     }
 
@@ -148,16 +147,22 @@ export class EditorPartyServer extends YServer<Env> {
     }
   }
 
-  private async registerCalendar(createdAt: number | null) {
-    try {
-      const registry = await getServerByName(
-        this.env.rooms,
-        OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
-      );
-      await registry.registerCalendar({ id: this.name, createdAt });
-    } catch (error) {
-      console.error("failed to register calendar", error);
-    }
+  /**
+   * Records the calendar in the occupancy server's registry once this instance
+   * sees an event: loaded from storage on start (creation time unknown, so
+   * `null`) or arriving in an update, whether from the POST or a sync.
+   */
+  private registerCalendar(createdAt: number | null) {
+    if (this.#registered || !hasCalendarEvent(this.document)) return;
+    this.#registered = true;
+    getServerByName(this.env.rooms, OCCUPANCY_SERVER_SINGLETON_ROOM_ID)
+      .then((registry) =>
+        registry.registerCalendar({ id: this.name, createdAt }),
+      )
+      .catch((error) => {
+        this.#registered = false;
+        console.error("failed to register calendar", error);
+      });
   }
 
   /**

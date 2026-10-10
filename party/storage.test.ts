@@ -141,6 +141,11 @@ test.for([
   },
 );
 
+async function registeredAt(id: string) {
+  const rows = await registeredCalendars();
+  return rows.find((row) => row.id === id)?.created_at;
+}
+
 test("POST registers the calendar with its creation time", async () => {
   const id = "registered-calendar";
   const before = Date.now();
@@ -152,10 +157,23 @@ test("POST registers the calendar with its creation time", async () => {
   });
   expect(response.status).toBe(200);
 
-  const [registered] = (await registeredCalendars()).filter(
-    (row) => row.id === id,
+  await vi.waitFor(async () =>
+    expect((await registeredAt(id)) as number).toBeGreaterThanOrEqual(before),
   );
-  expect(registered.created_at as number).toBeGreaterThanOrEqual(before);
+});
+
+test("a calendar created through sync is registered", async () => {
+  const id = "synced-calendar";
+  const before = Date.now();
+  const stub = await startCalendar(id);
+
+  await runInDurableObject(stub, (instance: EditorPartyServer) =>
+    initializeCalendarMap(instance.document, event(id)),
+  );
+
+  await vi.waitFor(async () =>
+    expect((await registeredAt(id)) as number).toBeGreaterThanOrEqual(before),
+  );
 });
 
 test("history is compacted past its limit and keeps recent edits granular", async () => {
