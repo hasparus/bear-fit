@@ -47,4 +47,9 @@ export async function createCalendar(
 
   await expect(page).toHaveURL(/\?id=/);
   await page.getByText("Dates", { exact: true }).waitFor({ state: "visible" });
+
+  const id = new URL(page.url()).searchParams.get("id");
+  if (!id) throw new Error("Calendar id missing from URL");
+
+  return { id, nextMonthName };
 }

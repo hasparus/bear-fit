@@ -1,45 +1,33 @@
-import type { Page } from "@playwright/test";
-
 import { expect, test } from "../test";
+import { createCalendar } from "../test/utils/createCalendar";
 
 test.setTimeout(60_000);
 
-async function createEvent(page: Page, eventName: string, startDay: number, endDay: number) {
+test("footer lists recently visited events and highlights the current event", async ({
+  page,
+}) => {
   await page.goto("/");
 
-  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
-
-  await page.getByLabel("Name your event").fill(eventName);
-
-  await page.getByRole("button", { name: "next month" }).click();
-
-  const today = new Date();
-  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  const nextMonthName = nextMonth.toLocaleDateString("en-US", { month: "long" });
-
-  await page.getByRole("button", { name: `${nextMonthName} ${startDay}th` }).click();
-  await page.getByRole("button", { name: `${nextMonthName} ${endDay}th` }).click();
-
-  await page.getByText("Create Calendar").click();
-
-  await expect(page).toHaveURL(/\?id=/);
-}
-
-test("footer lists recently visited events and highlights the current event", async ({ page }) => {
-  await page.goto("/");
-
-  await expect(page.getByRole("heading", { name: "Your recent calendars" })).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Your recent calendars" }),
+  ).toHaveCount(0);
 
   const firstEventName = `footer recents ${Math.random().toString(36).slice(2, 8)}`;
   const START_DAY = 5;
   const END_DAY = 9;
 
-  await createEvent(page, firstEventName, START_DAY, END_DAY);
+  await createCalendar(page, {
+    endDay: END_DAY,
+    name: firstEventName,
+    startDay: START_DAY,
+  });
 
   const footer = page.locator("footer");
   const firstEventItem = footer.getByRole("listitem").first();
 
-  await expect(footer.getByRole("heading", { name: "Your recent calendars" })).toBeVisible();
+  await expect(
+    footer.getByRole("heading", { name: "Your recent calendars" }),
+  ).toBeVisible();
   await expect(firstEventItem).toContainText(firstEventName);
   await expect(firstEventItem).toContainText("(current)");
 
@@ -51,7 +39,9 @@ test("footer lists recently visited events and highlights the current event", as
 
   await page.goto("/");
 
-  const recentsHeading = page.getByRole("heading", { name: "Your recent calendars" });
+  const recentsHeading = page.getByRole("heading", {
+    name: "Your recent calendars",
+  });
   await expect(recentsHeading).toBeVisible();
 
   const recentsItems = page.locator("footer ul li");
@@ -67,9 +57,17 @@ test("footer lists recently visited events and highlights the current event", as
 
   // The rendered dates should match the selected range.
   await expect(
-    page.locator(`footer time[dateTime$="-${START_DAY.toString().padStart(2, "0")}"]`).first(),
+    page
+      .locator(
+        `footer time[dateTime$="-${START_DAY.toString().padStart(2, "0")}"]`,
+      )
+      .first(),
   ).toBeVisible();
   await expect(
-    page.locator(`footer time[dateTime$="-${END_DAY.toString().padStart(2, "0")}"]`).first(),
+    page
+      .locator(
+        `footer time[dateTime$="-${END_DAY.toString().padStart(2, "0")}"]`,
+      )
+      .first(),
   ).toBeVisible();
 });

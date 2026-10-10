@@ -24,7 +24,7 @@ interface EditorEnv {
 
 interface UpdateRow {
   clock: number;
-  update: ArrayBufferLike;
+  update: Uint8Array;
 }
 
 const TABLE_DOCUMENTS = "documents";
@@ -46,6 +46,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
 
   #lastClock = 0;
   #historyInitialized = false;
+  #occupancyReport = Promise.resolve();
 
   async onStart(): Promise<void> {
     this.ensureTables();
@@ -69,8 +70,9 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       ),
     ];
 
-    if (row && row.state instanceof ArrayBuffer) {
-      Y.applyUpdate(this.document, new Uint8Array(row.state));
+    const state = row && blobToBytes(row.state);
+    if (state) {
+      Y.applyUpdate(this.document, state);
       return;
     }
 
@@ -147,7 +149,7 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         const body = encodeHistoryUpdates(
           this.loadUpdates().map((row) => ({
             clock: String(row.clock),
-            value: new Uint8Array(row.update),
+            value: row.update,
           })),
         );
 
@@ -207,19 +209,13 @@ export class EditorPartyServer extends YServer<EditorEnv> {
         this.name,
       ),
     ].map((row) => {
-      const raw = row.update_data as unknown;
-      let update: ArrayBufferLike;
-      if (raw instanceof ArrayBuffer || raw instanceof SharedArrayBuffer) {
-        update = raw;
-      } else if (ArrayBuffer.isView(raw as ArrayBufferView)) {
-        update = (raw as ArrayBufferView).buffer;
-      } else {
-        console.warn("unexpected update payload", typeof raw);
-        update = new Uint8Array().buffer;
+      const update = blobToBytes(row.update_data);
+      if (!update) {
+        console.warn("unexpected update payload", typeof row.update_data);
       }
       return {
         clock: Number(row.clock),
-        update,
+        update: update ?? new Uint8Array(),
       } satisfies UpdateRow;
     });
   }
@@ -260,7 +256,18 @@ export class EditorPartyServer extends YServer<EditorEnv> {
     await this.onSave();
   }
 
-  private async updateOccupancyCount() {
+  /**
+   * Reports run one at a time and read the connection count when they run, so
+   * a slow report can't land after a newer one and publish a stale count.
+   */
+  private updateOccupancyCount() {
+    this.#occupancyReport = this.#occupancyReport.then(() =>
+      this.reportOccupancyCount(),
+    );
+    return this.#occupancyReport;
+  }
+
+  private async reportOccupancyCount() {
     try {
       const stub = await getServerByName(
         this.env.rooms,
@@ -272,4 +279,13 @@ export class EditorPartyServer extends YServer<EditorEnv> {
       console.error("failed to notify occupancy server", error);
     }
   }
+}
+
+/** SQLite BLOB columns come back as ArrayBuffer; copy views by their exact range. */
+function blobToBytes(value: unknown): Uint8Array | null {
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (ArrayBuffer.isView(value)) {
+    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+  }
+  return null;
 }
