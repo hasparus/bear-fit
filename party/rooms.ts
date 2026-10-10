@@ -25,7 +25,7 @@ export type ServerMessage = PublicRoomInfo | Rooms;
 
 const PUBLIC_KEY = await crypto.subtle.importKey(
   "raw",
-  base64ToArrayBuffer("rJOn8TUSGzJx2bIgotE9NJiHz8Dx2wN3VwnrK+qGIpk="),
+  base64ToArrayBuffer("EOeE/T5LX+j95y0pZ8ThZBwyLL4RzlUDdpLcRQMHetE="),
   "Ed25519",
   false,
   ["verify"],

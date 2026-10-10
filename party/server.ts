@@ -62,7 +62,10 @@ export default class EditorServer implements Party.Server {
       console.log("↠ onConnect", this.room.id);
     }
 
-    return onConnect(conn, this.room, this.yPartyKitOptions);
+    return onConnect(conn, this.room, {
+      ...this.yPartyKitOptions,
+      readOnly: true,
+    });
   }
 
   async onRequest(req: Party.Request) {

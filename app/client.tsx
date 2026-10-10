@@ -6,6 +6,13 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { getUserId } from "./getUserId";
 
+if (window.location.host === "bear-fit.hasparus.partykit.dev") {
+  const { pathname, search, hash } = window.location;
+  window.location.replace(
+    `https://bear-fit.hasparus.workers.dev${pathname}${search}${hash}`,
+  );
+}
+
 const CLARITY_PROJECT_ID = "qjn2opasep";
 Clarity.init(CLARITY_PROJECT_ID);
 Clarity.identify(getUserId());
