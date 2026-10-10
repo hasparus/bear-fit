@@ -83,14 +83,8 @@ function YProvider({
   const yProvider = useYProvider({
     doc: yDoc,
     host: serverUrl,
+    options: { connect: true },
     room,
-    options: {
-      connect: true,
-      protocol:
-        typeof window !== "undefined" && window.location.protocol === "https:"
-          ? "wss"
-          : "ws",
-    },
   });
 
   return (

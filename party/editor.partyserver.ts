@@ -1,3 +1,4 @@
+import { type } from "arktype";
 import {
   type Connection,
   type ConnectionContext,
@@ -6,6 +7,8 @@ import {
 import { YServer } from "y-partyserver";
 import * as Y from "yjs";
 
+import type { Env } from "./worker";
+
 import { encodeHistoryUpdates } from "../app/encodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
 import {
@@ -13,74 +16,52 @@ import {
   initializeCalendarMap,
   yDocToJson,
 } from "../app/shared-data";
-import { OccupancyPartyServer } from "./occupancy.partyserver";
-import { CORS, OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./shared";
+import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./rooms";
 
-interface EditorEnv {
-  rooms: DurableObjectNamespace<OccupancyPartyServer>;
-}
+/**
+ * Past this many rows, the older half of the history is merged pairwise, so
+ * old versions get coarser while recent edits stay individually restorable.
+ */
+export const HISTORY_LIMIT = 500;
 
-interface UpdateRow {
+interface HistoryRow extends Record<string, SqlStorageValue> {
   clock: number;
-  update: Uint8Array;
+  data: ArrayBuffer;
 }
 
-const TABLE_DOCUMENTS = "documents";
-const TABLE_UPDATES = "document_updates";
-
-export class EditorPartyServer extends YServer<EditorEnv> {
-  static callbackOptions = {
-    debounceMaxWait: 5_000,
-    debounceWait: 750,
-    timeout: 5_000,
-  };
-
-  constructor(...args: ConstructorParameters<typeof YServer<EditorEnv>>) {
-    super(...args);
-    this.env = args[1];
-  }
-
-  protected override readonly env: EditorEnv;
-
-  #lastClock = 0;
-  #historyInitialized = false;
+/**
+ * One Durable Object holds one calendar. Its Yjs document is persisted only as
+ * the `history` log: every update is appended as it happens and the document
+ * is rebuilt from the log on start.
+ */
+export class EditorPartyServer extends YServer<Env> {
+  #historyLength = 0;
   #occupancyReport = Promise.resolve();
 
   async onStart(): Promise<void> {
-    this.ensureTables();
-    this.#lastClock = this.loadLastClock();
-
+    migrateStorage(this.ctx.storage);
     await super.onStart();
 
-    if (!this.#historyInitialized) {
-      this.document.on("update", (update) => {
-        this.persistIncrementalUpdate(update);
-      });
-      this.#historyInitialized = true;
+    this.document.on("update", (update: Uint8Array) => {
+      try {
+        this.appendHistory(update);
+      } catch (error) {
+        console.error("failed to persist update, resetting", error);
+        this.ctx.abort("failed to persist update");
+      }
+    });
+
+    if (hasCalendarEvent(this.document)) {
+      void this.registerCalendar(null);
     }
   }
 
   async onLoad(): Promise<void> {
-    const [row] = [
-      ...this.ctx.storage.sql.exec(
-        `SELECT state FROM ${TABLE_DOCUMENTS} WHERE id = ? LIMIT 1`,
-        this.name,
-      ),
-    ];
-
-    const state = row && blobToBytes(row.state);
-    if (state) {
-      Y.applyUpdate(this.document, state);
-    }
-  }
-
-  async onSave(): Promise<void> {
-    const update = Y.encodeStateAsUpdate(this.document);
-    this.ctx.storage.sql.exec(
-      `INSERT OR REPLACE INTO ${TABLE_DOCUMENTS} (id, state) VALUES (?, ?)`,
-      this.name,
-      update,
-    );
+    const rows = this.ctx.storage.sql
+      .exec<HistoryRow>("SELECT clock, data FROM history ORDER BY clock")
+      .toArray();
+    for (const row of rows) Y.applyUpdate(this.document, bytes(row));
+    this.#historyLength = rows.length;
   }
 
   async onConnect(
@@ -102,131 +83,82 @@ export class EditorPartyServer extends YServer<EditorEnv> {
   }
 
   async onRequest(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const headers = process.env.NODE_ENV !== "production" ? CORS : undefined;
+    const { pathname } = new URL(request.url);
 
-    if (request.method === "OPTIONS") {
-      return new Response("ok", { headers });
-    }
-
-    if (
-      request.method === "POST" &&
-      url.pathname.startsWith("/parties/main/")
-    ) {
-      try {
-        const payload = await request.json();
-        const event = CalendarEvent.assert(payload);
-
-        if (hasCalendarEvent(this.document)) {
-          return Response.json(
-            { error: "calendar already created" },
-            { headers, status: 403 },
-          );
-        }
-
-        initializeCalendarMap(this.document, event);
-        await this.onSave();
-
-        return Response.json({ message: "created" }, { headers });
-      } catch (error) {
-        console.error("failed to create calendar", error);
+    if (request.method === "POST") {
+      const event = CalendarEvent(await request.json().catch(() => null));
+      if (event instanceof type.errors) {
+        return Response.json({ error: "invalid calendar" }, { status: 400 });
+      }
+      if (hasCalendarEvent(this.document)) {
         return Response.json(
-          { error: "invalid calendar" },
-          { headers, status: 400 },
+          { error: "calendar already created" },
+          { status: 403 },
         );
       }
+
+      initializeCalendarMap(this.document, event);
+      await this.registerCalendar(Date.now());
+      return Response.json({ message: "created" });
     }
 
     if (request.method === "GET") {
-      if (url.pathname === `/parties/main/${this.name}/history`) {
+      if (pathname === `/parties/main/${this.name}/history`) {
+        const rows = this.ctx.storage.sql
+          .exec<HistoryRow>("SELECT clock, data FROM history ORDER BY clock")
+          .toArray();
         const body = encodeHistoryUpdates(
-          this.loadUpdates().map((row) => ({
-            clock: String(row.clock),
-            value: row.update,
-          })),
+          rows.map((row) => ({ clock: String(row.clock), value: bytes(row) })),
         );
-
         return new Response(body, {
-          headers: {
-            ...headers,
-            "Content-Type": "application/octet-stream",
-          },
+          headers: { "Content-Type": "application/octet-stream" },
         });
       }
 
-      if (url.pathname === "/parties/main/status") {
-        return new Response("ok", { headers });
-      }
-
-      if (url.pathname === `/parties/main/${this.name}`) {
-        return Response.json(yDocToJson(this.document), { headers });
+      if (pathname === `/parties/main/${this.name}`) {
+        return Response.json(yDocToJson(this.document));
       }
     }
 
-    return Response.json({ message: "not found" }, { headers, status: 404 });
+    return Response.json({ message: "not found" }, { status: 404 });
   }
 
-  private ensureTables() {
-    this.ctx.storage.sql.exec(
-      `CREATE TABLE IF NOT EXISTS ${TABLE_DOCUMENTS} (
-        id TEXT PRIMARY KEY,
-        state BLOB NOT NULL
-      )`,
-    );
+  private appendHistory(update: Uint8Array) {
+    const { sql } = this.ctx.storage;
+    sql.exec("INSERT INTO history (data) VALUES (?)", update);
+    this.#historyLength += 1;
 
-    this.ctx.storage.sql.exec(
-      `CREATE TABLE IF NOT EXISTS ${TABLE_UPDATES} (
-        doc_id TEXT NOT NULL,
-        clock INTEGER NOT NULL,
-        update_data BLOB NOT NULL,
-        PRIMARY KEY (doc_id, clock)
-      )`,
-    );
-  }
+    if (this.#historyLength <= HISTORY_LIMIT) return;
 
-  private loadLastClock(): number {
-    const [row] = [
-      ...this.ctx.storage.sql.exec(
-        `SELECT clock FROM ${TABLE_UPDATES} WHERE doc_id = ? ORDER BY clock DESC LIMIT 1`,
-        this.name,
-      ),
-    ];
-
-    return row ? Number(row.clock) : 0;
-  }
-
-  private loadUpdates(): UpdateRow[] {
-    return [
-      ...this.ctx.storage.sql.exec(
-        `SELECT clock, update_data FROM ${TABLE_UPDATES} WHERE doc_id = ? ORDER BY clock ASC`,
-        this.name,
-      ),
-    ].map((row) => {
-      const update = blobToBytes(row.update_data);
-      if (!update) {
-        console.warn("unexpected update payload", typeof row.update_data);
-      }
-      return {
-        clock: Number(row.clock),
-        update: update ?? new Uint8Array(),
-      } satisfies UpdateRow;
-    });
-  }
-
-  private persistIncrementalUpdate(update: Uint8Array) {
-    this.#lastClock += 1;
-    try {
-      this.ctx.storage.sql.exec(
-        `INSERT INTO ${TABLE_UPDATES} (doc_id, clock, update_data) VALUES (?, ?, ?)`,
-        this.name,
-        this.#lastClock,
-        update,
+    const older = sql
+      .exec<HistoryRow>(
+        "SELECT clock, data FROM history ORDER BY clock LIMIT ?",
+        Math.floor(this.#historyLength / 2),
+      )
+      .toArray();
+    for (let i = 0; i + 1 < older.length; i += 2) {
+      const [first, second] = [older[i], older[i + 1]];
+      sql.exec(
+        "UPDATE history SET data = ? WHERE clock = ?",
+        Y.mergeUpdates([bytes(first), bytes(second)]),
+        second.clock,
       );
-    } catch (error) {
-      console.error("failed to persist update", error);
+      sql.exec("DELETE FROM history WHERE clock = ?", first.clock);
+      this.#historyLength -= 1;
     }
   }
 
+  private async registerCalendar(createdAt: number | null) {
+    try {
+      const registry = await getServerByName(
+        this.env.rooms,
+        OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
+      );
+      await registry.registerCalendar({ id: this.name, createdAt });
+    } catch (error) {
+      console.error("failed to register calendar", error);
+    }
+  }
 
   /**
    * Reports run one at a time and read the connection count when they run, so
@@ -253,11 +185,58 @@ export class EditorPartyServer extends YServer<EditorEnv> {
   }
 }
 
-/** SQLite BLOB columns come back as ArrayBuffer; copy views by their exact range. */
-function blobToBytes(value: unknown): Uint8Array | null {
-  if (value instanceof ArrayBuffer) return new Uint8Array(value);
-  if (ArrayBuffer.isView(value)) {
-    return new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-  }
-  return null;
+/**
+ * Creates the `history` table and moves data from the earlier layout into it:
+ * a `documents (id, state)` snapshot and a `document_updates (doc_id, clock,
+ * update_data)` log, both keyed by the room name. Log rows are replayed in
+ * order, then the snapshot is applied, so any edit the log is missing lands as
+ * one final row. Runs in a single transaction and drops the old tables, so a
+ * failure leaves storage untouched and a rerun is a no-op.
+ */
+export function migrateStorage(storage: DurableObjectStorage) {
+  storage.transactionSync(() => {
+    const { sql } = storage;
+    sql.exec(
+      "CREATE TABLE IF NOT EXISTS history (clock INTEGER PRIMARY KEY, data BLOB NOT NULL)",
+    );
+
+    const legacyTables = sql
+      .exec<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('document_updates', 'documents')",
+      )
+      .toArray()
+      .map((row) => row.name);
+    if (legacyTables.length === 0) return;
+
+    const doc = new Y.Doc();
+    doc.on("update", (update: Uint8Array) => {
+      sql.exec("INSERT INTO history (data) VALUES (?)", update);
+    });
+
+    if (legacyTables.includes("document_updates")) {
+      const updates = sql
+        .exec<{
+          update_data: ArrayBuffer;
+        }>("SELECT update_data FROM document_updates ORDER BY clock")
+        .toArray();
+      for (const row of updates) {
+        Y.applyUpdate(doc, new Uint8Array(row.update_data));
+      }
+      sql.exec("DROP TABLE document_updates");
+    }
+
+    if (legacyTables.includes("documents")) {
+      const snapshots = sql
+        .exec<{ state: ArrayBuffer }>("SELECT state FROM documents")
+        .toArray();
+      for (const row of snapshots) {
+        Y.applyUpdate(doc, new Uint8Array(row.state));
+      }
+      sql.exec("DROP TABLE documents");
+    }
+  });
+}
+
+function bytes(row: HistoryRow) {
+  return new Uint8Array(row.data);
 }

@@ -7,22 +7,24 @@ import { createRoot } from "react-dom/client";
 import {
   AUTH_CHALLENGE_PREFIX,
   type ClientMessage,
+  OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
   type PublicRoomInfo,
-  type Rooms,
   type ServerMessage,
 } from "../../party/rooms";
-import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "../../party/shared";
 import { serverUrl } from "../api/serverUrl";
 import "../styles.css";
 
 createRoot(document.getElementById("app")!).render(<Dashboard />);
+
+type AdminInfo = Omit<Extract<ServerMessage, { type: "admin" }>, "type">;
 
 function Dashboard() {
   const [connectionState, setConnectionState] = useState<
     "connected" | "connecting" | "disconnected"
   >("connecting");
   const [error, setError] = useState<string | null>(null);
-  const [rooms, setRooms] = useState<PublicRoomInfo | Rooms | null>(null);
+  const [publicInfo, setPublicInfo] = useState<PublicRoomInfo | null>(null);
+  const [admin, setAdmin] = useState<AdminInfo | null>(null);
   const [challenge, setChallenge] = useState<string | null>(null);
 
   const ws = usePartySocket({
@@ -31,6 +33,7 @@ function Dashboard() {
     room: OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
     onClose() {
       setConnectionState("disconnected");
+      setAdmin(null);
     },
     onError(event) {
       setError(JSON.stringify(event));
@@ -39,13 +42,11 @@ function Dashboard() {
       const data = JSON.parse(event.data) as ServerMessage;
       if (data.type === "challenge") {
         setChallenge(data.challenge);
-      } else if (data.type === "rooms") {
-        setRooms(data.rooms);
+        setAdmin(null);
+      } else if (data.type === "admin") {
+        setAdmin({ calendars: data.calendars, rooms: data.rooms });
       } else {
-        // Don't accept PublicRoomInfo if we already have Rooms
-        setRooms((prev) =>
-          prev && !("activeConnections" in prev) ? prev : data.info,
-        );
+        setPublicInfo(data.info);
       }
     },
     onOpen() {
@@ -61,70 +62,92 @@ function Dashboard() {
       <div className="p-2 text-sm">
         <div>Connection state: {connectionState}</div>
         {error && <div>Error: {error}</div>}
-        <div className="my-2 bg-neutral-100 p-2">
-          {(() => {
-            if (!rooms) {
-              return null;
-            }
-
-            if ("activeConnections" in rooms) {
-              return (
+        {admin ? (
+          <>
+            <div className="my-2 bg-neutral-100 p-2">
+              <ul>
+                {Object.entries(admin.rooms).map(([roomId, count]) => (
+                  <li key={roomId}>
+                    {roomId}: {count} connections
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <table aria-label="Calendars" className="w-full text-left">
+              <thead>
+                <tr>
+                  <th>Calendar</th>
+                  <th>Created</th>
+                  <th>Connections</th>
+                </tr>
+              </thead>
+              <tbody>
+                {admin.calendars.map(({ id, createdAt }) => (
+                  <tr key={id}>
+                    <td>
+                      <a href={`/?id=${encodeURIComponent(id)}`}>{id}</a>
+                    </td>
+                    <td>
+                      {createdAt === null
+                        ? "unknown"
+                        : new Date(createdAt).toLocaleString()}
+                    </td>
+                    <td>{admin.rooms[id] ?? 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : (
+          <>
+            {publicInfo && (
+              <div className="my-2 bg-neutral-100 p-2">
                 <dl className="grid grid-cols-2 gap-2">
                   <dt>Rooms:</dt>
-                  <dd>{rooms.rooms}</dd>
+                  <dd>{publicInfo.rooms}</dd>
                   <dt>Active connections:</dt>
-                  <dd>{rooms.activeConnections}</dd>
+                  <dd>{publicInfo.activeConnections}</dd>
                 </dl>
-              );
-            } else {
-              return (
-                <ul>
-                  {Object.entries(rooms).map(([roomId, count]) => (
-                    <li key={roomId}>
-                      {roomId}: {count} connections
-                    </li>
-                  ))}
-                </ul>
-              );
-            }
-          })()}
-        </div>
-        {challenge && (
-          <p className="mb-2">
-            Sign{" "}
-            <code>
-              {AUTH_CHALLENGE_PREFIX}
-              {challenge}
-            </code>{" "}
-            with the admin key.
-          </p>
+              </div>
+            )}
+            {challenge && (
+              <p className="mb-2">
+                Sign{" "}
+                <code>
+                  {AUTH_CHALLENGE_PREFIX}
+                  {challenge}
+                </code>{" "}
+                with the admin key.
+              </p>
+            )}
+            <form
+              className="flex gap-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                const signature = formData.get("signature")?.toString();
+                if (signature) {
+                  ws.send(
+                    JSON.stringify({
+                      type: "auth",
+                      payload: { signature },
+                    } satisfies ClientMessage),
+                  );
+                }
+              }}
+            >
+              <input
+                type="text"
+                className="w-full"
+                name="signature"
+                placeholder="admin access key"
+              />
+              <button type="submit" className="btn shrink-0">
+                Authorize
+              </button>
+            </form>
+          </>
         )}
-        <form
-          className="flex gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            const signature = formData.get("signature")?.toString();
-            if (signature) {
-              ws.send(
-                JSON.stringify({
-                  type: "auth",
-                  payload: { signature },
-                } satisfies ClientMessage),
-              );
-            }
-          }}
-        >
-          <input
-            type="text"
-            className="w-full"
-            name="signature"
-            placeholder="admin access key"
-          />
-          <button type="submit" className="btn shrink-0">
-            Authorize
-          </button>
-        </form>
       </div>
     </div>
   );

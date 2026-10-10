@@ -8,12 +8,5 @@ declare global {
   }
 }
 
-interface ImportMeta {
-  env: ImportMetaEnv;
-}
-
-interface ImportMetaEnv {
-  readonly ALWAYS_PROD: 0 | 1;
-}
-
-declare const __PROD_SERVER_URL__: string;
+/** Production origin under `pnpm dev:prod`, empty otherwise. */
+declare const __SERVER_URL__: string;

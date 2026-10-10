@@ -74,14 +74,33 @@ test("dashboard only shows per-room details after signing its challenge", async 
 }) => {
   const roomA = `room-a-${Date.now()}`;
   const roomB = `room-b-${Date.now()}`;
+  const calendarId = `registered-${Date.now()}`;
+
+  const created = await page.request.post(`/parties/main/${calendarId}`, {
+    data: {
+      id: calendarId,
+      creator: "dashboard-spec",
+      endDate: "2030-01-12",
+      name: "Registered calendar",
+      startDate: "2030-01-06",
+    },
+  });
+  expect(created.ok()).toBe(true);
 
   const challenge = await openDashboard(page);
   await connectToRoom(page, roomA);
   await connectToRoom(page, roomB);
 
   await expect(page.locator(".bg-neutral-100 ul li")).toHaveCount(0);
+  await expect(page.getByRole("table", { name: "Calendars" })).toHaveCount(0);
 
   await authorize(page, sign(await challenge.innerText()));
+
+  await expect(
+    page
+      .getByRole("table", { name: "Calendars" })
+      .getByRole("link", { name: calendarId }),
+  ).toHaveAttribute("href", `/?id=${calendarId}`);
 
   const roomList = page.locator(".bg-neutral-100 ul");
   await expect(
@@ -104,7 +123,7 @@ test("dashboard rejects replayed signatures", async ({ browser, page }) => {
 
   await authorize(page, signature);
   await expect(page.locator(".bg-neutral-100 ul")).toBeAttached();
-  await expect(firstChallenge).not.toHaveText(challengeText);
+  await expect(firstChallenge).toBeHidden();
 
   const otherPage = await browser.newPage();
   const otherChallenge = await openDashboard(otherPage);

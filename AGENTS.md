@@ -17,7 +17,8 @@
   app with live reload on `http://127.0.0.1:1999`.
 - `pnpm typecheck` and `pnpm lint` keep strict TypeScript and ESLint
   (perfectionist sorting) happy; follow with `pnpm format` before committing.
-- `pnpm test` runs the Playwright suite headlessly, `pnpm test:ui` opens the
+- `pnpm test` runs the Durable Object tests (`party/*.test.ts`, Vitest in
+  workerd) and then the Playwright suite headlessly, `pnpm test:ui` opens the
   inspector, and `pnpm release` executes `scripts/deploy.sh` to deploy with an
   `APP_VERSION` tag.
 
