@@ -5,10 +5,10 @@ import { getServerByName } from "partyserver";
 import { expect, test, vi } from "vitest";
 import * as Y from "yjs";
 
-import type { CalendarEvent } from "../app/schemas";
 import type { Env } from "./worker";
 
 import { decodeHistoryUpdates } from "../app/decodeHistoryUpdates";
+import { CalendarEvent } from "../app/schemas";
 import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
 import {
   EditorPartyServer,
@@ -25,13 +25,13 @@ declare global {
 type EnvBindings = Env;
 
 const event = (id: string) =>
-  ({
+  CalendarEvent.assert({
     id,
     creator: "alice",
     endDate: "2026-11-11",
     name: "Bear picnic",
     startDate: "2026-11-06",
-  }) as CalendarEvent;
+  });
 
 function startCalendar(id: string) {
   return getServerByName(env.main, id);
@@ -57,7 +57,12 @@ async function registeredCalendars() {
     OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
   );
   return runInDurableObject(registry, (_, state) =>
-    state.storage.sql.exec("SELECT id, created_at FROM calendars").toArray(),
+    state.storage.sql
+      .exec<{
+        id: string;
+        created_at: number | null;
+      }>("SELECT id, created_at FROM calendars")
+      .toArray(),
   );
 }
 
@@ -225,17 +230,34 @@ test("undecodable legacy rows are skipped and the snapshot fills the gap", async
   expect(yDocToJson(replay(history))).toEqual(yDocToJson(source));
 });
 
-test("start fails without touching storage when no legacy row is usable", async () => {
-  const id = "unreadable-calendar";
-  await seedLegacy(id, { log: [new Uint8Array([255, 255, 255, 255])] });
+const garbage = new Uint8Array([255, 255, 255, 255]);
 
+async function expectStartToFail(id: string, message: string) {
   const stub = env.main.get(env.main.idFromName(id));
   await expect(
     stub.fetch(`https://bear.fit/parties/main/${id}`, {
       headers: { "x-partykit-room": id },
     }),
-  ).rejects.toThrow("no usable legacy log or snapshot");
+  ).rejects.toThrow(message);
   expect(await tableNames(id)).toEqual(["document_updates", "documents"]);
+}
+
+test("start fails without touching storage when no legacy row is usable", async () => {
+  const id = "unreadable-calendar";
+  await seedLegacy(id, { log: [garbage] });
+
+  await expectStartToFail(id, "no usable legacy log or snapshot");
+});
+
+test("start fails when the log has a gap the snapshot can't fill", async () => {
+  const id = "gapped-calendar";
+  const source = new Y.Doc();
+  const [, ...rest] = recordUpdates(source, () =>
+    initializeCalendarMap(source, event(id)),
+  );
+  await seedLegacy(id, { log: [garbage, ...rest], snapshot: garbage });
+
+  await expectStartToFail(id, "legacy data has gaps the snapshot can't fill");
 });
 
 test("oversized updates close the socket instead of reaching storage", async () => {
@@ -273,7 +295,7 @@ test("POST registers the calendar with its creation time", async () => {
   expect(response.status).toBe(200);
 
   await vi.waitFor(async () =>
-    expect((await registeredAt(id)) as number).toBeGreaterThanOrEqual(before),
+    expect((await registeredAt(id)) ?? 0).toBeGreaterThanOrEqual(before),
   );
 });
 
@@ -287,7 +309,7 @@ test("a calendar created through sync is registered", async () => {
   );
 
   await vi.waitFor(async () =>
-    expect((await registeredAt(id)) as number).toBeGreaterThanOrEqual(before),
+    expect((await registeredAt(id)) ?? 0).toBeGreaterThanOrEqual(before),
   );
 });
 

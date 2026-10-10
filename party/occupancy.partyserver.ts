@@ -59,7 +59,7 @@ export class OccupancyPartyServer extends Server<Env> {
       (await this.verifySignature(payload.signature, attempt.challenge))
     ) {
       connection.setState({ authorizedUntil: Date.now() + AUTHORIZATION_TTL });
-      connection.send(this.adminMessage());
+      send(connection, this.adminMessage());
     }
   }
 
@@ -130,18 +130,14 @@ export class OccupancyPartyServer extends Server<Env> {
     }
   }
 
-  private adminMessage() {
+  private adminMessage(): ServerMessage {
     const calendars = this.ctx.storage.sql
       .exec<{ id: string; createdAt: number | null }>(
         `SELECT id, created_at AS createdAt FROM calendars
          ORDER BY created_at DESC NULLS LAST, id`,
       )
       .toArray();
-    return JSON.stringify({
-      type: "admin",
-      calendars,
-      rooms: this.rooms,
-    } satisfies ServerMessage);
+    return { type: "admin", calendars, rooms: this.rooms };
   }
 
   private notifyAdmins(message: ServerMessage) {
