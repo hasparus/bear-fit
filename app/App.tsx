@@ -1,6 +1,6 @@
 import { Suspense, useRef } from "react";
 import useYProvider from "y-partyserver/react";
-import { Doc } from "yjs";
+import { Doc, encodeStateAsUpdate, encodeStateVector } from "yjs";
 
 import { postCalendar } from "./api/postCalendar";
 import { serverUrl, socketProtocol } from "./api/serverUrl";
@@ -57,15 +57,15 @@ function Routes({
   ) : (
     <CreateCalendarForm
       onSubmit={(calendarEvent) => {
+        const before = encodeStateVector(yDoc);
         initializeCalendarMap(yDoc, calendarEvent);
-
-        return postCalendar(calendarEvent)
-          .catch((error) => {
-            console.error("creating calendar failed", error);
-          })
-          .then(() => {
-            params.set("id", calendarEvent.id);
-          });
+        params.set("id", calendarEvent.id);
+        postCalendar(
+          calendarEvent.id,
+          encodeStateAsUpdate(yDoc, before),
+        ).catch((error) => {
+          console.error("creating calendar failed", error);
+        });
       }}
     />
   );

@@ -23,9 +23,8 @@ import { handleCalendarArrowKeys } from "./DateRangePicker";
 export function CreateCalendarForm({
   onSubmit,
 }: {
-  onSubmit: (event: CalendarEvent) => Promise<void>;
+  onSubmit: (event: CalendarEvent) => void;
 }) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dates, setDates] = useState<CalendarDatesValue>(() =>
     defaultCalendarDatesValue(),
   );
@@ -53,11 +52,8 @@ export function CreateCalendarForm({
           const base = { id: nanoid(), creator: getUserId(), name };
           const calendarEvent: CalendarEvent = { ...base, ...patch };
 
-          setIsSubmitting(true);
-          onSubmit(calendarEvent).finally(() => {
-            Clarity.event("event-created");
-            setIsSubmitting(false);
-          });
+          onSubmit(calendarEvent);
+          Clarity.event("event-created");
         }}
       >
         <h1 className="mb-4 font-bold leading-[1.3333]">Create a Calendar</h1>
@@ -86,11 +82,8 @@ export function CreateCalendarForm({
           className="btn btn-default w-full"
           disabled={!isCalendarDatesValueValid(dates)}
           style={{ borderWidth: "0.5em" }}
-          onClick={(event) => {
-            event.currentTarget.textContent = "Creating...";
-          }}
         >
-          {isSubmitting ? "Creating..." : "Create Calendar"}
+          Create Calendar
         </button>
       </form>
     </Container>

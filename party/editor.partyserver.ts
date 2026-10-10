@@ -1,4 +1,3 @@
-import { type } from "arktype";
 import {
   type Connection,
   type ConnectionContext,
@@ -11,12 +10,7 @@ import * as Y from "yjs";
 import type { Env } from "./worker";
 
 import { encodeHistoryUpdates } from "../app/encodeHistoryUpdates";
-import { CalendarEvent } from "../app/schemas";
-import {
-  hasCalendarEvent,
-  initializeCalendarMap,
-  yDocToJson,
-} from "../app/shared-data";
+import { hasCalendarEvent, yDocToJson } from "../app/shared-data";
 import { History, MAX_UPDATE_BYTES } from "./history";
 import { migrateLegacyStorage } from "./legacyStorage";
 import {
@@ -107,23 +101,15 @@ export class EditorPartyServer extends YServer<Env> {
   async onRequest(request: Request): Promise<Response> {
     const { pathname } = new URL(request.url);
 
-    if (request.method === "POST") {
-      const body = await request.arrayBuffer();
-      if (body.byteLength > MAX_UPDATE_BYTES) {
+    if (request.method === "POST" && pathname === `/parties/main/${this.name}`) {
+      const update = new Uint8Array(await request.arrayBuffer());
+      if (update.byteLength > MAX_UPDATE_BYTES) {
         return Response.json({ error: "calendar too large" }, { status: 413 });
       }
-      const event = CalendarEvent(parseJson(new TextDecoder().decode(body)));
-      if (event instanceof type.errors) {
-        return Response.json({ error: "invalid calendar" }, { status: 400 });
+      if (!isSelfContained(update)) {
+        return Response.json({ error: "invalid update" }, { status: 400 });
       }
-      if (hasCalendarEvent(this.document)) {
-        return Response.json(
-          { error: "calendar already created" },
-          { status: 403 },
-        );
-      }
-
-      initializeCalendarMap(this.document, event);
+      Y.applyUpdate(this.document, update);
       return Response.json({ message: "created" });
     }
 
@@ -191,10 +177,16 @@ export class EditorPartyServer extends YServer<Env> {
   }
 }
 
-function parseJson(text: string): unknown {
+/**
+ * Whether the update decodes and depends on nothing it doesn't carry, so
+ * applying it can't leave pending structs behind.
+ */
+function isSelfContained(update: Uint8Array) {
+  const doc = new Y.Doc();
   try {
-    return JSON.parse(text);
+    Y.applyUpdate(doc, update);
   } catch {
-    return null;
+    return false;
   }
+  return !doc.store.pendingStructs && !doc.store.pendingDs;
 }
