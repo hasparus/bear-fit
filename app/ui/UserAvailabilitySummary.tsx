@@ -3,6 +3,7 @@ import { unsafeKeys } from "unsafe-keys";
 
 import type { IsoDate, UserId } from "../schemas";
 
+import { displayName } from "../displayName";
 import { cn } from "./cn";
 
 export function UserAvailabilitySummary({
@@ -20,11 +21,11 @@ export function UserAvailabilitySummary({
   onHover: (userId: UserId | null) => void;
   onSelect: (userId: UserId | null) => void;
   selectedUsers: Readonly<Record<UserId, boolean>>;
-  userId: UserId | null;
+  userId: UserId;
 }) {
   const userIds = unsafeKeys(availabilityForUsers);
 
-  const currentUserDidNotSelectYet = !userId || !availabilityForUsers[userId];
+  const currentUserDidNotSelectYet = !availabilityForUsers[userId];
   const allUsersCount = userIds.length + (currentUserDidNotSelectYet ? 1 : 0);
 
   return (
@@ -44,7 +45,7 @@ export function UserAvailabilitySummary({
             isCurrentUser={user === userId}
             isSelected={selectedUsers[user as UserId]}
             key={user}
-            name={names[user as UserId] ?? user}
+            name={displayName(names, user as UserId)}
             onClick={() => onSelect?.(user as UserId)}
             onMouseEnter={() => onHover(user as UserId)}
           />
@@ -55,10 +56,10 @@ export function UserAvailabilitySummary({
           dates={[]}
           isCreator={creatorId === userId}
           isCurrentUser={true}
-          isSelected={selectedUsers[userId as UserId]}
+          isSelected={selectedUsers[userId]}
           key={userId}
-          name={names[userId as UserId] ?? userId}
-          onMouseEnter={() => onHover(userId as UserId)}
+          name={displayName(names, userId)}
+          onMouseEnter={() => onHover(userId)}
         />
       )}
     </dl>
