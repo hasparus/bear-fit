@@ -39,6 +39,17 @@ async function gateSync(page: Page, gate: () => Promise<void>) {
   });
 }
 
+/** Holds the page's creation POST until the returned function is called. */
+async function holdCreationPost(page: Page) {
+  const post = deferred();
+  await page.route("**/parties/main/*", async (route) => {
+    if (!isCreationPost(route.request())) return route.fallback();
+    await post.promise;
+    await route.continue();
+  });
+  return post.resolve;
+}
+
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => (resolve = r));
@@ -76,16 +87,11 @@ test("the creation POST alone delivers a calendar the user left right away", asy
   request,
 }) => {
   await gateSync(page, () => deferred().promise);
-  const post = deferred();
-  await page.route("**/parties/main/*", async (route) => {
-    if (!isCreationPost(route.request())) return route.fallback();
-    await post.promise;
-    await route.continue();
-  });
+  const releasePost = await holdCreationPost(page);
   const name = randomName("left right away");
   const { id } = await createCalendar(page, { name });
   await page.goto("about:blank");
-  post.resolve();
+  releasePost();
 
   await expect.poll(() => serverEventName(request, id)).toBe(name);
 });
@@ -138,17 +144,12 @@ test("reloading while the calendar is being created keeps it", async ({
 }) => {
   const sync = deferred();
   await gateSync(page, () => sync.promise);
-  const post = deferred();
-  await page.route("**/parties/main/*", async (route) => {
-    if (!isCreationPost(route.request())) return route.fallback();
-    await post.promise;
-    await route.continue();
-  });
+  const releasePost = await holdCreationPost(page);
   const name = randomName("reload");
   const { id } = await createCalendar(page, { name });
 
   await page.reload();
-  post.resolve();
+  releasePost();
   await expect.poll(() => serverEventName(request, id)).toBe(name);
   sync.resolve();
   await expect(page.getByRole("heading").first()).toHaveText(name);
@@ -208,12 +209,7 @@ test("a late or replayed creation POST doesn't revert later edits", async ({
   page,
   request,
 }) => {
-  const post = deferred();
-  await page.route("**/parties/main/*", async (route) => {
-    if (!isCreationPost(route.request())) return route.fallback();
-    await post.promise;
-    await route.continue();
-  });
+  const releasePost = await holdCreationPost(page);
   const { id } = await createCalendar(page, { name: randomName("late") });
 
   await using guestContext = await browser.newContext();
@@ -228,7 +224,7 @@ test("a late or replayed creation POST doesn't revert later edits", async ({
   });
 
   const response = page.waitForResponse((res) => isCreationPost(res.request()));
-  post.resolve();
+  releasePost();
   expect((await response).ok()).toBe(true);
   const replay = await request.post(`/parties/main/${id}`, {
     data: (await response).request().postDataBuffer(),
@@ -244,12 +240,7 @@ test("a guest who opens the link before the calendar lands gets it live", async 
   page,
 }) => {
   await gateSync(page, () => deferred().promise);
-  const post = deferred();
-  await page.route("**/parties/main/*", async (route) => {
-    if (!isCreationPost(route.request())) return route.fallback();
-    await post.promise;
-    await route.continue();
-  });
+  const releasePost = await holdCreationPost(page);
   const name = randomName("early guest");
   const { id } = await createCalendar(page, { name });
 
@@ -262,7 +253,7 @@ test("a guest who opens the link before the calendar lands gets it live", async 
   await synced;
   await expect(guest.getByRole("heading", { name })).toHaveCount(0);
 
-  post.resolve();
+  releasePost();
   await expect(guest.getByRole("heading").first()).toHaveText(name);
 });
 

@@ -445,6 +445,22 @@ test.for([
   ).toBeNull();
 });
 
+test("oversized creation POSTs are refused before reaching storage", async () => {
+  const id = "oversized-post-calendar";
+  const doc = new Y.Doc();
+  initializeCalendarMap(doc, event(id));
+  doc.getMap("names").set("alice", "a".repeat(MAX_UPDATE_BYTES));
+
+  const response = await (
+    await startCalendar(id)
+  ).fetch(`https://bear.fit/parties/main/${id}`, {
+    body: Y.encodeStateAsUpdate(doc),
+    method: "POST",
+  });
+  expect(response.status).toBe(413);
+  expect(await fetchHistory(id)).toEqual([]);
+});
+
 test("a calendar created through sync is registered", async () => {
   const id = "synced-calendar";
   const before = Date.now();
