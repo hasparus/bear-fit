@@ -17,18 +17,12 @@ import {
   initializeCalendarMap,
   yDocToJson,
 } from "../app/shared-data";
-import { appendHistory, createHistoryTable, readHistory } from "./history";
+import { History, MAX_UPDATE_BYTES } from "./history";
 import { migrateLegacyStorage } from "./legacyStorage";
-import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./rooms";
-
-/**
- * Past this many rows, the older half of the history is merged pairwise, so
- * old versions get coarser while recent edits stay individually restorable.
- */
-export const HISTORY_LIMIT = 500;
-
-/** Durable Object SQLite rows top out at 2 MB; stay well under it. */
-export const MAX_UPDATE_BYTES = 1024 * 1024;
+import {
+  OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
+  type RegisteredCalendar,
+} from "./rooms";
 
 /**
  * One Durable Object holds one calendar. Its Yjs document is persisted only as
@@ -36,46 +30,56 @@ export const MAX_UPDATE_BYTES = 1024 * 1024;
  * is rebuilt from the log on start.
  */
 export class EditorPartyServer extends YServer<Env> {
-  #historyLength = 0;
+  #history = new History(this.ctx.storage);
   #occupancyReport = Promise.resolve();
-  #registered = false;
-  /** `undefined` until an event is seen, `null` if it was already in storage. */
-  #calendarSeenAt: number | null | undefined;
+  /** Kept until the registry confirms it, so a retry sends the first sighting. */
+  #registration?: "done" | RegisteredCalendar;
 
   async onStart(): Promise<void> {
-    createHistoryTable(this.ctx.storage.sql);
     migrateLegacyStorage(this.ctx.storage);
     await super.onStart();
 
     this.document.on("update", (update: Uint8Array) => {
       try {
-        appendHistory(this.ctx.storage.sql, update);
+        this.#history.append(update);
       } catch (error) {
         console.error("failed to persist update, resetting", error);
         this.ctx.abort("failed to persist update");
         return;
       }
-      this.#historyLength += 1;
-      this.compactHistory();
       this.registerCalendar(Date.now());
     });
 
     this.registerCalendar(null);
   }
 
-  /** Refuses updates too large to store before Yjs applies them. */
+  /**
+   * Refuses messages too large to store before Yjs applies them, and drops
+   * pending structs (updates waiting on a missing dependency) once they grow
+   * that large, since they'd be stored as one update when unblocked.
+   */
   handleMessage(connection: Connection, message: WSMessage): void {
     if (typeof message !== "string" && message.byteLength > MAX_UPDATE_BYTES) {
       connection.close(1009, "update too large");
       return;
     }
     super.handleMessage(connection, message);
+
+    const { store } = this.document;
+    const pendingBytes =
+      (store.pendingStructs?.update.byteLength ?? 0) +
+      (store.pendingDs?.byteLength ?? 0);
+    if (pendingBytes > MAX_UPDATE_BYTES) {
+      store.pendingStructs = null;
+      store.pendingDs = null;
+      connection.close(1009, "pending updates too large");
+    }
   }
 
   async onLoad(): Promise<void> {
-    const history = readHistory(this.ctx.storage.sql);
-    for (const { update } of history) Y.applyUpdate(this.document, update);
-    this.#historyLength = history.length;
+    for (const { update } of this.#history.load()) {
+      Y.applyUpdate(this.document, update);
+    }
   }
 
   async onConnect(
@@ -122,7 +126,7 @@ export class EditorPartyServer extends YServer<Env> {
     if (request.method === "GET") {
       if (pathname === `/parties/main/${this.name}/history`) {
         const body = encodeHistoryUpdates(
-          readHistory(this.ctx.storage.sql).map(({ clock, update }) => ({
+          this.#history.rows().map(({ clock, update }) => ({
             clock: String(clock),
             value: update,
           })),
@@ -140,50 +144,20 @@ export class EditorPartyServer extends YServer<Env> {
     return Response.json({ message: "not found" }, { status: 404 });
   }
 
-  /** Merges the older half of the history pairwise once it's over the limit. */
-  private compactHistory() {
-    if (this.#historyLength <= HISTORY_LIMIT) return;
-
-    const { sql } = this.ctx.storage;
-    try {
-      this.#historyLength -= this.ctx.storage.transactionSync(() => {
-        const older = readHistory(sql, Math.floor(this.#historyLength / 2));
-        let merged = 0;
-        for (let i = 0; i + 1 < older.length; i += 2) {
-          const [first, second] = [older[i], older[i + 1]];
-          const data = Y.mergeUpdates([first.update, second.update]);
-          if (data.byteLength > MAX_UPDATE_BYTES) continue;
-          sql.exec(
-            "UPDATE history SET data = ? WHERE clock = ?",
-            data,
-            second.clock,
-          );
-          sql.exec("DELETE FROM history WHERE clock = ?", first.clock);
-          merged += 1;
-        }
-        return merged;
-      });
-    } catch (error) {
-      console.error("failed to compact history", error);
-    }
-  }
-
   /**
    * Records the calendar in the occupancy server's registry once this instance
    * sees an event: loaded from storage on start (creation time unknown, so
    * `null`) or arriving in an update, whether from the POST or a sync.
    */
   private registerCalendar(seenAt: number | null) {
-    if (this.#registered || !hasCalendarEvent(this.document)) return;
-    if (this.#calendarSeenAt === undefined) this.#calendarSeenAt = seenAt;
-    const createdAt = this.#calendarSeenAt;
-    this.#registered = true;
+    const pending = this.#registration;
+    if (pending === "done" || !hasCalendarEvent(this.document)) return;
+    const calendar = pending ?? { id: this.name, createdAt: seenAt };
+    this.#registration = "done";
     getServerByName(this.env.rooms, OCCUPANCY_SERVER_SINGLETON_ROOM_ID)
-      .then((registry) =>
-        registry.registerCalendar({ id: this.name, createdAt }),
-      )
+      .then((registry) => registry.registerCalendar(calendar))
       .catch((error) => {
-        this.#registered = false;
+        this.#registration = calendar;
         console.error("failed to register calendar", error);
       });
   }

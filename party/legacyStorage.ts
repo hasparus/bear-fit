@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 
-import { appendHistory, readHistory } from "./history";
+import { appendHistory, createHistoryTable, readHistory } from "./history";
 
 /**
  * Folds the earlier layout into `history`: a `documents (id, state)` snapshot
@@ -25,6 +25,7 @@ export function migrateLegacyStorage(storage: DurableObjectStorage) {
       .map((row) => row.name);
     if (legacyTables.length === 0) return;
 
+    createHistoryTable(sql);
     const doc = new Y.Doc();
     const history = readHistory(sql);
     for (const { update } of history) Y.applyUpdate(doc, update);
@@ -36,16 +37,18 @@ export function migrateLegacyStorage(storage: DurableObjectStorage) {
       legacyTables.includes(table)
         ? sql.exec<{ data: ArrayBuffer }>(query).toArray()
         : [];
-    const apply = (rows: { data: ArrayBuffer }[]) =>
-      rows.filter((row) => {
+    const apply = (rows: { data: ArrayBuffer }[]) => {
+      let applied = 0;
+      for (const row of rows) {
         try {
           Y.applyUpdate(doc, new Uint8Array(row.data));
-          return true;
+          applied += 1;
         } catch (error) {
           console.warn("skipping undecodable legacy row", error);
-          return false;
         }
-      }).length;
+      }
+      return applied;
+    };
 
     const log = read(
       "document_updates",

@@ -5,16 +5,13 @@ import { getServerByName } from "partyserver";
 import { expect, test, vi } from "vitest";
 import * as Y from "yjs";
 
+import type { EditorPartyServer } from "./editor.partyserver";
 import type { Env } from "./worker";
 
 import { decodeHistoryUpdates } from "../app/decodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
 import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
-import {
-  EditorPartyServer,
-  HISTORY_LIMIT,
-  MAX_UPDATE_BYTES,
-} from "./editor.partyserver";
+import { HISTORY_LIMIT, MAX_UPDATE_BYTES } from "./history";
 import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./rooms";
 
 declare global {
@@ -283,24 +280,54 @@ test("start fails when the log has a gap the snapshot can't fill", async () => {
   await expectStartToFail(id, "legacy data has gaps the snapshot can't fill");
 });
 
-test("oversized updates close the socket instead of reaching storage", async () => {
-  const id = "oversized-calendar";
+async function connect(id: string) {
   const stub = await startCalendar(id);
   const response = await stub.fetch(`https://bear.fit/parties/main/${id}`, {
     headers: { Upgrade: "websocket" },
   });
   const socket = response.webSocket!;
   socket.accept();
-  const closed = new Promise<number>((resolve) =>
+  const closeCode = new Promise<number>((resolve) =>
     socket.addEventListener("close", (event) => resolve(event.code)),
   );
+  return { closeCode, socket, stub };
+}
+
+test("oversized updates close the socket instead of reaching storage", async () => {
+  const id = "oversized-calendar";
+  const { closeCode, socket } = await connect(id);
 
   const doc = new Y.Doc();
   doc.getMap("names").set("alice", "a".repeat(MAX_UPDATE_BYTES));
   socket.send(syncUpdateMessage(Y.encodeStateAsUpdate(doc)));
 
-  expect(await closed).toBe(1009);
+  expect(await closeCode).toBe(1009);
   expect(await fetchHistory(id)).toEqual([]);
+});
+
+test("pending structs past the limit are dropped instead of stored once unblocked", async () => {
+  const id = "pending-flood-calendar";
+  const { closeCode, socket, stub } = await connect(id);
+
+  const source = new Y.Doc();
+  const names = source.getMap("names");
+  const [missing, ...orphans] = recordUpdates(source, () => {
+    names.set("first", "x");
+    names.set("a", "a".repeat(MAX_UPDATE_BYTES * 0.6));
+    names.set("b", "b".repeat(MAX_UPDATE_BYTES * 0.6));
+  });
+  for (const orphan of orphans) socket.send(syncUpdateMessage(orphan));
+
+  expect(await closeCode).toBe(1009);
+  const second = await connect(id);
+  second.socket.send(syncUpdateMessage(missing));
+  await vi.waitFor(async () => expect(await fetchHistory(id)).toHaveLength(1));
+  expect(
+    await runInDurableObject(stub, (instance: EditorPartyServer) => ({
+      names: instance.document.getMap("names").toJSON(),
+      pending: instance.document.store.pendingStructs,
+    })),
+  ).toEqual({ names: { first: "x" }, pending: null });
 });
 
 /** A y-protocols sync message (`messageSync`, `messageYjsUpdate`). */
