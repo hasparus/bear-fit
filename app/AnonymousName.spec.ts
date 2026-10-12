@@ -19,20 +19,22 @@ test("users without a name get a stable anonymous name instead of their id", asy
   await using bobContext = await browser.newContext();
   await using bob = await bobContext.newPage();
   await bob.goto(`/?id=${id}`);
-  await expect(bob.getByLabel("name")).not.toHaveAttribute(
+  const bobName = bob.getByLabel("name");
+  await expect(bobName).toHaveAttribute(
     "placeholder",
-    anonymous,
+    /^[A-Z][a-z]+ [A-Z][a-z]+$/,
   );
+  await expect(bobName).not.toHaveAttribute("placeholder", anonymous);
 
-  const aliceRow = bob.locator("dl div").filter({ hasText: /1 date$/ });
-  await expect(aliceRow).toContainText(anonymous);
+  const aliceTerm = bob.getByRole("term").filter({ hasText: "(creator)" });
+  await expect(aliceTerm).toHaveText(`${anonymous} (creator)`);
 
   await bob.getByRole("button", { name: `${nextMonthName} 7` }).hover();
-  await expect(bob.locator("li", { hasText: anonymous })).toBeVisible();
+  await expect(bob.getByRole("tooltip").getByText(anonymous)).toBeVisible();
 
   await aliceName.fill("Alice");
-  await expect(aliceRow).toContainText("Alice");
+  await expect(aliceTerm).toHaveText("Alice (creator)");
 
   await aliceName.fill("");
-  await expect(aliceRow).toContainText(anonymous);
+  await expect(aliceTerm).toHaveText(`${anonymous} (creator)`);
 });
