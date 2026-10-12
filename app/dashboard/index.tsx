@@ -53,7 +53,10 @@ function Dashboard() {
           (admin) =>
             admin && {
               ...admin,
-              calendars: [data.calendar, ...admin.calendars],
+              calendars:
+                data.calendar.createdAt === null
+                  ? [...admin.calendars, data.calendar]
+                  : [data.calendar, ...admin.calendars],
             },
         );
       } else {

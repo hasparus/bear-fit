@@ -310,11 +310,15 @@ test("pending structs past the limit are dropped instead of stored once unblocke
   const { closeCode, socket, stub } = await connect(id);
 
   const source = new Y.Doc();
-  const names = source.getMap("names");
+  const list = source.getArray<number>("list");
   const [missing, ...orphans] = recordUpdates(source, () => {
-    names.set("first", "x");
-    names.set("a", "a".repeat(MAX_UPDATE_BYTES * 0.6));
-    names.set("b", "b".repeat(MAX_UPDATE_BYTES * 0.6));
+    source.getMap("names").set("first", "x");
+    // Many small structs encode far smaller in V2, which Yjs keeps pending in.
+    for (let batch = 0; batch < 20; batch++) {
+      source.transact(() => {
+        for (let i = 0; i < 4000; i++) list.insert(0, [i]);
+      });
+    }
   });
   for (const orphan of orphans) socket.send(syncUpdateMessage(orphan));
 
@@ -324,10 +328,10 @@ test("pending structs past the limit are dropped instead of stored once unblocke
   await vi.waitFor(async () => expect(await fetchHistory(id)).toHaveLength(1));
   expect(
     await runInDurableObject(stub, (instance: EditorPartyServer) => ({
+      list: instance.document.getArray("list").length,
       names: instance.document.getMap("names").toJSON(),
-      pending: instance.document.store.pendingStructs,
     })),
-  ).toEqual({ names: { first: "x" }, pending: null });
+  ).toEqual({ list: 0, names: { first: "x" } });
 });
 
 /** A y-protocols sync message (`messageSync`, `messageYjsUpdate`). */

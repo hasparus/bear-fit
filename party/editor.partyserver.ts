@@ -56,7 +56,8 @@ export class EditorPartyServer extends YServer<Env> {
   /**
    * Refuses messages too large to store before Yjs applies them, and drops
    * pending structs (updates waiting on a missing dependency) once they grow
-   * that large, since they'd be stored as one update when unblocked.
+   * that large, since they'd be stored as one update when unblocked. Yjs keeps
+   * them in the V2 encoding, so they're measured as the V1 the log stores.
    */
   handleMessage(connection: Connection, message: WSMessage): void {
     if (typeof message !== "string" && message.byteLength > MAX_UPDATE_BYTES) {
@@ -66,9 +67,12 @@ export class EditorPartyServer extends YServer<Env> {
     super.handleMessage(connection, message);
 
     const { store } = this.document;
-    const pendingBytes =
-      (store.pendingStructs?.update.byteLength ?? 0) +
-      (store.pendingDs?.byteLength ?? 0);
+    const pending = [store.pendingStructs?.update, store.pendingDs];
+    const pendingBytes = pending.reduce(
+      (total, update) =>
+        total + (update ? Y.convertUpdateFormatV2ToV1(update).byteLength : 0),
+      0,
+    );
     if (pendingBytes > MAX_UPDATE_BYTES) {
       store.pendingStructs = null;
       store.pendingDs = null;
