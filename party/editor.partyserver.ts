@@ -106,7 +106,7 @@ export class EditorPartyServer extends YServer<Env> {
       if (update.byteLength > MAX_UPDATE_BYTES) {
         return Response.json({ error: "calendar too large" }, { status: 413 });
       }
-      if (!isSelfContained(update)) {
+      if (!isCalendarCreation(update)) {
         return Response.json({ error: "invalid update" }, { status: 400 });
       }
       Y.applyUpdate(this.document, update);
@@ -178,15 +178,17 @@ export class EditorPartyServer extends YServer<Env> {
 }
 
 /**
- * Whether the update decodes and depends on nothing it doesn't carry, so
- * applying it can't leave pending structs behind.
+ * Whether the update decodes into a calendar and depends on nothing it doesn't
+ * carry, so applying it can't leave pending structs behind.
  */
-function isSelfContained(update: Uint8Array) {
+function isCalendarCreation(update: Uint8Array) {
   const doc = new Y.Doc();
   try {
     Y.applyUpdate(doc, update);
   } catch {
     return false;
   }
-  return !doc.store.pendingStructs && !doc.store.pendingDs;
+  return (
+    !doc.store.pendingStructs && !doc.store.pendingDs && hasCalendarEvent(doc)
+  );
 }

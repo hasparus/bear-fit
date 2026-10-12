@@ -305,6 +305,7 @@ test("malformed creation POSTs are rejected and leave the calendar intact", asyn
 
   for (const data of [
     Buffer.alloc(0),
+    Buffer.from([0, 0]),
     Buffer.from("not a yjs update"),
     Buffer.from([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
     Buffer.from(JSON.stringify(before.event)),
