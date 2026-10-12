@@ -16,6 +16,6 @@ export async function postCalendar(
   });
 
   if (!res.ok) {
-    throw new Error(`creating calendar failed: ${res.status}`);
+    throw new Error(`HTTP ${res.status}`);
   }
 }

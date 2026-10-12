@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page, Request } from "@playwright/test";
 
 import { expect, test } from "../test";
-import { createCalendar } from "../test/utils/createCalendar";
+import { createCalendar, fillCreateForm } from "../test/utils/createCalendar";
 
 test.setTimeout(60_000);
 
@@ -72,9 +72,16 @@ test("the creation POST alone delivers a calendar the user left right away", asy
   request,
 }) => {
   await gateSync(page, () => deferred().promise);
+  const post = deferred();
+  await page.route("**/parties/main/*", async (route) => {
+    if (!isCreationPost(route.request())) return route.fallback();
+    await post.promise;
+    await route.continue();
+  });
   const name = randomName("left right away");
   const { id } = await createCalendar(page, { name });
   await page.goto("about:blank");
+  post.resolve();
 
   await expect.poll(() => serverEventName(request, id)).toBe(name);
 });
@@ -110,14 +117,7 @@ test("double-clicking Create makes a single calendar", async ({
   page.on("request", (req) => isCreationPost(req) && posts.push(req));
   await page.goto("/");
   const name = randomName("double submit");
-  await page.getByLabel("Name your event").fill(name);
-  await page.getByRole("button", { name: "next month" }).click();
-  const nextMonthName = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-  ).toLocaleDateString("en-US", { month: "long" });
-  await page.getByRole("button", { name: `${nextMonthName} 6th` }).click();
-  await page.getByRole("button", { name: `${nextMonthName} 12th` }).click();
+  await fillCreateForm(page, { name });
   await page.getByRole("button", { name: "Create Calendar" }).dblclick();
 
   await expect(page.getByRole("heading").first()).toHaveText(name);
@@ -134,16 +134,19 @@ test("reloading while the calendar is being created keeps it", async ({
 }) => {
   let sync = deferred().promise;
   await gateSync(page, () => sync);
+  const post = deferred();
   await page.route("**/parties/main/*", async (route) => {
     if (!isCreationPost(route.request())) return route.fallback();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await post.promise;
     await route.continue();
   });
   const name = randomName("reload");
   const { id } = await createCalendar(page, { name });
 
   sync = Promise.resolve();
-  await page.reload();
+  const reload = page.reload();
+  post.resolve();
+  await reload;
   await expect(page.getByRole("heading").first()).toHaveText(name);
   expect(await serverEventName(request, id)).toBe(name);
 });
@@ -216,7 +219,10 @@ test("a late or replayed creation POST doesn't revert later edits", async ({
 
   const imported = randomName("imported");
   await importCalendarJson(page, imported);
-  await expect(guest.getByRole("heading").first()).toHaveText(imported);
+  // An import reaches other clients as several updates spread over seconds.
+  await expect(guest.getByRole("heading").first()).toHaveText(imported, {
+    timeout: 15_000,
+  });
 
   const response = page.waitForResponse((res) => isCreationPost(res.request()));
   post.resolve();
@@ -271,10 +277,7 @@ test("a calendar created after going back starts from a clean doc", async ({
   const secondSync = deferred();
   sync = secondSync.promise;
   const second = randomName("second");
-  await page.getByLabel("Name your event").fill(second);
-  await page.getByRole("button", { name: "next month" }).click();
-  await page.getByRole("button", { name: `${nextMonthName} 6th` }).click();
-  await page.getByRole("button", { name: `${nextMonthName} 12th` }).click();
+  await fillCreateForm(page, { name: second });
   const creation = page.waitForRequest(isCreationPost);
   await page.getByRole("button", { name: "Create Calendar" }).click();
   const secondId = new URL((await creation).url()).pathname.split("/").pop()!;

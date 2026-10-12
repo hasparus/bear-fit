@@ -8,20 +8,21 @@ function ordinal(day: number) {
   return `${day}${suffix}`;
 }
 
-/**
- * Creates a calendar in next month and lands on its page. The canonical helper —
- * specs that need different dates or assertions pass options instead of
- * copy-pasting the flow.
- */
-export async function createCalendar(
+interface CalendarFormOptions {
+  endDay?: number;
+  name?: string;
+  startDay?: number;
+}
+
+/** Fills the create form with a range in next month, without submitting it. */
+export async function fillCreateForm(
   page: Page,
   {
     endDay = 12,
     name = "test calendar",
     startDay = 6,
-  }: { endDay?: number; name?: string; startDay?: number } = {},
+  }: CalendarFormOptions = {},
 ) {
-  await page.goto("/");
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
 
   await page.getByLabel("Name your event").fill(name);
@@ -43,6 +44,21 @@ export async function createCalendar(
   await page
     .getByRole("button", { name: `${nextMonthName} ${ordinal(endDay)}` })
     .click();
+
+  return { nextMonthName };
+}
+
+/**
+ * Creates a calendar in next month and lands on its page. The canonical helper —
+ * specs that need different dates or assertions pass options instead of
+ * copy-pasting the flow.
+ */
+export async function createCalendar(
+  page: Page,
+  options: CalendarFormOptions = {},
+) {
+  await page.goto("/");
+  const { nextMonthName } = await fillCreateForm(page, options);
   await page.getByText("Create Calendar").click();
 
   await expect(page).toHaveURL(/\?id=/);
