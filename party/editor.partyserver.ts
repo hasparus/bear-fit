@@ -10,7 +10,11 @@ import * as Y from "yjs";
 import type { Env } from "./worker";
 
 import { encodeHistoryUpdates } from "../app/encodeHistoryUpdates";
-import { hasCalendarEvent, yDocToJson } from "../app/shared-data";
+import {
+  getCalendarMap,
+  hasCalendarEvent,
+  yDocToJson,
+} from "../app/shared-data";
 import { History, MAX_UPDATE_BYTES } from "./history";
 import { migrateLegacyStorage } from "./legacyStorage";
 import {
@@ -106,7 +110,7 @@ export class EditorPartyServer extends YServer<Env> {
       if (update.byteLength > MAX_UPDATE_BYTES) {
         return Response.json({ error: "calendar too large" }, { status: 413 });
       }
-      if (!isCalendarCreation(update)) {
+      if (!isCalendarCreation(update, this.name)) {
         return Response.json({ error: "invalid update" }, { status: 400 });
       }
       Y.applyUpdate(this.document, update);
@@ -178,10 +182,10 @@ export class EditorPartyServer extends YServer<Env> {
 }
 
 /**
- * Whether the update decodes into a calendar and depends on nothing it doesn't
- * carry, so applying it can't leave pending structs behind.
+ * Whether the update decodes into the calendar `id` and depends on nothing it
+ * doesn't carry, so applying it can't leave pending structs behind.
  */
-function isCalendarCreation(update: Uint8Array) {
+function isCalendarCreation(update: Uint8Array, id: string) {
   const doc = new Y.Doc();
   try {
     Y.applyUpdate(doc, update);
@@ -189,6 +193,8 @@ function isCalendarCreation(update: Uint8Array) {
     return false;
   }
   return (
-    !doc.store.pendingStructs && !doc.store.pendingDs && hasCalendarEvent(doc)
+    !doc.store.pendingStructs &&
+    !doc.store.pendingDs &&
+    getCalendarMap(doc).get("id") === id
   );
 }

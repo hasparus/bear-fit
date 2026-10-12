@@ -3,7 +3,8 @@ import { serverUrl } from "./serverUrl";
 /**
  * Sends the Yjs update that created the calendar. The server applies the same
  * update the WebSocket sync carries, so whichever lands second is a no-op, and
- * `keepalive` lets it finish if the user leaves the page right away.
+ * `keepalive` lets it finish if the user leaves the page right away. It has no
+ * Content-Type, so cross-origin it needs no CORS preflight.
  */
 export async function postCalendar(
   calendarId: string,

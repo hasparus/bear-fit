@@ -398,17 +398,40 @@ test("a POSTed calendar is stored once and survives a restart", async () => {
   expect(calendar).toEqual(yDocToJson(created));
 });
 
-test("POSTed updates missing their dependencies are rejected", async () => {
-  const id = "dependent-post-calendar";
-  const source = new Y.Doc();
-  const [, dependent] = recordUpdates(source, () => {
-    initializeCalendarMap(source, event(id));
-    source.getMap("names").set("alice", "Alice");
-  });
+function afterMissingUpdate(edit: (names: Y.Map<string>) => void) {
+  const doc = new Y.Doc();
+  const names = doc.getMap<string>("names");
+  names.set("alice", "Alice");
+  const [update] = recordUpdates(doc, () => edit(names));
+  return update;
+}
 
+test.for([
+  {
+    case: "depend on missing structs",
+    body: (id: string) =>
+      Y.mergeUpdates([
+        creationUpdate(id),
+        afterMissingUpdate((names) => names.set("bob", "Bob")),
+      ]),
+  },
+  {
+    case: "depend on missing deletes",
+    body: (id: string) =>
+      Y.mergeUpdates([
+        creationUpdate(id),
+        afterMissingUpdate((names) => names.delete("alice")),
+      ]),
+  },
+  {
+    body: () => creationUpdate("another-calendar"),
+    case: "create another calendar",
+  },
+])("creation POSTs that $case are rejected", async ({ body, case: name }) => {
+  const id = `rejected-post-${name.replaceAll(" ", "-")}`;
   const stub = await startCalendar(id);
   const response = await stub.fetch(`https://bear.fit/parties/main/${id}`, {
-    body: dependent,
+    body: body(id),
     method: "POST",
   });
   expect(response.status).toBe(400);
