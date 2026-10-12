@@ -3,6 +3,7 @@ import { unsafeKeys } from "unsafe-keys";
 
 import type { IsoDate, UserId } from "../schemas";
 
+import { displayName } from "../displayName";
 import { cn } from "./cn";
 
 export function UserAvailabilitySummary({
@@ -44,7 +45,7 @@ export function UserAvailabilitySummary({
             isCurrentUser={user === userId}
             isSelected={selectedUsers[user as UserId]}
             key={user}
-            name={names[user as UserId] ?? user}
+            name={displayName(names, user as UserId)}
             onClick={() => onSelect?.(user as UserId)}
             onMouseEnter={() => onHover(user as UserId)}
           />
@@ -57,7 +58,7 @@ export function UserAvailabilitySummary({
           isCurrentUser={true}
           isSelected={selectedUsers[userId as UserId]}
           key={userId}
-          name={names[userId as UserId] ?? userId}
+          name={displayName(names, userId as UserId)}
           onMouseEnter={() => onHover(userId as UserId)}
         />
       )}

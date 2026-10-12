@@ -12,6 +12,7 @@ import React, {
 import { useY } from "react-yjs";
 import { type Doc } from "yjs";
 
+import { anonymousName, displayName } from "../displayName";
 import { getUserId } from "../getUserId";
 import {
   type AvailabilitySet,
@@ -296,6 +297,7 @@ export function CalendarDetails({
                   id="name"
                   type="text"
                   className="w-full border pt-2 pr-2 pb-2 pl-[5px] rounded-sm"
+                  placeholder={userId ? anonymousName(userId) : undefined}
                   value={userName || ""}
                   onChange={(e) => {
                     if (!userId) {
@@ -564,7 +566,7 @@ function GridCellTooltip({
       {users && (
         <ul className="flex flex-col">
           {users.map((userId) => (
-            <li key={userId}>{names[userId] || userId}</li>
+            <li key={userId}>{displayName(names, userId)}</li>
           ))}
         </ul>
       )}
