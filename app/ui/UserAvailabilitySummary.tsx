@@ -21,11 +21,11 @@ export function UserAvailabilitySummary({
   onHover: (userId: UserId | null) => void;
   onSelect: (userId: UserId | null) => void;
   selectedUsers: Readonly<Record<UserId, boolean>>;
-  userId: UserId | null;
+  userId: UserId;
 }) {
   const userIds = unsafeKeys(availabilityForUsers);
 
-  const currentUserDidNotSelectYet = !userId || !availabilityForUsers[userId];
+  const currentUserDidNotSelectYet = !availabilityForUsers[userId];
   const allUsersCount = userIds.length + (currentUserDidNotSelectYet ? 1 : 0);
 
   return (
@@ -56,10 +56,10 @@ export function UserAvailabilitySummary({
           dates={[]}
           isCreator={creatorId === userId}
           isCurrentUser={true}
-          isSelected={selectedUsers[userId as UserId]}
+          isSelected={selectedUsers[userId]}
           key={userId}
-          name={displayName(names, userId as UserId)}
-          onMouseEnter={() => onHover(userId as UserId)}
+          name={displayName(names, userId)}
+          onMouseEnter={() => onHover(userId)}
         />
       )}
     </dl>

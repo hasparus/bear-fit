@@ -297,7 +297,7 @@ export function CalendarDetails({
                   id="name"
                   type="text"
                   className="w-full border pt-2 pr-2 pb-2 pl-[5px] rounded-sm"
-                  placeholder={userId ? anonymousName(userId) : undefined}
+                  placeholder={anonymousName(userId)}
                   value={userName || ""}
                   onChange={(e) => {
                     if (!userId) {
