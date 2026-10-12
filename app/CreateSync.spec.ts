@@ -11,6 +11,10 @@ const randomName = (prefix: string) =>
 const isCreationPost = (request: Request) =>
   request.method() === "POST" && request.url().includes("/parties/main/");
 
+/** The server's reply to a client's sync step 1, carrying its whole state. */
+const isSyncStep2 = ({ payload }: { payload: Buffer | string }) =>
+  typeof payload !== "string" && payload[0] === 0 && payload[1] === 1;
+
 async function serverDoc(request: APIRequestContext, id: string) {
   const res = await request.get(`/parties/main/${id}`);
   return (await res.json()) as {
@@ -132,8 +136,8 @@ test("reloading while the calendar is being created keeps it", async ({
   page,
   request,
 }) => {
-  let sync = deferred().promise;
-  await gateSync(page, () => sync);
+  const sync = deferred();
+  await gateSync(page, () => sync.promise);
   const post = deferred();
   await page.route("**/parties/main/*", async (route) => {
     if (!isCreationPost(route.request())) return route.fallback();
@@ -143,12 +147,11 @@ test("reloading while the calendar is being created keeps it", async ({
   const name = randomName("reload");
   const { id } = await createCalendar(page, { name });
 
-  sync = Promise.resolve();
-  const reload = page.reload();
+  await page.reload();
   post.resolve();
-  await reload;
+  await expect.poll(() => serverEventName(request, id)).toBe(name);
+  sync.resolve();
   await expect(page.getByRole("heading").first()).toHaveText(name);
-  expect(await serverEventName(request, id)).toBe(name);
 });
 
 test("two tabs of the creator edit the same calendar and converge", async ({
@@ -252,8 +255,12 @@ test("a guest who opens the link before the calendar lands gets it live", async 
 
   await using guestContext = await browser.newContext();
   const guest = await guestContext.newPage();
+  const synced = guest
+    .waitForEvent("websocket", (ws) => ws.url().includes(id))
+    .then((ws) => ws.waitForEvent("framereceived", isSyncStep2));
   await guest.goto(`/?id=${id}`);
-  await expect(guest.getByText("Dates", { exact: true })).toBeVisible();
+  await synced;
+  await expect(guest.getByRole("heading", { name })).toHaveCount(0);
 
   post.resolve();
   await expect(guest.getByRole("heading").first()).toHaveText(name);
