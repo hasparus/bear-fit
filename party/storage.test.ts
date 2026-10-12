@@ -30,6 +30,12 @@ const event = (id: string) =>
     startDate: "2026-11-06",
   });
 
+function creationUpdate(id: string) {
+  const doc = new Y.Doc();
+  initializeCalendarMap(doc, event(id));
+  return Y.encodeStateAsUpdate(doc);
+}
+
 function startCalendar(id: string) {
   return getServerByName(env.main, id);
 }
@@ -358,7 +364,7 @@ test("POST registers the calendar with its creation time", async () => {
 
   const stub = await startCalendar(id);
   const response = await stub.fetch(`https://bear.fit/parties/main/${id}`, {
-    body: JSON.stringify(event(id)),
+    body: creationUpdate(id),
     method: "POST",
   });
   expect(response.status).toBe(200);
@@ -366,6 +372,54 @@ test("POST registers the calendar with its creation time", async () => {
   await vi.waitFor(async () =>
     expect((await registeredAt(id)) ?? 0).toBeGreaterThanOrEqual(before),
   );
+});
+
+test("a POSTed calendar is stored once and survives a restart", async () => {
+  const id = "posted-calendar";
+  const created = new Y.Doc();
+  initializeCalendarMap(created, event(id));
+  const update = Y.encodeStateAsUpdate(created);
+
+  for (let i = 0; i < 2; i++) {
+    const response = await (
+      await startCalendar(id)
+    ).fetch(`https://bear.fit/parties/main/${id}`, {
+      body: update,
+      method: "POST",
+    });
+    expect(response.status).toBe(200);
+  }
+  expect(await fetchHistory(id)).toHaveLength(1);
+
+  await abortAllDurableObjects();
+  const calendar = await (
+    await (await startCalendar(id)).fetch(`https://bear.fit/parties/main/${id}`)
+  ).json();
+  expect(calendar).toEqual(yDocToJson(created));
+});
+
+test("POSTed updates missing their dependencies are rejected", async () => {
+  const id = "dependent-post-calendar";
+  const source = new Y.Doc();
+  const [, dependent] = recordUpdates(source, () => {
+    initializeCalendarMap(source, event(id));
+    source.getMap("names").set("alice", "Alice");
+  });
+
+  const stub = await startCalendar(id);
+  const response = await stub.fetch(`https://bear.fit/parties/main/${id}`, {
+    body: dependent,
+    method: "POST",
+  });
+  expect(response.status).toBe(400);
+  expect(await fetchHistory(id)).toEqual([]);
+  expect(
+    await runInDurableObject(
+      stub,
+      ({ document: { store } }: EditorPartyServer) =>
+        store.pendingStructs ?? store.pendingDs,
+    ),
+  ).toBeNull();
 });
 
 test("a calendar created through sync is registered", async () => {
@@ -388,7 +442,7 @@ test("history is compacted past its limit and keeps recent edits granular", asyn
 
   const stub = await startCalendar(id);
   await stub.fetch(`https://bear.fit/parties/main/${id}`, {
-    body: JSON.stringify(event(id)),
+    body: creationUpdate(id),
     method: "POST",
   });
   const expected = await runInDurableObject(

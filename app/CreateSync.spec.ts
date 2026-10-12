@@ -79,20 +79,105 @@ test("the creation POST alone delivers a calendar the user left right away", asy
   await expect.poll(() => serverEventName(request, id)).toBe(name);
 });
 
-test("sync delivers the calendar when the creation POST fails", async ({
-  browser,
+for (const failure of ["network error", "server error"] as const) {
+  test(`sync delivers the calendar when the creation POST hits a ${failure}`, async ({
+    browser,
+    page,
+    request,
+  }) => {
+    await page.route("**/parties/main/*", (route) => {
+      if (!isCreationPost(route.request())) return route.fallback();
+      return failure === "network error"
+        ? route.abort()
+        : route.fulfill({ status: 500 });
+    });
+    const name = randomName("post fails");
+    const { id } = await createCalendar(page, { name });
+
+    await using guestContext = await browser.newContext();
+    const guest = await guestContext.newPage();
+    await guest.goto(`/?id=${id}`);
+    await expect(guest.getByRole("heading").first()).toHaveText(name);
+    expect(await serverEventName(request, id)).toBe(name);
+  });
+}
+
+test("double-clicking Create makes a single calendar", async ({
   page,
+  request,
 }) => {
-  await page.route("**/parties/main/*", (route) =>
-    isCreationPost(route.request()) ? route.abort() : route.fallback(),
-  );
-  const name = randomName("post fails");
+  const posts: Request[] = [];
+  page.on("request", (req) => isCreationPost(req) && posts.push(req));
+  await page.goto("/");
+  const name = randomName("double submit");
+  await page.getByLabel("Name your event").fill(name);
+  await page.getByRole("button", { name: "next month" }).click();
+  const nextMonthName = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth() + 1,
+  ).toLocaleDateString("en-US", { month: "long" });
+  await page.getByRole("button", { name: `${nextMonthName} 6th` }).click();
+  await page.getByRole("button", { name: `${nextMonthName} 12th` }).click();
+  await page.getByRole("button", { name: "Create Calendar" }).dblclick();
+
+  await expect(page.getByRole("heading").first()).toHaveText(name);
+  const id = new URL(page.url()).searchParams.get("id")!;
+  await expect.poll(() => serverEventName(request, id)).toBe(name);
+  expect(posts.map((req) => req.url())).toEqual([
+    expect.stringContaining(`/parties/main/${id}`),
+  ]);
+});
+
+test("reloading while the calendar is being created keeps it", async ({
+  page,
+  request,
+}) => {
+  let sync = deferred().promise;
+  await gateSync(page, () => sync);
+  await page.route("**/parties/main/*", async (route) => {
+    if (!isCreationPost(route.request())) return route.fallback();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await route.continue();
+  });
+  const name = randomName("reload");
   const { id } = await createCalendar(page, { name });
 
-  await using guestContext = await browser.newContext();
-  const guest = await guestContext.newPage();
-  await guest.goto(`/?id=${id}`);
-  await expect(guest.getByRole("heading").first()).toHaveText(name);
+  sync = Promise.resolve();
+  await page.reload();
+  await expect(page.getByRole("heading").first()).toHaveText(name);
+  expect(await serverEventName(request, id)).toBe(name);
+});
+
+test("two tabs of the creator edit the same calendar and converge", async ({
+  context,
+  page,
+  request,
+}) => {
+  const name = randomName("two tabs");
+  const { id, nextMonthName } = await createCalendar(page, { name });
+  const second = await context.newPage();
+  await second.goto(`/?id=${id}`);
+  await expect(second.getByRole("heading").first()).toHaveText(name);
+
+  await page.getByLabel("Your name").fill("Alice");
+  await page.getByRole("button", { name: `${nextMonthName} 7` }).click();
+  await second.getByRole("button", { name: `${nextMonthName} 8` }).click();
+
+  for (const tab of [page, second]) {
+    await expect(
+      tab.locator("dl div").filter({ hasText: /Alice/ }).first(),
+    ).toContainText("2 dates");
+  }
+  await expect
+    .poll(async () => {
+      const { availability, event, names } = await serverDoc(request, id);
+      return {
+        dates: Object.keys(availability).length,
+        name: event.name,
+        names: Object.values(names),
+      };
+    })
+    .toEqual({ dates: 2, name, names: ["Alice"] });
 });
 
 test("edits made before the first sync aren't reverted by the creation", async ({

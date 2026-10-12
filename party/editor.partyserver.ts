@@ -101,7 +101,7 @@ export class EditorPartyServer extends YServer<Env> {
   async onRequest(request: Request): Promise<Response> {
     const { pathname } = new URL(request.url);
 
-    if (request.method === "POST" && pathname === `/parties/main/${this.name}`) {
+    if (request.method === "POST") {
       const update = new Uint8Array(await request.arrayBuffer());
       if (update.byteLength > MAX_UPDATE_BYTES) {
         return Response.json({ error: "calendar too large" }, { status: 413 });

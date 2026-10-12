@@ -2,8 +2,11 @@ import type { Page } from "@playwright/test";
 
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { Doc, encodeStateAsUpdate } from "yjs";
 
 import { expect, test } from "../test";
+import { CalendarEvent } from "./schemas";
+import { initializeCalendarMap } from "./shared-data";
 
 test.setTimeout(45_000);
 
@@ -76,14 +79,19 @@ test("dashboard only shows per-room details after signing its challenge", async 
   const roomB = `room-b-${Date.now()}`;
   const calendarId = `registered-${Date.now()}`;
 
-  const created = await page.request.post(`/parties/main/${calendarId}`, {
-    data: {
+  const calendar = new Doc();
+  initializeCalendarMap(
+    calendar,
+    CalendarEvent.assert({
       id: calendarId,
       creator: "dashboard-spec",
       endDate: "2030-01-12",
       name: "Registered calendar",
       startDate: "2030-01-06",
-    },
+    }),
+  );
+  const created = await page.request.post(`/parties/main/${calendarId}`, {
+    data: Buffer.from(encodeStateAsUpdate(calendar)),
   });
   expect(created.ok()).toBe(true);
 
