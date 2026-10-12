@@ -1,21 +1,22 @@
-import type { CalendarEvent } from "../schemas";
-
 import { serverUrl } from "./serverUrl";
 
+/**
+ * Sends the Yjs update that created the calendar. The server applies the same
+ * update the WebSocket sync carries, so whichever lands second is a no-op, and
+ * `keepalive` lets it finish if the user leaves the page right away. It has no
+ * Content-Type, so cross-origin it needs no CORS preflight.
+ */
 export async function postCalendar(
-  calendarEvent: CalendarEvent,
-): Promise<unknown> {
-  const res = await fetch(`${serverUrl}/parties/main/${calendarEvent.id}`, {
-    body: JSON.stringify(calendarEvent),
+  calendarId: string,
+  update: Uint8Array,
+): Promise<void> {
+  const res = await fetch(`${serverUrl}/parties/main/${calendarId}`, {
+    body: update,
+    keepalive: true,
     method: "POST",
   });
 
-  if (res.status === 404) {
-    throw new Error("server not found");
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
   }
-
-  const json = await res.json();
-
-  // TODO: If the status was not 200, we should show an error message and retry.
-  return json;
 }
