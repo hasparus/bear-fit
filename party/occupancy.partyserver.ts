@@ -1,94 +1,66 @@
-import { type } from "arktype";
 import { type Connection, Server } from "partyserver";
+
+import type { Env } from "./worker";
 
 import {
   AUTH_CHALLENGE_PREFIX,
-  AUTH_CHALLENGE_TTL,
-  AUTHORIZATION_EXPIRATION_TIME,
-  base64ToArrayBuffer,
   ClientMessage,
   makePublicRoomInfo,
+  RegisteredCalendar,
   type Rooms,
   type ServerMessage,
-  textEncoder,
   UpdateFromRoom,
 } from "./rooms";
 
-interface OccupancyEnv {
-  PUBLIC_KEY_B64: string;
-}
+const AUTH_CHALLENGE_TTL = 1000 * 60 * 5;
+const AUTHORIZATION_TTL = 1000 * 60 * 60 * 24;
 
-interface ChallengeState {
-  challenge: string;
-  issuedAt: number;
-}
+type DashboardState =
+  | { authorizedUntil: number }
+  | { challenge: string; issuedAt: number };
+type DashboardConnection = Connection<DashboardState>;
 
-export class OccupancyPartyServer extends Server<OccupancyEnv> {
-  constructor(...args: ConstructorParameters<typeof Server<OccupancyEnv>>) {
-    super(...args);
-    const [, env] = args;
-    this.env = env;
-    this.publicKeyPromise = this.importPublicKey(env.PUBLIC_KEY_B64);
-  }
-
-  protected override readonly env: OccupancyEnv;
-
+export class OccupancyPartyServer extends Server<Env> {
   private rooms: Rooms = {};
-  private readonly authorizedConnections = new Map<string, number>();
-  private readonly publicKeyPromise: Promise<CryptoKey>;
 
   async onStart(): Promise<void> {
-    await this.loadFromStorage();
+    this.ctx.storage.sql.exec(
+      `CREATE TABLE IF NOT EXISTS calendars (
+        id TEXT PRIMARY KEY,
+        created_at INTEGER
+      )`,
+    );
+    const stored = await this.ctx.storage.get<string>("rooms");
+    if (stored) this.rooms = JSON.parse(stored);
   }
 
-  async onConnect(connection: Connection): Promise<void> {
+  async onConnect(connection: DashboardConnection): Promise<void> {
     send(connection, { type: "public", info: makePublicRoomInfo(this.rooms) });
     this.issueChallenge(connection);
   }
 
-  async onClose(
-    connection: Connection,
-    code: number,
-    reason: string,
-    wasClean: boolean,
-  ): Promise<void> {
-    await super.onClose(connection, code, reason, wasClean);
-    this.authorizedConnections.delete(connection.id);
-  }
-
   async onMessage(
-    connection: Connection,
+    connection: DashboardConnection,
     message: ArrayBuffer | string,
   ): Promise<void> {
     if (typeof message !== "string") {
       throw new Error("invalid message");
     }
 
-    const parsed = ClientMessage.assert(JSON.parse(message));
+    const { payload } = ClientMessage.assert(JSON.parse(message));
 
-    if (parsed.type === "auth") {
-      const state = connection.state as ChallengeState | null;
-      this.issueChallenge(connection);
+    const attempt = connection.state;
+    this.issueChallenge(connection);
 
-      if (!state || Date.now() - state.issuedAt > AUTH_CHALLENGE_TTL) {
-        return;
-      }
-
-      try {
-        const verified = await this.verifySignature(
-          parsed.payload.signature,
-          state.challenge,
-        );
-        if (verified) {
-          this.authorizeConnection(connection);
-        }
-      } catch (error) {
-        console.error("dashboard auth verification failed", error);
-      }
-      return;
+    if (
+      attempt &&
+      "challenge" in attempt &&
+      Date.now() - attempt.issuedAt <= AUTH_CHALLENGE_TTL &&
+      (await this.verifySignature(payload.signature, attempt.challenge))
+    ) {
+      connection.setState({ authorizedUntil: Date.now() + AUTHORIZATION_TTL });
+      send(connection, this.adminMessage());
     }
-
-    throw new Error("invalid message");
   }
 
   async onRequest(request: Request): Promise<Response> {
@@ -100,119 +72,83 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
   }
 
   async updateRoomCount(update: UpdateFromRoom): Promise<void> {
-    const validated = UpdateFromRoom(update);
-    if (validated instanceof type.errors) {
-      throw new Error(validated.summary);
-    }
+    const { count, room } = UpdateFromRoom.assert(update);
 
-    if (validated.count === 0) {
-      Reflect.deleteProperty(this.rooms, validated.room);
+    if (count === 0) {
+      Reflect.deleteProperty(this.rooms, room);
     } else {
-      this.rooms[validated.room] = validated.count;
+      this.rooms[room] = count;
     }
 
-    await this.saveToStorage();
+    await this.ctx.storage.put("rooms", JSON.stringify(this.rooms));
 
-    const publicInfo: ServerMessage = {
-      type: "public",
-      info: makePublicRoomInfo(this.rooms),
-    };
-    this.broadcast(JSON.stringify(publicInfo));
-    this.notifyAuthorizedConnections();
-  }
-
-  private issueChallenge(connection: Connection) {
-    const state: ChallengeState = {
-      challenge: crypto.randomUUID(),
-      issuedAt: Date.now(),
-    };
-    connection.setState(state);
-    send(connection, { type: "challenge", challenge: state.challenge });
-  }
-
-  private async loadFromStorage() {
-    try {
-      const stored = await this.ctx.storage.get<string>("rooms");
-      if (stored) {
-        this.rooms = { ...this.rooms, ...JSON.parse(stored) };
-      }
-    } catch (error) {
-      console.error("failed to load rooms from storage", error);
-    }
-  }
-
-  private async saveToStorage() {
-    try {
-      await this.ctx.storage.put("rooms", JSON.stringify(this.rooms));
-    } catch (error) {
-      console.error("failed to persist rooms", error);
-    }
-  }
-
-  private async importPublicKey(value: string | undefined): Promise<CryptoKey> {
-    if (!value) {
-      throw new Error(
-        "PUBLIC_KEY_B64 environment variable must be set to an Ed25519 public key.",
-      );
-    }
-
-    return crypto.subtle.importKey(
-      "raw",
-      base64ToArrayBuffer(value),
-      "Ed25519",
-      false,
-      ["verify"],
+    this.broadcast(
+      JSON.stringify({
+        type: "public",
+        info: makePublicRoomInfo(this.rooms),
+      } satisfies ServerMessage),
     );
+    this.notifyAdmins({ type: "rooms", rooms: this.rooms });
   }
 
-  private async verifySignature(
-    signatureB64: string,
-    challenge: string,
-  ): Promise<boolean> {
+  async registerCalendar(calendar: RegisteredCalendar): Promise<void> {
+    const { id, createdAt } = RegisteredCalendar.assert(calendar);
+    const { rowsWritten } = this.ctx.storage.sql.exec(
+      "INSERT OR IGNORE INTO calendars (id, created_at) VALUES (?, ?)",
+      id,
+      createdAt,
+    );
+    if (rowsWritten > 0) {
+      this.notifyAdmins({ type: "calendar", calendar: { id, createdAt } });
+    }
+  }
+
+  private issueChallenge(connection: DashboardConnection) {
+    const challenge = crypto.randomUUID();
+    connection.setState({ challenge, issuedAt: Date.now() });
+    send(connection, { type: "challenge", challenge });
+  }
+
+  private async verifySignature(signature: string, challenge: string) {
     try {
-      const encoded = textEncoder.encode(AUTH_CHALLENGE_PREFIX + challenge);
-      const signature = base64ToArrayBuffer(signatureB64);
-      const publicKey = await this.publicKeyPromise;
-      return crypto.subtle.verify(
-        { name: "Ed25519" },
+      const publicKey = await crypto.subtle.importKey(
+        "raw",
+        base64ToBytes(this.env.PUBLIC_KEY_B64),
+        "Ed25519",
+        false,
+        ["verify"],
+      );
+      return await crypto.subtle.verify(
+        "Ed25519",
         publicKey,
-        signature,
-        encoded,
+        base64ToBytes(signature),
+        new TextEncoder().encode(AUTH_CHALLENGE_PREFIX + challenge),
       );
     } catch (error) {
-      console.error("failed to verify signature", error);
+      console.error("dashboard auth verification failed", error);
       return false;
     }
   }
 
-  private authorizeConnection(connection: Connection) {
-    send(connection, { type: "rooms", rooms: this.rooms });
-    this.authorizedConnections.set(
-      connection.id,
-      Date.now() + AUTHORIZATION_EXPIRATION_TIME,
-    );
+  private adminMessage(): ServerMessage {
+    const calendars = this.ctx.storage.sql
+      .exec<{ id: string; createdAt: number | null }>(
+        `SELECT id, created_at AS createdAt FROM calendars
+         ORDER BY created_at DESC NULLS LAST, id`,
+      )
+      .toArray();
+    return { type: "admin", calendars, rooms: this.rooms };
   }
 
-  private notifyAuthorizedConnections() {
-    const payload: ServerMessage = { type: "rooms", rooms: this.rooms };
-    const now = Date.now();
+  private notifyAdmins(message: ServerMessage) {
+    for (const connection of this.getConnections<DashboardState>()) {
+      const { state } = connection;
+      if (!state || !("authorizedUntil" in state)) continue;
 
-    for (const [connectionId, expiresAt] of this.authorizedConnections) {
-      if (expiresAt < now) {
-        this.authorizedConnections.delete(connectionId);
-        continue;
-      }
-
-      const target = this.getConnection(connectionId);
-      if (target) {
-        try {
-          send(target, payload);
-        } catch (error) {
-          console.error(
-            "failed to send update to authorized connection",
-            error,
-          );
-        }
+      if (state.authorizedUntil < Date.now()) {
+        this.issueChallenge(connection);
+      } else {
+        send(connection, message);
       }
     }
   }
@@ -220,4 +156,8 @@ export class OccupancyPartyServer extends Server<OccupancyEnv> {
 
 function send(connection: Connection, message: ServerMessage) {
   connection.send(JSON.stringify(message));
+}
+
+function base64ToBytes(base64: string) {
+  return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 }

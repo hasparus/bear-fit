@@ -13,8 +13,9 @@ export default defineConfig({
   },
   define: {
     APP_VERSION: JSON.stringify(process.env.APP_VERSION ?? "localhost"),
-    "import.meta.env.ALWAYS_PROD": process.env.ALWAYS_PROD ? "1" : "0",
-    __PROD_SERVER_URL__: JSON.stringify(process.env.PROD_SERVER_URL ?? ""),
+    __SERVER_URL__: JSON.stringify(
+      process.env.ALWAYS_PROD ? "https://bear-fit.hasparus.workers.dev" : "",
+    ),
   },
   environments: {
     client: {
