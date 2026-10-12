@@ -11,7 +11,6 @@ export async function postCalendar(
 ): Promise<void> {
   const res = await fetch(`${serverUrl}/parties/main/${calendarId}`, {
     body: update,
-    headers: { "Content-Type": "application/octet-stream" },
     keepalive: true,
     method: "POST",
   });
