@@ -9,9 +9,10 @@ import { appendHistory, readHistory } from "./history";
  * new to the document is appended, so reruns add nothing and edits written by
  * an older deployment are picked up. The old tables are left in place.
  *
- * Undecodable rows are skipped. It throws, rolling back, when the result would
- * have gaps (part of the log is unreadable and the snapshot can't fill it) or
- * when there's no history and no legacy row is usable.
+ * Undecodable rows are skipped. Updates still missing their dependencies after
+ * the snapshot is applied were never visible in the snapshot either, so they're
+ * left behind. It throws, rolling back, when there's a gap and no snapshot
+ * decoded, or when there's no history and no legacy row is usable.
  */
 export function migrateLegacyStorage(storage: DurableObjectStorage) {
   storage.transactionSync(() => {
@@ -31,37 +32,42 @@ export function migrateLegacyStorage(storage: DurableObjectStorage) {
     const newUpdates: Uint8Array[] = [];
     doc.on("update", (update: Uint8Array) => newUpdates.push(update));
 
-    const legacyRows = [
-      ...(legacyTables.includes("document_updates")
-        ? sql
-            .exec<{
-              data: ArrayBuffer;
-            }>(
-              "SELECT update_data AS data FROM document_updates ORDER BY clock",
-            )
-            .toArray()
-        : []),
-      ...(legacyTables.includes("documents")
-        ? sql
-            .exec<{ data: ArrayBuffer }>("SELECT state AS data FROM documents")
-            .toArray()
-        : []),
-    ];
+    const read = (table: string, query: string) =>
+      legacyTables.includes(table)
+        ? sql.exec<{ data: ArrayBuffer }>(query).toArray()
+        : [];
+    const apply = (rows: { data: ArrayBuffer }[]) =>
+      rows.filter((row) => {
+        try {
+          Y.applyUpdate(doc, new Uint8Array(row.data));
+          return true;
+        } catch (error) {
+          console.warn("skipping undecodable legacy row", error);
+          return false;
+        }
+      }).length;
 
-    let applied = 0;
-    for (const row of legacyRows) {
-      try {
-        Y.applyUpdate(doc, new Uint8Array(row.data));
-        applied += 1;
-      } catch (error) {
-        console.warn("skipping undecodable legacy row", error);
-      }
-    }
+    const log = read(
+      "document_updates",
+      "SELECT update_data AS data FROM document_updates ORDER BY clock",
+    );
+    const snapshot = read("documents", "SELECT state AS data FROM documents");
+    const appliedLog = apply(log);
+    const appliedSnapshot = apply(snapshot);
 
     if (doc.store.pendingStructs || doc.store.pendingDs) {
-      throw new Error("legacy data has gaps the snapshot can't fill");
+      if (appliedSnapshot === 0) {
+        throw new Error("legacy data has gaps the snapshot can't fill");
+      }
+      console.warn(
+        "legacy data has updates missing their dependencies; the snapshot never showed them either, so they stay only in the legacy tables",
+      );
     }
-    if (history.length === 0 && legacyRows.length > 0 && applied === 0) {
+    if (
+      history.length === 0 &&
+      log.length + snapshot.length > 0 &&
+      appliedLog + appliedSnapshot === 0
+    ) {
       throw new Error("no usable legacy log or snapshot");
     }
 

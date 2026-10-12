@@ -230,6 +230,29 @@ test("undecodable legacy rows are skipped and the snapshot fills the gap", async
   expect(yDocToJson(replay(history))).toEqual(yDocToJson(source));
 });
 
+test("legacy updates missing their dependencies stay behind when the snapshot decodes", async () => {
+  const id = "pending-calendar";
+  const source = new Y.Doc();
+  const [created] = recordUpdates(source, () =>
+    initializeCalendarMap(source, event(id)),
+  );
+  const [, orphan] = recordUpdates(source, () => {
+    source.getMap("names").set("alice", "Alice");
+    source.getMap("names").set("bob", "Bob");
+  });
+  const legacy = new Y.Doc();
+  Y.applyUpdate(legacy, created);
+  Y.applyUpdate(legacy, orphan);
+  expect(legacy.store.pendingStructs).not.toBeNull();
+  await seedLegacy(id, {
+    log: [created],
+    snapshot: Y.encodeStateAsUpdate(legacy),
+  });
+
+  const history = await fetchHistory(id);
+  expect(yDocToJson(replay(history))).toEqual(yDocToJson(legacy));
+});
+
 const garbage = new Uint8Array([255, 255, 255, 255]);
 
 async function expectStartToFail(id: string, message: string) {
@@ -272,11 +295,26 @@ test("oversized updates close the socket instead of reaching storage", async () 
     socket.addEventListener("close", (event) => resolve(event.code)),
   );
 
-  socket.send(new Uint8Array(MAX_UPDATE_BYTES + 1));
+  const doc = new Y.Doc();
+  doc.getMap("names").set("alice", "a".repeat(MAX_UPDATE_BYTES));
+  socket.send(syncUpdateMessage(Y.encodeStateAsUpdate(doc)));
 
   expect(await closed).toBe(1009);
   expect(await fetchHistory(id)).toEqual([]);
 });
+
+/** A y-protocols sync message (`messageSync`, `messageYjsUpdate`). */
+function syncUpdateMessage(update: Uint8Array) {
+  const length: number[] = [];
+  for (let n = update.length; ; n >>>= 7) {
+    if (n < 0x80) {
+      length.push(n);
+      break;
+    }
+    length.push((n & 0x7f) | 0x80);
+  }
+  return new Uint8Array([0, 2, ...length, ...update]);
+}
 
 async function registeredAt(id: string) {
   const rows = await registeredCalendars();
