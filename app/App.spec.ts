@@ -71,6 +71,13 @@ test("creates a new calendar, fills dates, opens a new browser and fills more da
   await bob.getByRole("button", { name: `${nextMonthName} 7` }).click();
   await bob.getByRole("button", { name: `${nextMonthName} 11` }).click();
 
+  await expect(
+    alice.locator("dl div").filter({ hasText: /Bob/ }).first(),
+  ).toContainText("2 dates");
+  await expect(
+    bob.locator("dl div").filter({ hasText: /Alice/ }).first(),
+  ).toContainText("4 dates");
+
   await alice.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await alice.getByText("Nerd Mode").click();
 
@@ -126,13 +133,16 @@ test("creates a new calendar, fills dates, opens a new browser and fills more da
   }
 
   const title = bob.getByRole("heading", { name: new RegExp(eventName) });
-  title.dispatchEvent("contextmenu");
+  await title.dispatchEvent("contextmenu");
 
   await bob.getByText("Copy calendar JSON").click();
 
+  await expect
+    .poll(() => bob.evaluate(() => navigator.clipboard.readText()))
+    .toContain(eventName);
   const copiedJson = await bob.evaluate(() => navigator.clipboard.readText());
 
-  expect(copiedJson).toBe(downloadedJson);
+  expect(JSON.parse(copiedJson)).toEqual(exported);
 });
 
 test("creator imports a JSON file to overwrite the event doc", async ({
