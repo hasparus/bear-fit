@@ -33,7 +33,7 @@ export function EditCalendarDialog() {
   }, [isEditOpen]);
 
   const handleSubmit = async (patch: CalendarDatesPatch) => {
-    applyCalendarDates(calendarMap, patch);
+    applyCalendarDates(yDoc, patch);
     dialogs.set("edit-event", false);
   };
 

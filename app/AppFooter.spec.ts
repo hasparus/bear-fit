@@ -71,3 +71,26 @@ test("footer lists recently visited events and highlights the current event", as
       .first(),
   ).toBeVisible();
 });
+
+test("a calendar paints without waiting for the footer stats", async ({
+  page,
+}) => {
+  const name = `paint first ${Math.random().toString(36).slice(2, 8)}`;
+  const { id, nextMonthName } = await createCalendar(page, { name });
+
+  let releaseStats!: () => void;
+  const statsHeld = new Promise<void>((resolve) => (releaseStats = resolve));
+  await page.route("**/parties/rooms/index", async (route) => {
+    await statsHeld;
+    await route.continue();
+  });
+  await page.goto(`/?id=${id}`);
+
+  await expect(page.getByRole("heading", { name })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: `${nextMonthName} 6` }),
+  ).toBeVisible();
+
+  releaseStats();
+  await expect(page.getByText(/Calendars? created/)).toBeVisible();
+});

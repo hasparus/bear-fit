@@ -1,6 +1,8 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../test";
+import { createCalendar } from "../test/utils/createCalendar";
+import { historyLength, serverDoc } from "../test/utils/server";
 
 test.use({ viewport: { width: 360, height: 400 } });
 
@@ -64,4 +66,23 @@ test("edit dialog fits the viewport and stays usable on a small screen", async (
   await expect(saveButton).toBeEnabled();
   await saveButton.click();
   await expect(dialog).not.toBeVisible();
+});
+
+test("a date edit reaches the server as a single update", async ({
+  page,
+  request,
+}) => {
+  const { id } = await createCalendar(page);
+  const serverEvent = async () => (await serverDoc(request, id)).event;
+  await expect.poll(serverEvent).toHaveProperty("startDate");
+  const before = await historyLength(request, id);
+
+  const dialog = await openEditDialog(page);
+  await dialog.getByText("Rolling window", { exact: true }).click();
+  await dialog.getByRole("button", { name: "Save Changes" }).click();
+
+  await expect
+    .poll(async () => Object.keys(await serverEvent()).sort())
+    .toEqual(["creator", "id", "name", "rolling"]);
+  expect(await historyLength(request, id)).toBe(before + 1);
 });

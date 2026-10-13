@@ -2,7 +2,7 @@ import type { APIRequestContext, Page, Request } from "@playwright/test";
 
 import { expect, test } from "../test";
 import { createCalendar, fillCreateForm } from "../test/utils/createCalendar";
-import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
+import { historyLength, serverDoc } from "../test/utils/server";
 
 test.setTimeout(60_000);
 
@@ -15,20 +15,6 @@ const isCreationPost = (request: Request) =>
 /** The server's reply to a client's sync step 1, carrying its whole state. */
 const isSyncStep2 = ({ payload }: { payload: Buffer | string }) =>
   typeof payload !== "string" && payload[0] === 0 && payload[1] === 1;
-
-async function serverDoc(request: APIRequestContext, id: string) {
-  const res = await request.get(`/parties/main/${id}`);
-  return (await res.json()) as {
-    availability: Record<string, boolean>;
-    event: Record<string, unknown>;
-    names: Record<string, string>;
-  };
-}
-
-async function historyLength(request: APIRequestContext, id: string) {
-  const res = await request.get(`/parties/main/${id}/history`);
-  return decodeHistoryUpdates(await res.body()).length;
-}
 
 async function serverEventName(request: APIRequestContext, id: string) {
   return (await serverDoc(request, id)).event.name;
