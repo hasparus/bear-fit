@@ -1,5 +1,7 @@
 # Repository Guidelines
 
+Every millisecond counts. Bear-fit is small and fast and provides a seamless UX.
+
 ## Project Structure & Module Organization
 
 - `app/` contains the React UI, shared schemas, and Playwright specs (e.g.
