@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { expect, test } from "../test";
 import { createCalendar } from "../test/utils/createCalendar";
-import { historyLength } from "../test/utils/historyLength";
+import { historyLength, serverDoc } from "../test/utils/server";
 
 test.use({ viewport: { width: 360, height: 400 } });
 
@@ -73,10 +73,7 @@ test("a date edit reaches the server as a single update", async ({
   request,
 }) => {
   const { id } = await createCalendar(page);
-  const serverEvent = async () => {
-    const res = await request.get(`/parties/main/${id}`);
-    return ((await res.json()) as { event: Record<string, unknown> }).event;
-  };
+  const serverEvent = async () => (await serverDoc(request, id)).event;
   await expect.poll(serverEvent).toHaveProperty("startDate");
   const before = await historyLength(request, id);
 

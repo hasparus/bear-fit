@@ -80,7 +80,7 @@ test("a calendar paints without waiting for the footer stats", async ({
 
   let releaseStats!: () => void;
   const statsHeld = new Promise<void>((resolve) => (releaseStats = resolve));
-  await page.route("**/parties/rooms/**", async (route) => {
+  await page.route("**/parties/rooms/index", async (route) => {
     await statsHeld;
     await route.continue();
   });
