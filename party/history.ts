@@ -20,27 +20,6 @@ export interface HistoryRow {
   update: Uint8Array;
 }
 
-export function createHistoryTable(sql: SqlStorage) {
-  sql.exec(
-    "CREATE TABLE IF NOT EXISTS history (clock INTEGER PRIMARY KEY, data BLOB NOT NULL)",
-  );
-}
-
-/** Oldest first; `limit` of -1 reads everything. */
-export function readHistory(sql: SqlStorage, limit = -1): HistoryRow[] {
-  return sql
-    .exec<{ clock: number; data: ArrayBuffer }>(
-      "SELECT clock, data FROM history ORDER BY clock LIMIT ?",
-      limit,
-    )
-    .toArray()
-    .map(({ clock, data }) => ({ clock, update: new Uint8Array(data) }));
-}
-
-export function appendHistory(sql: SqlStorage, update: Uint8Array) {
-  sql.exec("INSERT INTO history (data) VALUES (?)", update);
-}
-
 /** A calendar's Yjs updates, appended as they happen and compacted as it grows. */
 export class History {
   readonly #storage: DurableObjectStorage;
@@ -50,21 +29,35 @@ export class History {
     this.#storage = storage;
   }
 
-  /** Creates the table if needed and returns every row, oldest first. */
+  /**
+   * Creates the table if needed, drops the unused `documents` and
+   * `document_updates` tables, and returns every row, oldest first.
+   */
   load(): HistoryRow[] {
-    createHistoryTable(this.#storage.sql);
-    const rows = readHistory(this.#storage.sql);
+    this.#storage.sql.exec(
+      `DROP TABLE IF EXISTS documents;
+       DROP TABLE IF EXISTS document_updates;
+       CREATE TABLE IF NOT EXISTS history (clock INTEGER PRIMARY KEY, data BLOB NOT NULL)`,
+    );
+    const rows = this.rows();
     this.#length = rows.length;
     return rows;
   }
 
-  rows(): HistoryRow[] {
-    return readHistory(this.#storage.sql);
+  /** Oldest first; `limit` of -1 reads everything. */
+  rows(limit = -1): HistoryRow[] {
+    return this.#storage.sql
+      .exec<{ clock: number; data: ArrayBuffer }>(
+        "SELECT clock, data FROM history ORDER BY clock LIMIT ?",
+        limit,
+      )
+      .toArray()
+      .map(({ clock, data }) => ({ clock, update: new Uint8Array(data) }));
   }
 
   /** Throws only if the update wasn't stored; compaction failures are logged. */
   append(update: Uint8Array) {
-    appendHistory(this.#storage.sql, update);
+    this.#storage.sql.exec("INSERT INTO history (data) VALUES (?)", update);
     this.#length += 1;
     if (this.#length > HISTORY_LIMIT) this.#compact();
   }
@@ -74,7 +67,7 @@ export class History {
     const { sql } = this.#storage;
     try {
       this.#length -= this.#storage.transactionSync(() => {
-        const older = readHistory(sql, Math.floor(this.#length / 2));
+        const older = this.rows(Math.floor(this.#length / 2));
         let merged = 0;
         for (let i = 0; i + 1 < older.length; i += 2) {
           const [first, second] = [older[i], older[i + 1]];

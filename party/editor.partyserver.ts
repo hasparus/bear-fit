@@ -16,7 +16,6 @@ import {
   yDocToJson,
 } from "../app/shared-data";
 import { History, MAX_UPDATE_BYTES } from "./history";
-import { migrateLegacyStorage } from "./legacyStorage";
 import {
   OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
   type RegisteredCalendar,
@@ -34,7 +33,6 @@ export class EditorPartyServer extends YServer<Env> {
   #registration?: "done" | RegisteredCalendar;
 
   async onStart(): Promise<void> {
-    migrateLegacyStorage(this.ctx.storage);
     await super.onStart();
 
     this.document.on("update", (update: Uint8Array) => {
