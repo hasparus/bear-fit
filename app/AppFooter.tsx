@@ -1,10 +1,11 @@
-import { use } from "react";
+import { Suspense, use } from "react";
 
 import { getPublicRoomInfo } from "./api/getRoomCount";
 import { formatIsoDate, resolveCalendarDates } from "./schemas";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
 import { GitHubIcon } from "./ui/GitHubIcon";
+import { Skeleton } from "./ui/Skeleton";
 import { useUserDispatch, useUserState } from "./ui/UserStateContext";
 
 export function AppFooter({
@@ -120,7 +121,9 @@ export function AppFooter({
             <GitHubIcon className="size-4 inline ml-1 mb-px" />
           </a>
         </p>
-        <Stats className="mb-6 bg-neutral-100 p-2" />
+        <Suspense fallback={<Skeleton className="block mb-6 h-12" />}>
+          <Stats className="mb-6 bg-neutral-100 p-2" />
+        </Suspense>
         <section>
           <h3 className="font-sans">Settings</h3>
           <form className="mt-2">
