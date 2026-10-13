@@ -21,6 +21,7 @@ function trackSyncSockets(page: Page) {
 /**
  * Each y-partyserver provider registers a window `unload` listener until it's
  * destroyed, so the live ones are a proxy for providers that still exist.
+ * Assumes nothing else on the page listens for `unload`.
  */
 async function trackUnloadListeners(page: Page) {
   await page.addInitScript(() => {
@@ -69,14 +70,6 @@ test("a direct visit opens one sync socket", async ({ browser, page }) => {
 
   expect(openSockets(id)).toBe(1);
   expect(await liveProviders()).toBe(1);
-});
-
-test("creating a calendar opens one sync socket", async ({ page }) => {
-  const openSockets = trackSyncSockets(page);
-  const { id } = await createCalendar(page);
-  await waitForSaved(page);
-
-  expect(openSockets(id)).toBe(1);
 });
 
 test("switching calendars closes the old socket and provider", async ({

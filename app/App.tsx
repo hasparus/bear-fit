@@ -42,8 +42,8 @@ function getCalendarDoc(calendarId: string) {
   return doc;
 }
 
-/** Connects to a calendar outside React, so the socket opens before render. */
 const providers = new Map<string, PartyProvider>();
+/** Connects to a calendar outside React, so the socket opens before render. */
 export function getCalendarProvider(calendarId: string) {
   // ponytail: one calendar per tab, so the others' providers are destroyed
   for (const [id, provider] of providers) {
