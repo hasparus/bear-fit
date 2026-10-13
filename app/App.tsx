@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import useYProvider from "y-partyserver/react";
+import PartyProvider from "y-partyserver/provider";
 import { Doc, encodeStateAsUpdate } from "yjs";
 
 import { postCalendar } from "./api/postCalendar";
@@ -42,16 +42,35 @@ function getCalendarDoc(calendarId: string) {
   return doc;
 }
 
+/** Connects to a calendar outside React, so the socket opens before render. */
+const providers = new Map<string, PartyProvider>();
+export function getCalendarProvider(calendarId: string) {
+  // ponytail: one calendar per tab, so the others' providers are destroyed
+  for (const [id, provider] of providers) {
+    if (id === calendarId) continue;
+    provider.destroy();
+    provider.awareness.destroy();
+    providers.delete(id);
+  }
+  let provider = providers.get(calendarId);
+  if (!provider) {
+    provider = new PartyProvider(
+      serverUrl,
+      calendarId,
+      getCalendarDoc(calendarId),
+      { protocol: socketProtocol },
+    );
+    providers.set(calendarId, provider);
+  }
+  return provider;
+}
+
 function Routes({ params }: { params: ReturnType<typeof useSearchParams> }) {
   const calendarId = params.get("id");
 
   return calendarId ? (
     <Suspense fallback={<Loading />}>
-      <YProvider
-        key={calendarId}
-        room={calendarId}
-        yDoc={getCalendarDoc(calendarId)}
-      >
+      <YProvider calendarId={calendarId} key={calendarId}>
         <CalendarDetails />
       </YProvider>
     </Suspense>
@@ -60,6 +79,7 @@ function Routes({ params }: { params: ReturnType<typeof useSearchParams> }) {
       onSubmit={(calendarEvent) => {
         const doc = getCalendarDoc(calendarEvent.id);
         initializeCalendarMap(doc, calendarEvent);
+        getCalendarProvider(calendarEvent.id);
         params.set("id", calendarEvent.id);
         postCalendar(calendarEvent.id, encodeStateAsUpdate(doc)).catch(
           (error) => {
@@ -72,23 +92,16 @@ function Routes({ params }: { params: ReturnType<typeof useSearchParams> }) {
 }
 
 function YProvider({
+  calendarId,
   children,
-  room,
-  yDoc,
 }: {
+  calendarId: string;
   children: React.ReactNode;
-  room: string;
-  yDoc: Doc;
 }) {
-  const yProvider = useYProvider({
-    doc: yDoc,
-    host: serverUrl,
-    options: { connect: true, protocol: socketProtocol },
-    room,
-  });
+  const yProvider = getCalendarProvider(calendarId);
 
   return (
-    <YDocContext.Provider value={yDoc}>
+    <YDocContext.Provider value={yProvider.doc}>
       <YProviderContext.Provider value={yProvider}>
         {children}
       </YProviderContext.Provider>
