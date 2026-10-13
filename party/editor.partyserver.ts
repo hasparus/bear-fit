@@ -33,9 +33,6 @@ export class EditorPartyServer extends YServer<Env> {
   #registration?: "done" | RegisteredCalendar;
 
   async onStart(): Promise<void> {
-    this.ctx.storage.sql.exec(
-      "DROP TABLE IF EXISTS documents; DROP TABLE IF EXISTS document_updates",
-    );
     await super.onStart();
 
     this.document.on("update", (update: Uint8Array) => {

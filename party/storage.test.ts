@@ -11,7 +11,7 @@ import type { Env } from "./worker";
 import { decodeHistoryUpdates } from "../app/decodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
 import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
-import { HISTORY_LIMIT, MAX_UPDATE_BYTES } from "./history";
+import { History, HISTORY_LIMIT, MAX_UPDATE_BYTES } from "./history";
 import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./rooms";
 
 declare global {
@@ -93,20 +93,22 @@ function recordUpdates(doc: Y.Doc, edit: () => void) {
 
 test("start drops leftover tables and registers the stored calendar", async () => {
   const id = "stored-calendar";
-  const update = creationUpdate(id);
+  const source = new Y.Doc();
+  initializeCalendarMap(source, event(id));
   const stub = env.main.get(env.main.idFromName(id));
-  await runInDurableObject(stub, (_, { storage: { sql } }) => {
-    sql.exec("CREATE TABLE documents (id TEXT PRIMARY KEY, state BLOB)");
-    sql.exec("CREATE TABLE document_updates (update_data BLOB)");
-    sql.exec("CREATE TABLE history (clock INTEGER PRIMARY KEY, data BLOB)");
-    sql.exec("INSERT INTO history (data) VALUES (?)", update);
+  await runInDurableObject(stub, (_, { storage }) => {
+    const history = new History(storage);
+    history.load();
+    history.append(Y.encodeStateAsUpdate(source));
+    storage.sql.exec("CREATE TABLE documents (id TEXT, state BLOB)");
+    storage.sql.exec("CREATE TABLE document_updates (update_data BLOB)");
   });
 
   const calendar = await (
     await (await startCalendar(id)).fetch(`https://bear.fit/parties/main/${id}`)
   ).json();
 
-  expect(calendar).toEqual(yDocToJson(replay([{ value: update }])));
+  expect(calendar).toEqual(yDocToJson(source));
   expect(await tableNames(id)).toEqual(["history"]);
   await vi.waitFor(async () =>
     expect(await registeredCalendars()).toContainEqual({
