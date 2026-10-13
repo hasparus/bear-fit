@@ -69,42 +69,6 @@ async function registeredCalendars() {
   );
 }
 
-function seedLegacy(
-  id: string,
-  { log, snapshot }: { log: Uint8Array[]; snapshot?: Uint8Array },
-) {
-  const stub = env.main.get(env.main.idFromName(id));
-  return runInDurableObject(stub, (_, state) => {
-    const { sql } = state.storage;
-    sql.exec(
-      "CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, state BLOB NOT NULL)",
-    );
-    sql.exec(
-      "CREATE TABLE IF NOT EXISTS document_updates (doc_id TEXT NOT NULL, clock INTEGER NOT NULL, update_data BLOB NOT NULL, PRIMARY KEY (doc_id, clock))",
-    );
-    if (snapshot) {
-      sql.exec(
-        "INSERT OR REPLACE INTO documents (id, state) VALUES (?, ?)",
-        id,
-        snapshot,
-      );
-    }
-    const [{ clock }] = sql
-      .exec<{
-        clock: number;
-      }>("SELECT COALESCE(MAX(clock), 0) AS clock FROM document_updates")
-      .toArray();
-    log.forEach((update, index) =>
-      sql.exec(
-        "INSERT INTO document_updates (doc_id, clock, update_data) VALUES (?, ?, ?)",
-        id,
-        clock + index + 1,
-        update,
-      ),
-    );
-  });
-}
-
 function tableNames(id: string) {
   const stub = env.main.get(env.main.idFromName(id));
   return runInDurableObject(stub, (_, state) =>
@@ -127,163 +91,29 @@ function recordUpdates(doc: Y.Doc, edit: () => void) {
   return updates;
 }
 
-test.for([
-  { case: "log matches snapshot", snapshotOnlyEdits: 0 },
-  { case: "snapshot has an edit missing from the log", snapshotOnlyEdits: 1 },
-])(
-  "start migrates the legacy layout into history: $case",
-  async ({ snapshotOnlyEdits }) => {
-    const id = `legacy-calendar-${snapshotOnlyEdits}`;
-
-    const source = new Y.Doc();
-    const logged = recordUpdates(source, () => {
-      initializeCalendarMap(source, event(id));
-      source.getMap("names").set("alice", "Alice");
-      source.getMap("availability").set("alice|2026-11-07", true);
-    });
-    if (snapshotOnlyEdits) {
-      source.getMap("availability").set("alice|2026-11-08", true);
-    }
-    await seedLegacy(id, {
-      log: logged,
-      snapshot: Y.encodeStateAsUpdate(source),
-    });
-
-    const history = await fetchHistory(id);
-
-    expect(await tableNames(id)).toEqual([
-      "document_updates",
-      "documents",
-      "history",
-    ]);
-    expect(history.map((update) => update.clock)).toEqual(
-      [...Array(logged.length + snapshotOnlyEdits).keys()].map((i) =>
-        String(i + 1),
-      ),
-    );
-    for (let length = 1; length <= logged.length; length++) {
-      expect(yDocToJson(replay(history.slice(0, length)))).toEqual(
-        yDocToJson(replay(logged.slice(0, length).map((value) => ({ value })))),
-      );
-    }
-    expect(yDocToJson(replay(history))).toEqual(yDocToJson(source));
-
-    const calendar = await (
-      await (
-        await startCalendar(id)
-      ).fetch(`https://bear.fit/parties/main/${id}`)
-    ).json();
-    expect(calendar).toEqual(yDocToJson(source));
-
-    await vi.waitFor(async () =>
-      expect(await registeredCalendars()).toContainEqual({
-        id,
-        created_at: null,
-      }),
-    );
-
-    await abortAllDurableObjects();
-    expect(await fetchHistory(id)).toEqual(history);
-  },
-);
-
-test("start picks up legacy rows written after migration, once", async () => {
-  const id = "reverted-calendar";
-  const source = new Y.Doc();
-  const logged = recordUpdates(source, () =>
-    initializeCalendarMap(source, event(id)),
-  );
-  await seedLegacy(id, {
-    log: logged,
-    snapshot: Y.encodeStateAsUpdate(source),
-  });
-  const migrated = await fetchHistory(id);
-
-  const writtenByOlderDeployment = recordUpdates(source, () =>
-    source.getMap("names").set("bob", "Bob"),
-  );
-  await seedLegacy(id, {
-    log: writtenByOlderDeployment,
-    snapshot: Y.encodeStateAsUpdate(source),
-  });
-  await abortAllDurableObjects();
-
-  const history = await fetchHistory(id);
-  expect(history.slice(0, migrated.length)).toEqual(migrated);
-  expect(history).toHaveLength(migrated.length + 1);
-  expect(yDocToJson(replay(history))).toEqual(yDocToJson(source));
-
-  await abortAllDurableObjects();
-  expect(await fetchHistory(id)).toEqual(history);
-});
-
-test("undecodable legacy rows are skipped and the snapshot fills the gap", async () => {
-  const id = "corrupt-calendar";
-  const source = new Y.Doc();
-  const [first, ...rest] = recordUpdates(source, () => {
-    initializeCalendarMap(source, event(id));
-    source.getMap("names").set("alice", "Alice");
-  });
-  await seedLegacy(id, {
-    log: [first, new Uint8Array([255, 255, 255, 255]), ...rest],
-    snapshot: Y.encodeStateAsUpdate(source),
-  });
-
-  const history = await fetchHistory(id);
-  expect(yDocToJson(replay(history))).toEqual(yDocToJson(source));
-});
-
-test("legacy updates missing their dependencies stay behind when the snapshot decodes", async () => {
-  const id = "pending-calendar";
-  const source = new Y.Doc();
-  const [created] = recordUpdates(source, () =>
-    initializeCalendarMap(source, event(id)),
-  );
-  const [, orphan] = recordUpdates(source, () => {
-    source.getMap("names").set("alice", "Alice");
-    source.getMap("names").set("bob", "Bob");
-  });
-  const legacy = new Y.Doc();
-  Y.applyUpdate(legacy, created);
-  Y.applyUpdate(legacy, orphan);
-  expect(legacy.store.pendingStructs).not.toBeNull();
-  await seedLegacy(id, {
-    log: [created],
-    snapshot: Y.encodeStateAsUpdate(legacy),
-  });
-
-  const history = await fetchHistory(id);
-  expect(yDocToJson(replay(history))).toEqual(yDocToJson(legacy));
-});
-
-const garbage = new Uint8Array([255, 255, 255, 255]);
-
-async function expectStartToFail(id: string, message: string) {
+test("start drops leftover tables and registers the stored calendar", async () => {
+  const id = "stored-calendar";
+  const update = creationUpdate(id);
   const stub = env.main.get(env.main.idFromName(id));
-  await expect(
-    stub.fetch(`https://bear.fit/parties/main/${id}`, {
-      headers: { "x-partykit-room": id },
+  await runInDurableObject(stub, (_, { storage: { sql } }) => {
+    sql.exec("CREATE TABLE documents (id TEXT PRIMARY KEY, state BLOB)");
+    sql.exec("CREATE TABLE document_updates (update_data BLOB)");
+    sql.exec("CREATE TABLE history (clock INTEGER PRIMARY KEY, data BLOB)");
+    sql.exec("INSERT INTO history (data) VALUES (?)", update);
+  });
+
+  const calendar = await (
+    await (await startCalendar(id)).fetch(`https://bear.fit/parties/main/${id}`)
+  ).json();
+
+  expect(calendar).toEqual(yDocToJson(replay([{ value: update }])));
+  expect(await tableNames(id)).toEqual(["history"]);
+  await vi.waitFor(async () =>
+    expect(await registeredCalendars()).toContainEqual({
+      id,
+      created_at: null,
     }),
-  ).rejects.toThrow(message);
-  expect(await tableNames(id)).toEqual(["document_updates", "documents"]);
-}
-
-test("start fails without touching storage when no legacy row is usable", async () => {
-  const id = "unreadable-calendar";
-  await seedLegacy(id, { log: [garbage] });
-
-  await expectStartToFail(id, "no usable legacy log or snapshot");
-});
-
-test("start fails when the log has a gap the snapshot can't fill", async () => {
-  const id = "gapped-calendar";
-  const source = new Y.Doc();
-  const [, ...rest] = recordUpdates(source, () =>
-    initializeCalendarMap(source, event(id)),
   );
-  await seedLegacy(id, { log: [garbage, ...rest], snapshot: garbage });
-
-  await expectStartToFail(id, "legacy data has gaps the snapshot can't fill");
 });
 
 async function connect(id: string) {
