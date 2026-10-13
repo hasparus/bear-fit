@@ -7,69 +7,71 @@ import { YDocJsonSchema } from "../shared-data";
 export function overwriteYDocWithJson(yDoc: Doc, json: unknown) {
   const jsonData = YDocJsonSchema.assert(json);
 
-  const currentUserId = getUserId();
+  yDoc.transact(() => {
+    const currentUserId = getUserId();
 
-  const namesMap = yDoc.getMap("names");
+    const namesMap = yDoc.getMap("names");
 
-  const currentUserName =
-    namesMap.get(currentUserId) || localStorage.getItem("userName");
+    const currentUserName =
+      namesMap.get(currentUserId) || localStorage.getItem("userName");
 
-  const sameNameUserIds: UserId[] = [];
-  Object.entries(jsonData.names).forEach(([id, name]) => {
-    if (name === currentUserName && id !== currentUserId) {
-      sameNameUserIds.push(id as UserId);
-    }
-  });
+    const sameNameUserIds: UserId[] = [];
+    Object.entries(jsonData.names).forEach(([id, name]) => {
+      if (name === currentUserName && id !== currentUserId) {
+        sameNameUserIds.push(id as UserId);
+      }
+    });
 
-  const availabilityMap = yDoc.getMap("availability");
+    const availabilityMap = yDoc.getMap("availability");
 
-  const keysToDelete: string[] = [];
-  availabilityMap.forEach((_value, key) => {
-    keysToDelete.push(key);
-  });
+    const keysToDelete: string[] = [];
+    availabilityMap.forEach((_value, key) => {
+      keysToDelete.push(key);
+    });
 
-  keysToDelete.forEach((key) => {
-    availabilityMap.delete(key);
-  });
+    keysToDelete.forEach((key) => {
+      availabilityMap.delete(key);
+    });
 
-  Object.entries(jsonData.availability).forEach(([key, value]) => {
-    try {
-      const belongsToSameNameUser = sameNameUserIds.some((userId) =>
-        key.startsWith(userId),
-      );
+    Object.entries(jsonData.availability).forEach(([key, value]) => {
+      try {
+        const belongsToSameNameUser = sameNameUserIds.some((userId) =>
+          key.startsWith(userId),
+        );
 
-      if (belongsToSameNameUser) {
-        const { date } = AvailabilityKey.parseToObject(key);
-        const newKey = AvailabilityKey(currentUserId, date);
-        availabilityMap.set(newKey, value);
-      } else {
+        if (belongsToSameNameUser) {
+          const { date } = AvailabilityKey.parseToObject(key);
+          const newKey = AvailabilityKey(currentUserId, date);
+          availabilityMap.set(newKey, value);
+        } else {
+          availabilityMap.set(key, value);
+        }
+      } catch (e: unknown) {
+        console.error("Error importing availability:", e);
         availabilityMap.set(key, value);
       }
-    } catch (e: unknown) {
-      console.error("Error importing availability:", e);
-      availabilityMap.set(key, value);
-    }
-  });
+    });
 
-  const calendarMap = yDoc.getMap("event");
-  Object.entries(jsonData.event).forEach(([key, value]) => {
-    if (key === "creator") {
-      return;
+    const calendarMap = yDoc.getMap("event");
+    Object.entries(jsonData.event).forEach(([key, value]) => {
+      if (key === "creator") {
+        return;
+      }
+      calendarMap.set(key, value);
+    });
+    if (jsonData.event.rolling) {
+      calendarMap.delete("startDate");
+      calendarMap.delete("endDate");
+    } else {
+      calendarMap.delete("rolling");
     }
-    calendarMap.set(key, value);
-  });
-  if (jsonData.event.rolling) {
-    calendarMap.delete("startDate");
-    calendarMap.delete("endDate");
-  } else {
-    calendarMap.delete("rolling");
-  }
 
-  Object.entries(jsonData.names).forEach(([key, value]) => {
-    if (!sameNameUserIds.includes(key as UserId)) {
-      namesMap.set(key, value);
-    }
-  });
+    Object.entries(jsonData.names).forEach(([key, value]) => {
+      if (!sameNameUserIds.includes(key as UserId)) {
+        namesMap.set(key, value);
+      }
+    });
 
-  namesMap.set(currentUserId, currentUserName);
+    namesMap.set(currentUserId, currentUserName);
+  });
 }
