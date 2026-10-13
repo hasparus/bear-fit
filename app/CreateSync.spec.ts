@@ -2,6 +2,7 @@ import type { APIRequestContext, Page, Request } from "@playwright/test";
 
 import { expect, test } from "../test";
 import { createCalendar, fillCreateForm } from "../test/utils/createCalendar";
+import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
 
 test.setTimeout(60_000);
 
@@ -22,6 +23,11 @@ async function serverDoc(request: APIRequestContext, id: string) {
     event: Record<string, unknown>;
     names: Record<string, string>;
   };
+}
+
+async function historyLength(request: APIRequestContext, id: string) {
+  const res = await request.get(`/parties/main/${id}/history`);
+  return decodeHistoryUpdates(await res.body()).length;
 }
 
 async function serverEventName(request: APIRequestContext, id: string) {
@@ -204,6 +210,22 @@ test("edits made before the first sync aren't reverted by the creation", async (
   await expect(page.getByRole("heading").first()).toHaveText(imported);
 });
 
+test("an import reaches the server as a single update", async ({
+  page,
+  request,
+}) => {
+  const name = randomName("single update");
+  const { id } = await createCalendar(page, { name });
+  await expect.poll(() => serverEventName(request, id)).toBe(name);
+  const before = await historyLength(request, id);
+
+  const imported = randomName("imported");
+  await importCalendarJson(page, imported);
+
+  await expect.poll(() => serverEventName(request, id)).toBe(imported);
+  expect(await historyLength(request, id)).toBe(before + 1);
+});
+
 test("a late or replayed creation POST doesn't revert later edits", async ({
   browser,
   page,
@@ -218,10 +240,7 @@ test("a late or replayed creation POST doesn't revert later edits", async ({
 
   const imported = randomName("imported");
   await importCalendarJson(page, imported);
-  // An import reaches other clients as several updates spread over seconds.
-  await expect(guest.getByRole("heading").first()).toHaveText(imported, {
-    timeout: 15_000,
-  });
+  await expect(guest.getByRole("heading").first()).toHaveText(imported);
 
   const response = page.waitForResponse((res) => isCreationPost(res.request()));
   releasePost();
