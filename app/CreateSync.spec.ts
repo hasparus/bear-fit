@@ -2,7 +2,7 @@ import type { APIRequestContext, Page, Request } from "@playwright/test";
 
 import { expect, test } from "../test";
 import { createCalendar, fillCreateForm } from "../test/utils/createCalendar";
-import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
+import { historyLength } from "../test/utils/historyLength";
 
 test.setTimeout(60_000);
 
@@ -23,11 +23,6 @@ async function serverDoc(request: APIRequestContext, id: string) {
     event: Record<string, unknown>;
     names: Record<string, string>;
   };
-}
-
-async function historyLength(request: APIRequestContext, id: string) {
-  const res = await request.get(`/parties/main/${id}/history`);
-  return decodeHistoryUpdates(await res.body()).length;
 }
 
 async function serverEventName(request: APIRequestContext, id: string) {

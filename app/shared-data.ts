@@ -1,13 +1,8 @@
 import type { Doc } from "yjs";
-import type { Map as YMap } from "yjs";
 
 import { type } from "arktype";
 
-import {
-  type CalendarDatesPatch,
-  CalendarEvent,
-  UserId,
-} from "./schemas";
+import { type CalendarDatesPatch, CalendarEvent, UserId } from "./schemas";
 
 export const getCalendarMap = (doc: Doc) => {
   return doc.getMap("event");
@@ -17,19 +12,19 @@ export const hasCalendarEvent = (doc: Doc) => {
   return getCalendarMap(doc).has("id");
 };
 
-export const applyCalendarDates = (
-  calendarMap: YMap<unknown>,
-  patch: CalendarDatesPatch,
-) => {
-  if ("rolling" in patch) {
-    calendarMap.set("rolling", patch.rolling);
-    calendarMap.delete("startDate");
-    calendarMap.delete("endDate");
-  } else {
-    calendarMap.set("startDate", patch.startDate);
-    calendarMap.set("endDate", patch.endDate);
-    calendarMap.delete("rolling");
-  }
+export const applyCalendarDates = (doc: Doc, patch: CalendarDatesPatch) => {
+  const calendarMap = getCalendarMap(doc);
+  doc.transact(() => {
+    if ("rolling" in patch) {
+      calendarMap.set("rolling", patch.rolling);
+      calendarMap.delete("startDate");
+      calendarMap.delete("endDate");
+    } else {
+      calendarMap.set("startDate", patch.startDate);
+      calendarMap.set("endDate", patch.endDate);
+      calendarMap.delete("rolling");
+    }
+  });
 };
 
 export const initializeCalendarMap = (doc: Doc, event: CalendarEvent) => {
@@ -39,9 +34,9 @@ export const initializeCalendarMap = (doc: Doc, event: CalendarEvent) => {
   calendarMap.set("name", event.name);
   calendarMap.set("creator", event.creator);
   if (event.rolling) {
-    applyCalendarDates(calendarMap, { rolling: event.rolling });
+    applyCalendarDates(doc, { rolling: event.rolling });
   } else {
-    applyCalendarDates(calendarMap, {
+    applyCalendarDates(doc, {
       endDate: event.endDate!,
       startDate: event.startDate!,
     });
