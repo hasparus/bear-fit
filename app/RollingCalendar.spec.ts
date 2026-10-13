@@ -70,6 +70,9 @@ test("creates a rolling event and shows today through the resolved end date", as
     .dispatchEvent("contextmenu");
   await page.getByRole("menuitem", { name: "Copy calendar JSON" }).click();
 
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toContain(eventName);
   const copiedJson = await page.evaluate(() => navigator.clipboard.readText());
   const exported = YDocJsonSchema.assert(JSON.parse(copiedJson));
   const event = CalendarEvent.assert(exported.event);

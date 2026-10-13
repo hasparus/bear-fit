@@ -137,9 +137,12 @@ test("creates a new calendar, fills dates, opens a new browser and fills more da
 
   await bob.getByText("Copy calendar JSON").click();
 
+  await expect
+    .poll(() => bob.evaluate(() => navigator.clipboard.readText()))
+    .toContain(eventName);
   const copiedJson = await bob.evaluate(() => navigator.clipboard.readText());
 
-  expect(JSON.parse(copiedJson)).toEqual(JSON.parse(downloadedJson));
+  expect(JSON.parse(copiedJson)).toEqual(exported);
 });
 
 test("creator imports a JSON file to overwrite the event doc", async ({
