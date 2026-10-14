@@ -35,7 +35,7 @@ export function AppFooter({
           <section className="mb-6">
             <h3 className="font-sans mt-4">Your recent calendars</h3>
             <ul className="mt-2">
-              {calendars.map((calendar) => {
+              {calendars.slice(0, 10).map((calendar) => {
                 const { endDate, startDate } = resolveCalendarDates(calendar);
                 return (
                   <li key={calendar.id}>

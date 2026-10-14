@@ -94,3 +94,48 @@ test("a calendar paints without waiting for the footer stats", async ({
   releaseStats();
   await expect(page.getByText(/Calendars? created/)).toBeVisible();
 });
+
+test("footer shows 10 of up to 100 remembered calendars, most recent first", async ({
+  page,
+}) => {
+  const a = await createCalendar(page, { name: "recent a" });
+  const b = await createCalendar(page, { name: "recent b" });
+
+  const storedIds = () =>
+    page.evaluate(() =>
+      (
+        JSON.parse(localStorage.getItem("🐻👤state")!).events as {
+          id: string;
+        }[]
+      ).map((calendar) => calendar.id),
+    );
+  await expect.poll(storedIds).toEqual([b.id, a.id]);
+
+  const seededIds = Array.from({ length: 99 }, (_, i) => `seeded-${i}`);
+  await page.evaluate(
+    ({ aId, seededIds }) => {
+      const state = JSON.parse(localStorage.getItem("🐻👤state")!);
+      const calendarA = state.events.find(
+        (calendar: { id: string }) => calendar.id === aId,
+      );
+      state.events = [
+        ...seededIds.map((id) => ({ ...calendarA, id, name: id })),
+        calendarA,
+      ];
+      localStorage.setItem("🐻👤state", JSON.stringify(state));
+    },
+    { aId: a.id, seededIds },
+  );
+
+  await page.goto(`/?id=${a.id}`);
+  await expect.poll(storedIds).toEqual([a.id, ...seededIds]);
+
+  await page.goto(`/?id=${b.id}`);
+  await expect.poll(storedIds).toEqual([b.id, a.id, ...seededIds.slice(0, 98)]);
+
+  const recents = page.locator("footer ul").first().getByRole("listitem");
+  await expect(recents).toHaveCount(10);
+  await expect(recents.first()).toContainText("recent b (");
+  await expect(recents.first()).toContainText("(current)");
+  await expect(recents.nth(1)).toContainText("recent a (");
+});

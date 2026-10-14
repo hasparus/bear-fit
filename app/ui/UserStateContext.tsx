@@ -93,14 +93,15 @@ function userStateReducer(
       };
     }
     case "remember-calendar":
-      if (
-        state.calendars.some((calendar) => calendar.id === action.payload.id)
-      ) {
-        return state;
-      }
+      if (state.calendars[0]?.id === action.payload.id) return state;
       return {
         ...state,
-        calendars: [action.payload, ...state.calendars].slice(0, 10),
+        calendars: [
+          action.payload,
+          ...state.calendars.filter(
+            (calendar) => calendar.id !== action.payload.id,
+          ),
+        ].slice(0, 100),
       };
     case "set-nerd-mode":
       return { ...state, nerdMode: action.payload };
