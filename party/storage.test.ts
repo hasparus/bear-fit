@@ -293,7 +293,7 @@ test("oversized creation POSTs are refused before reaching storage", async () =>
   expect(await fetchHistory(id)).toEqual([]);
 });
 
-test("a calendar created through sync is registered", async () => {
+test("a calendar created through sync is registered and stored as one update", async () => {
   const id = "synced-calendar";
   const before = Date.now();
   const stub = await startCalendar(id);
@@ -305,6 +305,7 @@ test("a calendar created through sync is registered", async () => {
   await vi.waitFor(async () =>
     expect((await registeredAt(id)) ?? 0).toBeGreaterThanOrEqual(before),
   );
+  expect(await fetchHistory(id)).toHaveLength(1);
 });
 
 test("history is compacted past its limit and keeps recent edits granular", async () => {
