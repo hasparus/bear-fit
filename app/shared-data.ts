@@ -30,17 +30,19 @@ export const applyCalendarDates = (doc: Doc, patch: CalendarDatesPatch) => {
 export const initializeCalendarMap = (doc: Doc, event: CalendarEvent) => {
   const calendarMap = getCalendarMap(doc);
 
-  calendarMap.set("id", event.id);
-  calendarMap.set("name", event.name);
-  calendarMap.set("creator", event.creator);
-  if (event.rolling) {
-    applyCalendarDates(doc, { rolling: event.rolling });
-  } else {
-    applyCalendarDates(doc, {
-      endDate: event.endDate!,
-      startDate: event.startDate!,
-    });
-  }
+  doc.transact(() => {
+    calendarMap.set("id", event.id);
+    calendarMap.set("name", event.name);
+    calendarMap.set("creator", event.creator);
+    if (event.rolling) {
+      applyCalendarDates(doc, { rolling: event.rolling });
+    } else {
+      applyCalendarDates(doc, {
+        endDate: event.endDate!,
+        startDate: event.startDate!,
+      });
+    }
+  });
 };
 
 export function yDocToJson(doc: Doc) {
