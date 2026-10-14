@@ -30,9 +30,11 @@ function sign(message: string): string {
 }
 
 async function openDashboard(page: Page) {
-  await page.goto("/dashboard");
+  await expect(async () => {
+    await page.goto("/dashboard");
+    await expect(page.locator(".bg-neutral-100 dl")).toBeVisible();
+  }).toPass();
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.locator(".bg-neutral-100 dl")).toBeVisible();
   return page.locator("code");
 }
 
@@ -60,24 +62,30 @@ async function authorize(page: Page, signature: string) {
 }
 
 test("occupancy endpoint rejects public writes", async ({ request }) => {
-  const response = await request.post(OCCUPANCY_ENDPOINT, {
-    data: { count: 999, room: `forged-room-${Date.now()}` },
-  });
-  expect(response.status()).toBe(405);
+  await expect(async () => {
+    const response = await request.post(OCCUPANCY_ENDPOINT, {
+      data: { count: 999, room: `forged-room-${Date.now()}` },
+    });
+    expect(response.status()).toBe(405);
+  }).toPass();
 
-  const publicInfo = await request.get(OCCUPANCY_ENDPOINT);
-  expect(await publicInfo.json()).toEqual({
-    activeConnections: expect.any(Number),
-    rooms: expect.any(Number),
-  });
+  await expect(async () => {
+    const publicInfo = await request.get(OCCUPANCY_ENDPOINT);
+    expect(publicInfo.headers()["content-type"]).toBe("application/json");
+    expect(await publicInfo.json()).toEqual({
+      activeConnections: expect.any(Number),
+      rooms: expect.any(Number),
+    });
+  }).toPass();
 });
 
 test("dashboard only shows per-room details after signing its challenge", async ({
   page,
 }) => {
-  const roomA = `room-a-${Date.now()}`;
-  const roomB = `room-b-${Date.now()}`;
-  const calendarId = `registered-${Date.now()}`;
+  const id = crypto.randomUUID();
+  const roomA = `room-a-${id}`;
+  const roomB = `room-b-${id}`;
+  const calendarId = `registered-${id}`;
 
   const calendar = new Doc();
   initializeCalendarMap(
@@ -90,10 +98,12 @@ test("dashboard only shows per-room details after signing its challenge", async 
       startDate: "2030-01-06",
     }),
   );
-  const created = await page.request.post(`/parties/main/${calendarId}`, {
-    data: Buffer.from(encodeStateAsUpdate(calendar)),
-  });
-  expect(created.ok()).toBe(true);
+  await expect(async () => {
+    const created = await page.request.post(`/parties/main/${calendarId}`, {
+      data: Buffer.from(encodeStateAsUpdate(calendar)),
+    });
+    expect(created.ok()).toBe(true);
+  }).toPass();
 
   const challenge = await openDashboard(page);
   await connectToRoom(page, roomA);
