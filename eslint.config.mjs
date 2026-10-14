@@ -1,8 +1,6 @@
 // @ts-check
 
 import eslint from "@eslint/js";
-// TODO: ESLint plugin for Tailwind CSS is not compatible with Tailwind 4 yet
-// import tailwindPlugin from "@hasparus/eslint-plugin-tailwindcss";
 import perfectionistPlugin from "eslint-plugin-perfectionist";
 import tseslint from "typescript-eslint";
 
@@ -20,7 +18,6 @@ const objectsOrderOptions = {
 };
 
 export default tseslint.config(
-  // ...tailwindPlugin.configs["flat/recommended"],
   {
     extends: [perfectionistPlugin.configs["recommended-natural"]],
     rules: {
