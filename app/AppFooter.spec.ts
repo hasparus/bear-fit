@@ -189,7 +189,7 @@ test("footer paints stored calendars on the first render and doesn't rewrite the
 
     let firstFooterText: string | null = null;
     new MutationObserver((_, observer) => {
-      const footer = document.querySelector("footer");
+      const footer = document.getElementById("footer");
       if (!footer) return;
       firstFooterText = footer.textContent;
       observer.disconnect();
@@ -201,7 +201,7 @@ test("footer paints stored calendars on the first render and doesn't rewrite the
   }, stored);
   await page.goto("/");
 
-  await page.locator('label[for="nerd-mode"]').click();
+  await page.getByText("Nerd Mode", { exact: true }).click();
   await expect(page.getByLabel("Nerd Mode")).toBeChecked();
 
   const { firstFooterText, writes } = await page.evaluate(() =>
