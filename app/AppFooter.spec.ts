@@ -139,3 +139,27 @@ test("footer shows 10 of up to 100 remembered calendars, most recent first", asy
   await expect(recents.first()).toContainText("(current)");
   await expect(recents.nth(1)).toContainText("recent a (");
 });
+
+test("footer and storage follow date edits of the most recent calendar", async ({
+  page,
+}) => {
+  const { id } = await createCalendar(page, { name: "re-dated" });
+  const recent = page.locator("footer ul li").first();
+  await expect(recent).toContainText("re-dated (");
+  await expect(recent).not.toContainText("rolling");
+
+  await page.getByText("Dates", { exact: true }).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Edit dates" }).click();
+  const dialog = page.getByRole("dialog", { name: "Edit Calendar" });
+  await dialog.getByText("Rolling window", { exact: true }).click();
+  await dialog.getByRole("button", { name: "Save Changes" }).click();
+
+  await expect(recent).toContainText(", rolling)");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => JSON.parse(localStorage.getItem("🐻👤state")!).events[0],
+      ),
+    )
+    .toMatchObject({ id, name: "re-dated", rolling: expect.any(Number) });
+});

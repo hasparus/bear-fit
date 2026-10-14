@@ -92,8 +92,17 @@ function userStateReducer(
         calendars,
       };
     }
-    case "remember-calendar":
-      if (state.calendars[0]?.id === action.payload.id) return state;
+    case "remember-calendar": {
+      const [first] = state.calendars;
+      if (
+        first?.id === action.payload.id &&
+        first.name === action.payload.name &&
+        first.startDate === action.payload.startDate &&
+        first.endDate === action.payload.endDate &&
+        first.rolling === action.payload.rolling
+      ) {
+        return state;
+      }
       return {
         ...state,
         calendars: [
@@ -103,6 +112,7 @@ function userStateReducer(
           ),
         ].slice(0, 100),
       };
+    }
     case "set-nerd-mode":
       return { ...state, nerdMode: action.payload };
     case "~load-from-storage":
