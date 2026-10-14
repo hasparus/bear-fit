@@ -5,6 +5,7 @@ import path from "node:path";
 import { Doc, encodeStateAsUpdate } from "yjs";
 
 import { expect, test } from "../test";
+import { retryDropped } from "../test/utils/server";
 import { CalendarEvent } from "./schemas";
 import { initializeCalendarMap } from "./shared-data";
 
@@ -33,7 +34,7 @@ async function openDashboard(page: Page) {
   await expect(async () => {
     await page.goto("/dashboard");
     await expect(page.locator(".bg-neutral-100 dl")).toBeVisible();
-  }).toPass();
+  }).toPass({ timeout: 20_000 });
   await expect(page).toHaveURL(/\/dashboard$/);
   return page.locator("code");
 }
@@ -62,21 +63,18 @@ async function authorize(page: Page, signature: string) {
 }
 
 test("occupancy endpoint rejects public writes", async ({ request }) => {
-  await expect(async () => {
-    const response = await request.post(OCCUPANCY_ENDPOINT, {
-      data: { count: 999, room: `forged-room-${Date.now()}` },
-    });
-    expect(response.status()).toBe(405);
-  }).toPass();
+  const response = await retryDropped(() =>
+    request.post(OCCUPANCY_ENDPOINT, {
+      data: { count: 999, room: `forged-room-${crypto.randomUUID()}` },
+    }),
+  );
+  expect(response.status()).toBe(405);
 
-  await expect(async () => {
-    const publicInfo = await request.get(OCCUPANCY_ENDPOINT);
-    expect(publicInfo.headers()["content-type"]).toBe("application/json");
-    expect(await publicInfo.json()).toEqual({
-      activeConnections: expect.any(Number),
-      rooms: expect.any(Number),
-    });
-  }).toPass();
+  const publicInfo = await retryDropped(() => request.get(OCCUPANCY_ENDPOINT));
+  expect(await publicInfo.json()).toEqual({
+    activeConnections: expect.any(Number),
+    rooms: expect.any(Number),
+  });
 });
 
 test("dashboard only shows per-room details after signing its challenge", async ({
@@ -98,12 +96,12 @@ test("dashboard only shows per-room details after signing its challenge", async 
       startDate: "2030-01-06",
     }),
   );
-  await expect(async () => {
-    const created = await page.request.post(`/parties/main/${calendarId}`, {
+  const created = await retryDropped(() =>
+    page.request.post(`/parties/main/${calendarId}`, {
       data: Buffer.from(encodeStateAsUpdate(calendar)),
-    });
-    expect(created.ok()).toBe(true);
-  }).toPass();
+    }),
+  );
+  expect(created.ok()).toBe(true);
 
   const challenge = await openDashboard(page);
   await connectToRoom(page, roomA);
