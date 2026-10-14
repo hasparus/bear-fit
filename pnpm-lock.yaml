@@ -26,8 +26,8 @@ importers:
         specifier: ^2.1.19
         version: 2.1.19
       nanoid:
-        specifier: ^5.1.5
-        version: 5.1.5
+        specifier: ^5.1.16
+        version: 5.1.16
       partyserver:
         specifier: ^0.0.75
         version: 0.0.75(@cloudflare/workers-types@4.20251014.0)
@@ -3026,13 +3026,8 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
-  nanoid@5.1.5:
-    resolution: {integrity: sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==}
-    engines: {node: ^18 || >=20}
-    hasBin: true
-
-  nanoid@5.1.6:
-    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+  nanoid@5.1.16:
+    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
 
@@ -6517,9 +6512,7 @@ snapshots:
 
   nanoid@3.3.11: {}
 
-  nanoid@5.1.5: {}
-
-  nanoid@5.1.6: {}
+  nanoid@5.1.16: {}
 
   natural-compare@1.4.0: {}
 
@@ -6619,7 +6612,7 @@ snapshots:
   partyserver@0.0.75(@cloudflare/workers-types@4.20251014.0):
     dependencies:
       '@cloudflare/workers-types': 4.20251014.0
-      nanoid: 5.1.6
+      nanoid: 5.1.16
 
   partysocket@1.0.3:
     dependencies:
@@ -7271,7 +7264,7 @@ snapshots:
       '@cloudflare/workers-types': 4.20251014.0
       lib0: 0.2.114
       lodash.debounce: 4.0.8
-      nanoid: 5.1.6
+      nanoid: 5.1.16
       partyserver: 0.0.75(@cloudflare/workers-types@4.20251014.0)
       y-protocols: 1.0.6(yjs@13.6.24)
       yjs: 13.6.24
