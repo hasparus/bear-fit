@@ -163,3 +163,54 @@ test("footer and storage follow date edits of the most recent calendar", async (
     )
     .toMatchObject({ id, name: "re-dated", rolling: expect.any(Number) });
 });
+
+test("footer paints stored calendars on the first render and doesn't rewrite them on load", async ({
+  page,
+}) => {
+  const stored = {
+    id: "stored",
+    creator: "someone",
+    name: "stored one",
+    rolling: 7,
+  };
+  await page.addInitScript((calendar) => {
+    const key = "🐻👤state";
+    localStorage.setItem(
+      key,
+      JSON.stringify({ events: [calendar], nerdMode: false }),
+    );
+
+    const writes: unknown[] = [];
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, value) {
+      if (k === key) writes.push(JSON.parse(value));
+      setItem.call(this, k, value);
+    };
+
+    let firstFooterText: string | null = null;
+    new MutationObserver((_, observer) => {
+      const footer = document.querySelector("footer");
+      if (!footer) return;
+      firstFooterText = footer.textContent;
+      observer.disconnect();
+    }).observe(document, { childList: true, subtree: true });
+
+    Object.assign(window, {
+      userStateLoad: () => ({ firstFooterText, writes }),
+    });
+  }, stored);
+  await page.goto("/");
+
+  await page.locator('label[for="nerd-mode"]').click();
+  await expect(page.getByLabel("Nerd Mode")).toBeChecked();
+
+  const { firstFooterText, writes } = await page.evaluate(() =>
+    (
+      window as unknown as {
+        userStateLoad: () => { firstFooterText: string; writes: unknown[] };
+      }
+    ).userStateLoad(),
+  );
+  expect(firstFooterText).toContain("stored one");
+  expect(writes).toEqual([{ events: [stored], nerdMode: true }]);
+});
