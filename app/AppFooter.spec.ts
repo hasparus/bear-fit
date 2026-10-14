@@ -207,7 +207,10 @@ test("footer paints stored calendars on the first render and doesn't rewrite the
   const { firstFooterText, writes } = await page.evaluate(() =>
     (
       window as unknown as {
-        userStateLoad: () => { firstFooterText: string; writes: unknown[] };
+        userStateLoad: () => {
+          firstFooterText: string | null;
+          writes: unknown[];
+        };
       }
     ).userStateLoad(),
   );
