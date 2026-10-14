@@ -31,11 +31,9 @@ function sign(message: string): string {
 }
 
 async function openDashboard(page: Page) {
-  await expect(async () => {
-    await page.goto("/dashboard");
-    await expect(page.locator(".bg-neutral-100 dl")).toBeVisible();
-  }).toPass({ timeout: 20_000 });
+  await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard$/);
+  await expect(page.locator(".bg-neutral-100 dl")).toBeVisible();
   return page.locator("code");
 }
 
