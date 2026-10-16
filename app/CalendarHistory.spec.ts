@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import * as Y from "yjs";
 
 import { expect, test } from "../test";
+import { retryDropped } from "../test/utils/server";
 import { AvailabilityKey, type IsoDate, type UserId } from "./schemas";
 import { YDocJsonSchema, yDocToJson } from "./shared-data";
 import { decodeHistoryUpdates } from "./decodeHistoryUpdates";
@@ -161,8 +162,8 @@ test("creator can restore an event version", async ({ page: alice }) => {
   const availabilityKey = AvailabilityKey(creatorId, targetIsoDate);
   expect(changedData.availability[availabilityKey]).toBe(true);
 
-  const historyResponse = await alice.request.get(
-    `/parties/main/${changedData.event.id}/history`,
+  const historyResponse = await retryDropped(() =>
+    alice.request.get(`/parties/main/${changedData.event.id}/history`),
   );
   if (!historyResponse.ok()) {
     throw new Error(`Failed to fetch history: ${historyResponse.status()}`);
