@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useRef,
 } from "react";
 
 import { CalendarEvent } from "../schemas";
@@ -69,10 +70,6 @@ export type UserStateAction =
   | {
       type: "set-nerd-mode";
       payload: boolean;
-    }
-  | {
-      type: "~load-from-storage";
-      payload: UserStateContextValue;
     };
 
 function userStateReducer(
@@ -115,20 +112,19 @@ function userStateReducer(
     }
     case "set-nerd-mode":
       return { ...state, nerdMode: action.payload };
-    case "~load-from-storage":
-      return { ...state, ...action.payload };
     default:
       throw new UnreachableCaseError(action);
   }
 }
 
-let stateFromStorage: UserStateContextValue | null = null;
-try {
-  const storage = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
-  const { events, nerdMode } = UserStateContextValue.assert(storage);
-  stateFromStorage = { calendars: events, nerdMode };
-} catch {
-  // we don't care about the error here
+function readStoredUserState(): UserStateContextValue {
+  try {
+    const storage = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "{}");
+    const { events, nerdMode } = UserStateContextValue.assert(storage);
+    return { calendars: events, nerdMode };
+  } catch {
+    return DEFAULT_USER_STATE;
+  }
 }
 
 export function PreferencesProvider({
@@ -136,17 +132,15 @@ export function PreferencesProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [state, dispatch] = useReducer(userStateReducer, DEFAULT_USER_STATE);
+  const [state, dispatch] = useReducer(
+    userStateReducer,
+    undefined,
+    readStoredUserState,
+  );
+  const loadedState = useRef(state);
 
   useEffect(() => {
-    if (stateFromStorage) {
-      dispatch({
-        type: "~load-from-storage",
-        payload: stateFromStorage,
-      });
-      stateFromStorage = null;
-      return;
-    }
+    if (state === loadedState.current) return;
 
     localStorage.setItem(
       LOCAL_STORAGE_KEY,
