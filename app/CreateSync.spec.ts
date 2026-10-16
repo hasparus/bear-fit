@@ -2,7 +2,7 @@ import type { APIRequestContext, Page, Request } from "@playwright/test";
 
 import { expect, test } from "../test";
 import { createCalendar, fillCreateForm } from "../test/utils/createCalendar";
-import { historyLength, serverDoc } from "../test/utils/server";
+import { historyLength, retryDropped, serverDoc } from "../test/utils/server";
 
 test.setTimeout(60_000);
 
@@ -231,9 +231,11 @@ test("a late or replayed creation POST doesn't revert later edits", async ({
   const response = page.waitForResponse((res) => isCreationPost(res.request()));
   releasePost();
   expect((await response).ok()).toBe(true);
-  const replay = await request.post(`/parties/main/${id}`, {
-    data: (await response).request().postDataBuffer(),
-  });
+  const replay = await retryDropped(async () =>
+    request.post(`/parties/main/${id}`, {
+      data: (await response).request().postDataBuffer(),
+    }),
+  );
   expect(replay.ok()).toBe(true);
 
   expect(await serverEventName(request, id)).toBe(imported);
@@ -313,7 +315,9 @@ test("malformed creation POSTs are rejected and leave the calendar intact", asyn
     Buffer.from([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
     Buffer.from(JSON.stringify(before.event)),
   ]) {
-    const res = await request.post(`/parties/main/${id}`, { data });
+    const res = await retryDropped(() =>
+      request.post(`/parties/main/${id}`, { data }),
+    );
     expect(res.status()).toBe(400);
   }
 

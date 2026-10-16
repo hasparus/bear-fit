@@ -5,6 +5,7 @@ import path from "node:path";
 import { Doc, encodeStateAsUpdate } from "yjs";
 
 import { expect, test } from "../test";
+import { retryDropped } from "../test/utils/server";
 import { CalendarEvent } from "./schemas";
 import { initializeCalendarMap } from "./shared-data";
 
@@ -60,12 +61,14 @@ async function authorize(page: Page, signature: string) {
 }
 
 test("occupancy endpoint rejects public writes", async ({ request }) => {
-  const response = await request.post(OCCUPANCY_ENDPOINT, {
-    data: { count: 999, room: `forged-room-${Date.now()}` },
-  });
+  const response = await retryDropped(() =>
+    request.post(OCCUPANCY_ENDPOINT, {
+      data: { count: 999, room: `forged-room-${crypto.randomUUID()}` },
+    }),
+  );
   expect(response.status()).toBe(405);
 
-  const publicInfo = await request.get(OCCUPANCY_ENDPOINT);
+  const publicInfo = await retryDropped(() => request.get(OCCUPANCY_ENDPOINT));
   expect(await publicInfo.json()).toEqual({
     activeConnections: expect.any(Number),
     rooms: expect.any(Number),
@@ -75,9 +78,10 @@ test("occupancy endpoint rejects public writes", async ({ request }) => {
 test("dashboard only shows per-room details after signing its challenge", async ({
   page,
 }) => {
-  const roomA = `room-a-${Date.now()}`;
-  const roomB = `room-b-${Date.now()}`;
-  const calendarId = `registered-${Date.now()}`;
+  const id = crypto.randomUUID();
+  const roomA = `room-a-${id}`;
+  const roomB = `room-b-${id}`;
+  const calendarId = `registered-${id}`;
 
   const calendar = new Doc();
   initializeCalendarMap(
@@ -90,9 +94,11 @@ test("dashboard only shows per-room details after signing its challenge", async 
       startDate: "2030-01-06",
     }),
   );
-  const created = await page.request.post(`/parties/main/${calendarId}`, {
-    data: Buffer.from(encodeStateAsUpdate(calendar)),
-  });
+  const created = await retryDropped(() =>
+    page.request.post(`/parties/main/${calendarId}`, {
+      data: Buffer.from(encodeStateAsUpdate(calendar)),
+    }),
+  );
   expect(created.ok()).toBe(true);
 
   const challenge = await openDashboard(page);

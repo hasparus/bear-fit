@@ -1,5 +1,6 @@
 import { expect, test } from "../test";
 import { createCalendar } from "../test/utils/createCalendar";
+import { retryDropped } from "../test/utils/server";
 
 test.setTimeout(60_000);
 
@@ -41,7 +42,7 @@ test("opening an event connection updates occupancy, and closing it drains again
   request,
 }) => {
   async function activeConnections() {
-    const res = await request.get(OCCUPANCY_ENDPOINT);
+    const res = await retryDropped(() => request.get(OCCUPANCY_ENDPOINT));
     const info = (await res.json()) as { activeConnections: number };
     return info.activeConnections;
   }
