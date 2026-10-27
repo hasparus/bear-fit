@@ -115,3 +115,19 @@ test("picking two dates inside the current range replaces it", async ({
     .poll(serverDates)
     .toEqual({ endDate: `${yearMonth}10`, startDate: `${yearMonth}08` });
 });
+
+test("switching to a rolling window shows the current month", async ({
+  page,
+}) => {
+  const { nextMonthName } = await createCalendar(page);
+  const dialog = await openEditDialog(page);
+  await expect(dialog.getByText(nextMonthName)).toBeVisible();
+
+  await dialog.getByText("Rolling window", { exact: true }).click();
+
+  const thisMonthName = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    timeZone: "UTC",
+  });
+  await expect(dialog.getByText(thisMonthName)).toBeVisible();
+});
