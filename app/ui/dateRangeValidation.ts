@@ -1,4 +1,4 @@
-import { type DateRange } from "react-day-picker";
+import { type DateRange } from "@daypicker/react";
 
 export const isValidDateRange = (dateRange: DateRange): boolean => {
   return !!(dateRange.from && dateRange.to && dateRange.from < dateRange.to);

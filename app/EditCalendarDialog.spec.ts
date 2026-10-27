@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { expect, test } from "../test";
-import { createCalendar } from "../test/utils/createCalendar";
+import { createCalendar, ordinal } from "../test/utils/createCalendar";
 import { historyLength, serverDoc } from "../test/utils/server";
 
 test.use({ viewport: { width: 360, height: 400 } });
@@ -85,4 +85,34 @@ test("a date edit reaches the server as a single update", async ({
     .poll(async () => Object.keys(await serverEvent()).sort())
     .toEqual(["creator", "id", "name", "rolling"]);
   expect(await historyLength(request, id)).toBe(before + 1);
+});
+
+test("picking two dates inside the current range replaces it", async ({
+  page,
+  request,
+}) => {
+  const { id, nextMonthName } = await createCalendar(page, {
+    endDay: 12,
+    startDay: 6,
+  });
+  const serverDates = async () => {
+    const { endDate, startDate } = (await serverDoc(request, id)).event;
+    return { endDate, startDate };
+  };
+  await expect.poll(serverDates).toHaveProperty("startDate");
+  const yearMonth = String((await serverDates()).startDate).slice(0, 8);
+
+  const dialog = await openEditDialog(page);
+  await dialog.getByRole("button", { name: "next month" }).click();
+  await expect(dialog.getByText(nextMonthName)).toBeVisible();
+
+  const day = (n: number) =>
+    dialog.getByRole("button", { name: `${nextMonthName} ${ordinal(n)}` });
+  await day(8).click();
+  await day(10).click();
+  await dialog.getByRole("button", { name: "Save Changes" }).click();
+
+  await expect
+    .poll(serverDates)
+    .toEqual({ endDate: `${yearMonth}10`, startDate: `${yearMonth}08` });
 });

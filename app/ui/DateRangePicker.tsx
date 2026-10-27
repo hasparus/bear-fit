@@ -1,5 +1,5 @@
-import { type DateRange, type DayPickerProps } from "react-day-picker";
-import { DayPicker } from "react-day-picker";
+import { type DateRange, type DayPickerProps } from "@daypicker/react";
+import { DayPicker } from "@daypicker/react";
 
 import { tryGetFirstDayOfTheWeek } from "../tryGetFirstDayOfTheWeek";
 import "./react-day-picker.css";
@@ -22,6 +22,7 @@ export function DateRangePicker({
       showOutsideDays
       fixedWeeks // avoid layout shift when changing months
       mode="range"
+      resetOnSelect
       selected={selected}
       timeZone="UTC"
       weekStartsOn={tryGetFirstDayOfTheWeek()}
