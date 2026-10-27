@@ -19,6 +19,7 @@ import "./styles.css";
 
 export function App() {
   const params = useSearchParams();
+  const calendarId = params.get("id");
 
   return (
     <PreferencesProvider>
@@ -27,8 +28,8 @@ export function App() {
         <div className="min-h-[89vh] flex items-center mt-2">
           <Routes params={params} />
         </div>
-        <AppFooter className="mt-8" currentCalendarId={params.get("id")} />
-        <CursorPartyScript />
+        <AppFooter className="mt-8" currentCalendarId={calendarId} />
+        {calendarId && <CursorPartyScript room={calendarId} />}
       </DialogsProvider>
     </PreferencesProvider>
   );

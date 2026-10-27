@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import "./cursors.css";
 
@@ -38,17 +38,24 @@ function useCursorChatKey() {
   }, []);
 }
 
-export function CursorPartyScript() {
-  const [isMounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+/**
+ * One cursor room per calendar, so a fresh calendar never shows strangers.
+ * Injected by hand: React 19 hoists `<script async>` and never removes it.
+ * Removing the script tears cursor-party down; it reads its room from `data-room`.
+ */
+export function CursorPartyScript({ room }: { room: string }) {
   useCursorChatKey();
 
-  if (!isMounted) return null;
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://cursor-party.hasparus.workers.dev/cursors.js";
+    script.dataset.room = room;
+    document.body.appendChild(script);
+    return () => {
+      script.remove();
+    };
+  }, [room]);
 
-  return (
-    <script async src="https://cursor-party.hasparus.workers.dev/cursors.js" />
-  );
+  return null;
 }
