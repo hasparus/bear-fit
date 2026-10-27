@@ -2,7 +2,7 @@ import { type Page } from "@playwright/test";
 
 import { expect } from "../index";
 
-function ordinal(day: number) {
+export function ordinal(day: number) {
   if (day % 100 >= 11 && day % 100 <= 13) return `${day}th`;
   const suffix = { 1: "st", 2: "nd", 3: "rd" }[day % 10] ?? "th";
   return `${day}${suffix}`;
