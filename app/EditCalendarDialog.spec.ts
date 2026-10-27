@@ -103,7 +103,6 @@ test("picking two dates inside the current range replaces it", async ({
   const yearMonth = String((await serverDates()).startDate).slice(0, 8);
 
   const dialog = await openEditDialog(page);
-  await dialog.getByRole("button", { name: "next month" }).click();
   await expect(dialog.getByText(nextMonthName)).toBeVisible();
 
   const day = (n: number) =>

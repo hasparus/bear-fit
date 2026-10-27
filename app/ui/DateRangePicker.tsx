@@ -20,6 +20,7 @@ export function DateRangePicker({
   return (
     <DayPicker
       showOutsideDays
+      defaultMonth={selected.from}
       fixedWeeks // avoid layout shift when changing months
       mode="range"
       resetOnSelect
