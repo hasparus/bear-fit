@@ -375,7 +375,11 @@ test("edits event dates and preserves user availability", async ({
   await expect(alice.getByText("Edit Calendar")).toBeVisible();
   await expect(alice.getByText("Choose new range")).toBeVisible();
 
-  await alice.getByRole("button", { name: "Go to the Next Month" }).click();
+  await expect(
+    alice
+      .getByRole("dialog", { name: "Edit Calendar" })
+      .getByText(nextMonthName),
+  ).toBeVisible();
 
   await alice
     .getByRole("button", { name: `${nextMonthName} ${NEW_START_DAY}rd` })

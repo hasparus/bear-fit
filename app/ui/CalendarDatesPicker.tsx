@@ -114,6 +114,8 @@ export function CalendarDatesPicker({
         </small>
       </label>
       <DateRangePicker
+        // remount so the picker shows the new range's month
+        key={value.isRolling ? "rolling" : "fixed"}
         {...fixedRangeProps}
         onSelect={handleRangeSelect}
         selected={selected}
