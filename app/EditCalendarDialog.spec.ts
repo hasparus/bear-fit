@@ -86,3 +86,30 @@ test("a date edit reaches the server as a single update", async ({
     .toEqual(["creator", "id", "name", "rolling"]);
   expect(await historyLength(request, id)).toBe(before + 1);
 });
+
+test("picking two dates inside the current range replaces it", async ({
+  page,
+  request,
+}) => {
+  const { id, nextMonthName } = await createCalendar(page, {
+    endDay: 12,
+    startDay: 6,
+  });
+  const dialog = await openEditDialog(page);
+
+  const day = (n: number) =>
+    dialog.getByRole("button", { name: new RegExp(`${nextMonthName} ${n}th`) });
+  if (!(await day(8).isVisible())) {
+    await dialog.getByRole("button", { name: "next month" }).click();
+  }
+  await day(8).click();
+  await day(10).click();
+  await dialog.getByRole("button", { name: "Save Changes" }).click();
+
+  await expect
+    .poll(async () => {
+      const { endDate, startDate } = (await serverDoc(request, id)).event;
+      return [String(startDate).slice(8, 10), String(endDate).slice(8, 10)];
+    })
+    .toEqual(["08", "10"]);
+});
