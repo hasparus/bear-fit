@@ -8,11 +8,19 @@ test("cursors join only the open calendar's room", async ({ page }) => {
   );
   const cursorScripts = page.locator('script[src*="cursor-party"]');
 
-  const { id } = await createCalendar(page);
-  await expect(cursorScripts).toHaveCount(1);
-  await expect(cursorScripts).toHaveAttribute("data-room", id);
-
-  await page.goBack();
+  await page.goto("/");
   await page.getByText("Create a Calendar").waitFor({ state: "visible" });
   await expect(cursorScripts).toHaveCount(0);
+
+  const { id } = await createCalendar(page);
+  await expect(cursorScripts).toHaveAttribute("data-room", id);
+
+  // leaving keeps the script loaded but out of every room
+  await page.goBack();
+  await page.getByText("Create a Calendar").waitFor({ state: "visible" });
+  await expect(cursorScripts).toHaveAttribute("data-room", "");
+
+  await page.goForward();
+  await expect(cursorScripts).toHaveAttribute("data-room", id);
+  await expect(cursorScripts).toHaveCount(1);
 });

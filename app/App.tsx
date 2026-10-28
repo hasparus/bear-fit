@@ -29,7 +29,7 @@ export function App() {
           <Routes params={params} />
         </div>
         <AppFooter className="mt-8" currentCalendarId={calendarId} />
-        {calendarId && <CursorPartyScript room={calendarId} />}
+        <CursorPartyScript room={calendarId} />
       </DialogsProvider>
     </PreferencesProvider>
   );
