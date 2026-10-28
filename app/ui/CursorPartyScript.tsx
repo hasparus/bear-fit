@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import "./cursors.css";
 
@@ -36,26 +36,25 @@ function useCursorChatKey(enabled: boolean) {
   }, [enabled]);
 }
 
+let script: HTMLScriptElement | undefined;
+
 /**
  * One cursor room per calendar, so a fresh calendar never shows strangers.
  * The script loads with the first calendar and stays: cursor-party follows
  * `data-room`, and "" leaves the room, so navigating never re-runs it.
  */
 export function CursorPartyScript({ room }: { room: string | null }) {
-  const script = useRef<HTMLScriptElement>(null);
-  useCursorChatKey(room !== null);
+  useCursorChatKey(Boolean(room));
 
   useEffect(() => {
-    if (script.current) {
-      script.current.dataset.room = room ?? "";
-    } else if (room) {
-      // by hand: React 19 hoists `<script async>` and won't update it
-      script.current = document.createElement("script");
-      script.current.async = true;
-      script.current.src =
-        "https://cursor-party.hasparus.workers.dev/cursors.js";
-      script.current.dataset.room = room;
-      document.body.appendChild(script.current);
+    if (!room && !script) return; // no cursors until a calendar opens
+    // by hand: React 19 hoists `<script async>` and won't update it
+    script ??= document.createElement("script");
+    script.dataset.room = room ?? "";
+    if (!script.isConnected) {
+      script.async = true;
+      script.src = "https://cursor-party.hasparus.workers.dev/cursors.js";
+      document.body.appendChild(script);
     }
   }, [room]);
 
