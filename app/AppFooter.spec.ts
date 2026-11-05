@@ -217,3 +217,60 @@ test("footer paints stored calendars on the first render and doesn't rewrite the
   expect(firstFooterText).toContain("stored one");
   expect(writes).toEqual([{ events: [stored], nerdMode: true }]);
 });
+
+const PUBLIC_STATS = { activeConnections: 0, rooms: 0 };
+
+test("footer stats retry a failed request and show the calendar count", async ({
+  page,
+}) => {
+  let requests = 0;
+  await page.route("**/parties/rooms/index", (route) =>
+    ++requests === 1
+      ? route.fulfill({ body: "nope", status: 500 })
+      : route.fulfill({ json: { ...PUBLIC_STATS, calendars: 1 } }),
+  );
+  await page.goto("/");
+
+  const stats = page.locator("dl").filter({ hasText: "created" });
+  await expect(stats.getByRole("definition")).toHaveText("1");
+  await expect(stats.getByRole("term")).toHaveText("Calendar created");
+});
+
+test("footer stats pluralize the calendar count", async ({ page }) => {
+  await page.route("**/parties/rooms/index", (route) =>
+    route.fulfill({ json: { ...PUBLIC_STATS, calendars: 7 } }),
+  );
+  await page.goto("/");
+
+  const stats = page.locator("dl").filter({ hasText: "created" });
+  await expect(stats.getByRole("definition")).toHaveText("7");
+  await expect(stats.getByRole("term")).toHaveText("Calendars created");
+});
+
+test("footer hides the stats when every request fails", async ({ page }) => {
+  let requests = 0;
+  await page.route("**/parties/rooms/index", (route) => {
+    requests++;
+    return route.fulfill({ body: "nope", status: 500 });
+  });
+  await page.goto("/");
+
+  await expect.poll(() => requests, { timeout: 10_000 }).toBe(3);
+  await expect(page.locator("footer .animate-pulse")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByText(/Calendars? created/)).toHaveCount(0);
+});
+
+test("footer stats don't retry a 404", async ({ page }) => {
+  let requests = 0;
+  await page.route("**/parties/rooms/index", (route) => {
+    requests++;
+    return route.fulfill({ body: "nope", status: 404 });
+  });
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.locator("footer .animate-pulse")).toHaveCount(0);
+  await expect(page.getByText(/Calendars? created/)).toHaveCount(0);
+  expect(requests).toBe(1);
+});

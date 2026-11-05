@@ -6,6 +6,7 @@ import {
   AUTH_CHALLENGE_PREFIX,
   ClientMessage,
   makePublicRoomInfo,
+  type PublicStats,
   RegisteredCalendar,
   type Rooms,
   type ServerMessage,
@@ -65,7 +66,15 @@ export class OccupancyPartyServer extends Server<Env> {
 
   async onRequest(request: Request): Promise<Response> {
     if (request.method === "GET") {
-      return Response.json(makePublicRoomInfo(this.rooms));
+      const { calendars } = this.ctx.storage.sql
+        .exec<{
+          calendars: number;
+        }>("SELECT COUNT(*) AS calendars FROM calendars")
+        .one();
+      return Response.json({
+        ...makePublicRoomInfo(this.rooms),
+        calendars,
+      } satisfies PublicStats);
     }
 
     return Response.json({ error: "Method not allowed" }, { status: 405 });

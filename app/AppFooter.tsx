@@ -1,6 +1,6 @@
 import { Suspense, use } from "react";
 
-import { getPublicRoomInfo } from "./api/getRoomCount";
+import { getPublicStats } from "./api/getPublicStats";
 import { formatIsoDate, resolveCalendarDates } from "./schemas";
 import { CheckboxField } from "./ui/CheckboxField";
 import { cn } from "./ui/cn";
@@ -145,19 +145,21 @@ export function AppFooter({
   );
 }
 
-const publicRoomInfo = getPublicRoomInfo().catch((err) => {
-  console.error("error fetching public room info", err);
-  return { rooms: 0 };
+const publicStats = getPublicStats().catch((err) => {
+  console.error("error fetching public stats", err);
+  return null;
 });
 
 function Stats({ className }: { className?: string }) {
-  const { rooms } = use(publicRoomInfo);
+  const stats = use(publicStats);
+  if (!stats) return null;
+  const { calendars } = stats;
 
   return (
     <dl className={cn("font-sans", className)}>
       <div className="flex gap-2 flex-row-reverse justify-center items-center">
-        <dt>Calendar{rooms === 1 ? "" : "s"} created</dt>
-        <dd className="text-2xl">{rooms}</dd>
+        <dt>Calendar{calendars === 1 ? "" : "s"} created</dt>
+        <dd className="text-2xl">{calendars}</dd>
       </div>
     </dl>
   );

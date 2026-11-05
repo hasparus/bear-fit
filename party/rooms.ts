@@ -49,3 +49,7 @@ export interface PublicRoomInfo {
   activeConnections: number;
   rooms: number;
 }
+
+export interface PublicStats extends PublicRoomInfo {
+  calendars: number;
+}

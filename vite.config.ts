@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [cloudflare(), react(), tailwind()],
   server: {
     host: "127.0.0.1",
+    watch: { ignored: ["**/.claude/**"] },
   },
   preview: {
     host: "127.0.0.1",

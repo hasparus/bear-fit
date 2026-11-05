@@ -17,17 +17,18 @@ const TEST_PUBLIC_KEY_B64 = (() => {
 const PORT = Number(process.env.TEST_PORT ?? 1999);
 
 // @cloudflare/vite-plugin sources Worker vars from `.dev.vars`/`.env`. Dev
-const devVars = [
-  `PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"`,
-  "",
-].join("\n");
+const devVars = [`PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"`, ""].join("\n");
 for (const dir of [
   process.cwd(),
   path.join(process.cwd(), "dist", "bear_fit"),
 ]) {
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, ".dev.vars"), devVars);
+    const file = path.join(dir, ".dev.vars");
+    // Every write restarts a running `vite dev`, and each worker loads this config.
+    if (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== devVars) {
+      fs.writeFileSync(file, devVars);
+    }
   } catch (error) {
     console.warn(`Could not write .dev.vars to ${dir}`, error);
   }
@@ -47,6 +48,8 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        // macOS: auto-updated Chrome instead of the pinned bundled engine.
+        channel: process.platform === "darwin" ? "chrome" : undefined,
         launchOptions: {
           downloadsPath: "./test/downloads/chromium",
         },
