@@ -17,10 +17,7 @@ const TEST_PUBLIC_KEY_B64 = (() => {
 const PORT = Number(process.env.TEST_PORT ?? 1999);
 
 // @cloudflare/vite-plugin sources Worker vars from `.dev.vars`/`.env`. Dev
-const devVars = [
-  `PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"`,
-  "",
-].join("\n");
+const devVars = [`PUBLIC_KEY_B64="${TEST_PUBLIC_KEY_B64}"`, ""].join("\n");
 for (const dir of [
   process.cwd(),
   path.join(process.cwd(), "dist", "bear_fit"),
@@ -37,7 +34,6 @@ for (const dir of [
   }
 }
 
-// SAFETY: macOS uses auto-updated Chrome instead of the pinned bundled engine.
 export default defineConfig({
   forbidOnly: !!process.env.CI,
   fullyParallel: true,
@@ -52,7 +48,8 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        ...(process.platform === "darwin" ? { channel: "chrome" as const } : {}),
+        // macOS: auto-updated Chrome instead of the pinned bundled engine.
+        channel: process.platform === "darwin" ? "chrome" : undefined,
         launchOptions: {
           downloadsPath: "./test/downloads/chromium",
         },
