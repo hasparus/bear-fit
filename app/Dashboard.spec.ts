@@ -71,6 +71,7 @@ test("occupancy endpoint rejects public writes", async ({ request }) => {
   const publicInfo = await retryDropped(() => request.get(OCCUPANCY_ENDPOINT));
   expect(await publicInfo.json()).toEqual({
     activeConnections: expect.any(Number),
+    calendars: expect.any(Number),
     rooms: expect.any(Number),
   });
 });

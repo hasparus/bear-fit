@@ -147,17 +147,17 @@ export function AppFooter({
 
 const publicRoomInfo = getPublicRoomInfo().catch((err) => {
   console.error("error fetching public room info", err);
-  return { rooms: 0 };
+  return { calendars: 0 };
 });
 
 function Stats({ className }: { className?: string }) {
-  const { rooms } = use(publicRoomInfo);
+  const { calendars } = use(publicRoomInfo);
 
   return (
     <dl className={cn("font-sans", className)}>
       <div className="flex gap-2 flex-row-reverse justify-center items-center">
-        <dt>Calendar{rooms === 1 ? "" : "s"} created</dt>
-        <dd className="text-2xl">{rooms}</dd>
+        <dt>Calendar{calendars === 1 ? "" : "s"} created</dt>
+        <dd className="text-2xl">{calendars}</dd>
       </div>
     </dl>
   );

@@ -12,7 +12,7 @@ import { decodeHistoryUpdates } from "../app/decodeHistoryUpdates";
 import { CalendarEvent } from "../app/schemas";
 import { initializeCalendarMap, yDocToJson } from "../app/shared-data";
 import { History, HISTORY_LIMIT, MAX_UPDATE_BYTES } from "./history";
-import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID } from "./rooms";
+import { OCCUPANCY_SERVER_SINGLETON_ROOM_ID, type PublicStats } from "./rooms";
 
 declare global {
   namespace Cloudflare {
@@ -203,6 +203,34 @@ test("POST registers the calendar with its creation time", async () => {
 
   await vi.waitFor(async () =>
     expect((await registeredAt(id)) ?? 0).toBeGreaterThanOrEqual(before),
+  );
+});
+
+test("public stats count calendars nobody is connected to", async () => {
+  const stats = async () => {
+    const registry = await getServerByName(
+      env.rooms,
+      OCCUPANCY_SERVER_SINGLETON_ROOM_ID,
+    );
+    const response = await registry.fetch(
+      "https://bear.fit/parties/rooms/index",
+    );
+    return (await response.json()) as PublicStats;
+  };
+  const id = "unoccupied-calendar";
+  const before = await stats();
+
+  const stub = await startCalendar(id);
+  await stub.fetch(`https://bear.fit/parties/main/${id}`, {
+    body: creationUpdate(id),
+    method: "POST",
+  });
+
+  await vi.waitFor(async () =>
+    expect(await stats()).toEqual({
+      ...before,
+      calendars: before.calendars + 1,
+    }),
   );
 });
 
