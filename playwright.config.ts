@@ -33,6 +33,7 @@ for (const dir of [
   }
 }
 
+// SAFETY: macOS uses auto-updated Chrome instead of the pinned bundled engine.
 export default defineConfig({
   forbidOnly: !!process.env.CI,
   fullyParallel: true,
@@ -47,6 +48,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        ...(process.platform === "darwin" ? { channel: "chrome" as const } : {}),
         launchOptions: {
           downloadsPath: "./test/downloads/chromium",
         },
