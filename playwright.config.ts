@@ -27,7 +27,11 @@ for (const dir of [
 ]) {
   try {
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, ".dev.vars"), devVars);
+    const file = path.join(dir, ".dev.vars");
+    // Every write restarts a running `vite dev`, and each worker loads this config.
+    if (!fs.existsSync(file) || fs.readFileSync(file, "utf8") !== devVars) {
+      fs.writeFileSync(file, devVars);
+    }
   } catch (error) {
     console.warn(`Could not write .dev.vars to ${dir}`, error);
   }
