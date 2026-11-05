@@ -264,7 +264,7 @@ export function CalendarDetails({
           <form
             onSubmit={(e) => e.preventDefault()}
             className={cn(
-              "font-[inherit] text-base",
+              "font-sans text-base",
               monthCount > 1 &&
                 "lg:grid lg:grid-areas-[details_calendar] lg:grid-cols-[1fr_auto_1fr] lg:gap-4",
             )}
