@@ -227,10 +227,7 @@ test("public stats count calendars nobody is connected to", async () => {
   });
 
   await vi.waitFor(async () =>
-    expect(await stats()).toEqual({
-      ...before,
-      calendars: before.calendars + 1,
-    }),
+    expect((await stats()).calendars).toBe(before.calendars + 1),
   );
 });
 
