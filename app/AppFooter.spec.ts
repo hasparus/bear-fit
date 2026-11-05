@@ -256,6 +256,21 @@ test("footer hides the stats when every request fails", async ({ page }) => {
   await page.goto("/");
 
   await expect.poll(() => requests, { timeout: 10_000 }).toBe(3);
+  await expect(page.locator("footer .animate-pulse")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
   await expect(page.getByText(/Calendars? created/)).toHaveCount(0);
+});
+
+test("footer stats don't retry a 404", async ({ page }) => {
+  let requests = 0;
+  await page.route("**/parties/rooms/index", (route) => {
+    requests++;
+    return route.fulfill({ body: "nope", status: 404 });
+  });
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.locator("footer .animate-pulse")).toHaveCount(0);
+  await expect(page.getByText(/Calendars? created/)).toHaveCount(0);
+  expect(requests).toBe(1);
 });

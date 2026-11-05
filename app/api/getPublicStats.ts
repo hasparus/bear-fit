@@ -2,21 +2,19 @@ import type { PublicStats } from "../../party/rooms";
 
 import { serverUrl } from "./serverUrl";
 
+const STATS_URL = `${serverUrl}/parties/rooms/index`;
 const RETRY_DELAYS_MS = [500, 2000];
 
 export async function getPublicStats() {
   for (const delay of RETRY_DELAYS_MS) {
-    try {
-      return await fetchPublicStats();
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
+    const res = await fetch(STATS_URL).catch(() => null);
+    if (res && res.status < 500) return readPublicStats(res);
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
-  return fetchPublicStats();
+  return readPublicStats(await fetch(STATS_URL));
 }
 
-async function fetchPublicStats() {
-  const res = await fetch(`${serverUrl}/parties/rooms/index`);
+async function readPublicStats(res: Response) {
   if (!res.ok) throw new Error(`stats request failed: ${res.status}`);
   return (await res.json()) as PublicStats;
 }
