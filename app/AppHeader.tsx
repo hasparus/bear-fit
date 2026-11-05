@@ -13,7 +13,7 @@ export function AppHeader({ className }: { className?: string }) {
       )}
     >
       <a
-        className="font-sans text-sm font-bold no-underline text-inherit"
+        className="font-sans text-xs font-bold no-underline text-inherit"
         href="/"
       >
         bear fit
