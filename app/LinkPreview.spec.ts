@@ -32,7 +32,7 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
     `<title>bear-fit · ${name.replace("<", "&lt;").replace(">", "&gt;")}</title>`,
   );
   expect(metaContent(html, "og:description")).toMatch(
-    /^Pick dates between [A-Z][a-z]{2} 6 and 12, \d{4}$/,
+    /^pick dates between [A-Z][a-z]{2} 6 and [A-Z][a-z]{2} 12, \d{4}$/,
   );
 
   const imageUrl = new URL(

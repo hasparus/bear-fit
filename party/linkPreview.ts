@@ -156,16 +156,24 @@ function describeDates(event: PreviewEvent): string {
   );
 }
 
+const monthDay = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
 /**
- * "Pick dates between Nov 6 and Dec 10, 2026", or "Pick dates in the next 14
+ * "pick dates between Nov 6 and Dec 10, 2026", or "pick dates in the next 14
  * days" for a rolling calendar. The description shows this.
  */
 function callToAction(event: PreviewEvent): string {
-  if (event.rolling) return `Pick dates in the next ${event.rolling} days`;
-  if (!event.startDate || !event.endDate) return "Pick your dates";
-  const range = dateRange
-    .formatRangeToParts(new Date(event.startDate), new Date(event.endDate))
-    .map((part) => (part.value.includes("–") ? " and " : part.value))
-    .join("");
-  return `Pick dates between ${range}`;
+  if (event.rolling) return `pick dates in the next ${event.rolling} days`;
+  if (!event.startDate || !event.endDate) return "pick your dates";
+  const start = new Date(event.startDate);
+  const end = new Date(event.endDate);
+  const from =
+    start.getUTCFullYear() === end.getUTCFullYear()
+      ? monthDay.format(start)
+      : dateRange.format(start);
+  return `pick dates between ${from} and ${dateRange.format(end)}`;
 }
