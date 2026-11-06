@@ -1,19 +1,17 @@
 name: ci
 on:
   push:
+
+# `check` and `e2e` run in parallel; `deploy` waits for both.
 jobs:
-  build-and-check:
+  check:
     permissions:
       contents: read
-      deployments: write
-      pull-requests: write
 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: pnpm/action-setup@v2
         with:
@@ -33,9 +31,104 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # Playwright runs in e2e.yml.
       - name: Durable Object tests
         run: pnpm exec vitest run
+
+  e2e:
+    permissions:
+      contents: read
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: "pnpm"
+
+      # Specs sign dashboard challenges with `bun .ssh/sign-message.tsx`.
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.2"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Split system deps from the browser download: the combined
+      # `--with-deps` wedges on the interactive `needrestart` apt prompt.
+      - name: Install Playwright system deps
+        run: pnpm exec playwright install-deps chromium firefox
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium firefox
+        timeout-minutes: 5
+
+      # Builds the app, then runs Playwright against the built output served
+      # by `vite preview`. playwright.config.ts writes the committed test
+      # public key to .dev.vars, which the Worker loads for dashboard auth.
+      - name: Run Playwright tests
+        run: pnpm test:e2e
+
+      - name: Generate coverage report
+        if: ${{ !cancelled() }}
+        run: pnpm test:coverage-report
+
+      - name: Install lcov
+        if: ${{ !cancelled() }}
+        run: sudo apt-get install -y lcov
+
+      # Enforces the minimum and uploads the report as an artifact. It only
+      # comments on pull_request events, which this workflow doesn't run on.
+      - name: Report code coverage
+        if: ${{ !cancelled() }}
+        uses: zgosalvez/github-actions-report-lcov@v4
+        with:
+          coverage-files: test/coverage/html/lcov.info
+          minimum-coverage: 65
+          artifact-name: code-coverage-report
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/p
+          retention-days: 30
+
+  deploy:
+    needs: [check, e2e]
+    permissions:
+      contents: read
+      deployments: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: "pnpm"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
 
       - name: Deploy
         id: deploy
