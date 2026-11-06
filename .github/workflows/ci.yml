@@ -1,6 +1,10 @@
 name: ci
+# Pull requests (so the coverage comment can post) and pushes to main; a
+# branch without a PR isn't checked or deployed.
 on:
   push:
+    branches: [main]
+  pull_request:
 
 # `check` and `e2e` run in parallel; `deploy` waits for both.
 jobs:
@@ -37,6 +41,7 @@ jobs:
   e2e:
     permissions:
       contents: read
+      pull-requests: write
 
     runs-on: ubuntu-latest
     steps:
@@ -80,22 +85,28 @@ jobs:
         run: pnpm test:e2e
 
       - name: Generate coverage report
-        if: ${{ !cancelled() }}
+        if:
+          always() && github.event.pull_request.head.repo.full_name ==
+          github.repository
         run: pnpm test:coverage-report
 
       - name: Install lcov
-        if: ${{ !cancelled() }}
+        if:
+          always() && github.event.pull_request.head.repo.full_name ==
+          github.repository
         run: sudo apt-get install -y lcov
 
-      # Enforces the minimum and uploads the report as an artifact. It only
-      # comments on pull_request events, which this workflow doesn't run on.
       - name: Report code coverage
-        if: ${{ !cancelled() }}
+        if:
+          always() && github.event.pull_request.head.repo.full_name ==
+          github.repository
         uses: zgosalvez/github-actions-report-lcov@v4
         with:
           coverage-files: test/coverage/html/lcov.info
           minimum-coverage: 65
           artifact-name: code-coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          update-comment: true
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -107,16 +118,22 @@ jobs:
 
   deploy:
     needs: [check, e2e]
+    # Fork PRs get no secrets, so they can't deploy.
+    if:
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       deployments: write
 
     runs-on: ubuntu-latest
     steps:
+      # The branch head, not the PR's merge commit, like the preview's name.
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: pnpm/action-setup@v2
         with:
