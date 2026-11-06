@@ -13,8 +13,6 @@ import { loadCard, renderCard } from "./ogImage";
 const CRAWLER =
   /bot|facebookexternalhit|whatsapp|preview|embedly|mastodon|cardyb|crawler|spider/i;
 
-const TAGLINE = "find a time that works for everybody";
-
 /** Just what the preview shows; older calendars may lack other fields. */
 const PreviewEvent = type({
   "endDate?": IsoDate,
@@ -56,31 +54,34 @@ async function serveIndex(request: Request, env: Env, url: URL) {
   if (!event) return response;
 
   const dates = describeDates(event);
-  const description = [dates, TAGLINE].filter(Boolean).join(" · ");
+  const title = `bear-fit · ${event.name}`;
+  const canonical = new URL("/", url);
+  canonical.searchParams.set("id", id);
   const image = new URL("/og.png", url);
   image.searchParams.set("id", id);
   image.searchParams.set("v", cardVersion(event.name, dates));
   const page = new HTMLRewriter()
     .on("title", {
       element: (element) => {
-        element.setInnerContent(`${event.name} · bear-fit`);
+        element.setInnerContent(title);
       },
     })
     .on('meta[name="description"], meta[property="og:description"]', {
       element: (element) => {
-        element.setAttribute("content", description);
+        element.setAttribute("content", callToAction(event));
       },
     })
     .on('meta[property="og:title"]', {
       element: (element) => {
-        element.setAttribute("content", event.name);
+        element.setAttribute("content", title);
       },
     })
     .on("head", {
       element: (head) => {
         // A serialized URL has no quotes or angle brackets; `&` is escaped.
         head.append(
-          `<meta property="og:image" content="${image.href.replaceAll("&", "&amp;")}" />` +
+          `<meta property="og:url" content="${canonical.href}" />` +
+            `<meta property="og:image" content="${image.href.replaceAll("&", "&amp;")}" />` +
             `<meta property="og:image:width" content="1200" />` +
             `<meta property="og:image:height" content="630" />` +
             `<meta name="twitter:card" content="summary_large_image" />`,
@@ -116,7 +117,7 @@ async function serveCardImage(env: Env, url: URL, id: string) {
 }
 
 /** Bump when the card's design changes, so crawlers refetch the image. */
-const CARD_DESIGN = 1;
+const CARD_DESIGN = 2;
 
 /** FNV-1a over what the card shows. */
 function cardVersion(name: string, dates: string) {
@@ -147,7 +148,7 @@ const dateRange = new Intl.DateTimeFormat("en-US", {
 
 /**
  * "Nov 6 – Dec 10, 2026", "Next 14 days" for a rolling calendar, or "" when
- * the calendar has no dates.
+ * the calendar has no dates. The card shows this.
  */
 function describeDates(event: PreviewEvent): string {
   if (event.rolling) return `Next ${event.rolling} days`;
@@ -156,4 +157,26 @@ function describeDates(event: PreviewEvent): string {
     new Date(event.startDate),
     new Date(event.endDate),
   );
+}
+
+const monthDay = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+/**
+ * "pick dates between Nov 6 and Dec 10, 2026", or "pick dates in the next 14
+ * days" for a rolling calendar. The description shows this.
+ */
+function callToAction(event: PreviewEvent): string {
+  if (event.rolling) return `pick dates in the next ${event.rolling} days`;
+  if (!event.startDate || !event.endDate) return "pick your dates";
+  const start = new Date(event.startDate);
+  const end = new Date(event.endDate);
+  const from =
+    start.getUTCFullYear() === end.getUTCFullYear()
+      ? monthDay.format(start)
+      : dateRange.format(start);
+  return `pick dates between ${from} and ${dateRange.format(end)}`;
 }

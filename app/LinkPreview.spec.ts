@@ -21,7 +21,7 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
       });
       return metaContent(await response.text(), "og:title");
     })
-    .toBe(name.replaceAll('"', "&quot;"));
+    .toBe(`bear-fit · ${name.replaceAll('"', "&quot;")}`);
 
   const html = await (
     await page.request.get(`/?id=${id}`, {
@@ -29,16 +29,19 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
     })
   ).text();
   expect(html).toContain(
-    `<title>${name.replace("<", "&lt;").replace(">", "&gt;")} · bear-fit</title>`,
+    `<title>bear-fit · ${name.replace("<", "&lt;").replace(">", "&gt;")}</title>`,
   );
   expect(metaContent(html, "og:description")).toMatch(
-    /^[A-Z][a-z]{2} 6 – 12, \d{4} · find a time that works for everybody$/,
+    /^pick dates between [A-Z][a-z]{2} 6 and [A-Z][a-z]{2} 12, \d{4}$/,
   );
 
   const imageUrl = new URL(
     metaContent(html, "og:image")!.replaceAll("&amp;", "&"),
   );
   expect(imageUrl.searchParams.get("v")).toBeTruthy();
+  expect(metaContent(html, "og:url")).toBe(
+    new URL(`/?id=${id}`, imageUrl).href,
+  );
   const image = await page.request.get(imageUrl.href);
   expect(image.headers()["content-type"]).toBe("image/png");
   const png = await image.body();
@@ -53,7 +56,7 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
   expect(revalidated.status()).toBe(200);
   expect(revalidated.headers()["etag"]).toBeUndefined();
   expect(metaContent(await revalidated.text(), "og:title")).toBe(
-    name.replaceAll('"', "&quot;"),
+    `bear-fit · ${name.replaceAll('"', "&quot;")}`,
   );
 });
 
