@@ -4,6 +4,7 @@ import { getServerByName } from "partyserver";
 import type { Env } from "./worker";
 
 import { IsoDate } from "../app/schemas";
+import { loadCard, renderCard } from "./ogImage";
 
 /**
  * Link-preview fetchers. They don't run JavaScript, so they only see the
@@ -44,6 +45,9 @@ export async function serveIndex(
 
   const dates = describeDates(event);
   const description = dates ? `${dates} · ${TAGLINE}` : TAGLINE;
+  // The id is URL-encoded and the origin is a parsed URL's, so neither can
+  // break out of the attribute.
+  const image = `${url.origin}/og/${encodeURIComponent(id)}.png?v=${cardVersion(event.name, dates)}`;
   return new HTMLRewriter()
     .on("title", {
       element: (element) => {
@@ -60,7 +64,54 @@ export async function serveIndex(
         element.setAttribute("content", event.name);
       },
     })
+    .on("head", {
+      element: (head) => {
+        head.append(
+          `<meta property="og:image" content="${image}" />` +
+            `<meta property="og:image:width" content="1200" />` +
+            `<meta property="og:image:height" content="630" />` +
+            `<meta name="twitter:card" content="summary_large_image" />`,
+          { html: true },
+        );
+      },
+    })
     .transform(response);
+}
+
+/**
+ * Serves `/og/<id>.png`. Its URL carries the card's version, so a rename or
+ * new dates gets a new URL and each URL's image can be cached for good.
+ */
+export async function serveCardImage(
+  env: Env,
+  url: URL,
+  id: string,
+): Promise<Response> {
+  const [card, event] = await Promise.all([
+    loadCard(env.ASSETS, url.origin),
+    getCalendarEvent(env, id),
+  ]);
+  if (!event) return new Response("Not Found", { status: 404 });
+
+  const png = await renderCard(card, event.name, describeDates(event) ?? "");
+  return new Response(png, {
+    headers: {
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": "image/png",
+    },
+  });
+}
+
+/** Bump when the card's design changes, so crawlers refetch the image. */
+const CARD_DESIGN = 1;
+
+/** FNV-1a over what the card shows. */
+function cardVersion(name: string, dates = "") {
+  let hash = 0x811c9dc5;
+  for (const char of `${CARD_DESIGN}\n${name}\n${dates}`) {
+    hash = Math.imul(hash ^ char.codePointAt(0)!, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 async function getCalendarEvent(env: Env, id: string) {
