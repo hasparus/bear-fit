@@ -17,17 +17,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24.22.1"
-          cache: "pnpm"
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Run linter
         run: pnpm lint
@@ -48,22 +38,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24.22.1"
-          cache: "pnpm"
+      - uses: ./.github/actions/setup
 
       # Specs sign dashboard challenges with `bun .ssh/sign-message.tsx`.
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: "1.4.2"
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
 
       # Split system deps from the browser download: the combined
       # `--with-deps` wedges on the interactive `needrestart` apt prompt.
@@ -84,17 +64,14 @@ jobs:
       - name: Run Playwright tests
         run: pnpm test:e2e
 
+      # The report action needs lcov's genhtml.
       - name: Generate coverage report
         if:
           always() && github.event.pull_request.head.repo.full_name ==
           github.repository
-        run: pnpm test:coverage-report
-
-      - name: Install lcov
-        if:
-          always() && github.event.pull_request.head.repo.full_name ==
-          github.repository
-        run: sudo apt-get install -y lcov
+        run: |
+          pnpm test:coverage-report
+          sudo apt-get install -y lcov
 
       - name: Report code coverage
         if:
@@ -135,17 +112,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24.22.1"
-          cache: "pnpm"
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Deploy
         id: deploy
