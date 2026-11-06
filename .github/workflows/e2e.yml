@@ -46,10 +46,10 @@ jobs:
         run: pnpm exec playwright install chromium firefox
         timeout-minutes: 5
 
-      # `pnpm test` builds the app first, then runs Playwright against the
-      # built output served by `vite preview`.
+      # Builds the app, then runs Playwright against the built output served
+      # by `vite preview`. The Durable Object tests run in ci.yml.
       - name: Run Playwright tests
-        run: pnpm test
+        run: pnpm test:e2e
 
       - name: Generate coverage report
         if:
