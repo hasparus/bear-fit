@@ -3,28 +3,38 @@
  * glyphs in `public/og-card.bin` (made by `scripts/og-card.ts`).
  */
 
-/** [advance, left, top, width, height, offset] */
-type Glyph = [number, number, number, number, number, number];
+/** A glyph's coverage bitmap at `offset`, placed relative to the pen. */
+export interface Glyph {
+  width: number;
+  advance: number;
+  height: number;
+  left: number;
+  offset: number;
+  top: number;
+}
 
-interface Font {
+export interface Font {
+  /** From the top of a line box. */
   baseline: number;
   glyphs: Record<string, Glyph>;
 }
 
-interface Card {
-  textWidth: number;
-  width: number;
-  bytes: Uint8Array;
+/**
+ * What `og-card.bin` holds: this JSON, then the bytes its offsets point into.
+ * A template is the whole dark card, drawn for a name of 1 or 2 lines.
+ */
+export interface CardMeta {
   fonts: { dates: Font; name: Font };
   height: number;
+  /** The text color, in the image's grayscale. */
+  textWidth: number;
+  width: number;
   ink: number;
+  templates: { dates: number; names: number[]; offset: number }[];
   textLeft: number;
-  templates: {
-    dates: number;
-    names: number[];
-    offset: number;
-  }[];
 }
+
+type Card = CardMeta & { bytes: Uint8Array };
 
 let card: Promise<Card> | undefined;
 
@@ -39,7 +49,7 @@ export function loadCard(assets: Fetcher, origin: string): Promise<Card> {
       response.body.pipeThrough(new DecompressionStream("deflate")),
     ).arrayBuffer();
     const length = new DataView(buffer).getUint32(0, true);
-    const meta = JSON.parse(
+    const meta: CardMeta = JSON.parse(
       new TextDecoder().decode(new Uint8Array(buffer, 4, length)),
     );
     return { ...meta, bytes: new Uint8Array(buffer, 4 + length) };
@@ -81,7 +91,7 @@ function draw(
   for (const char of text) {
     const glyph = font.glyphs[char];
     if (!glyph) continue;
-    const [advance, left, glyphTop, width, height, offset] = glyph;
+    const { width, advance, height, left, offset, top: glyphTop } = glyph;
     const x0 = Math.round(pen) - left;
     const y0 = baseline - glyphTop;
     for (let y = 0; y < height; y++) {
@@ -99,7 +109,7 @@ function draw(
 
 const width = (font: Font, text: string) => {
   let total = 0;
-  for (const char of text) total += font.glyphs[char]?.[0] ?? 0;
+  for (const char of text) total += font.glyphs[char]?.advance ?? 0;
   return total;
 };
 
@@ -114,7 +124,7 @@ export function wrap(
   maxWidth: number,
   maxLines: number,
 ): string[] {
-  const words = [...normalize(font, text).split(" ")];
+  const words = normalize(font, text).split(" ");
   const lines: string[] = [];
   let line = "";
   while (words.length) {

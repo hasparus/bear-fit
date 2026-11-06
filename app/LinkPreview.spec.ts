@@ -64,6 +64,6 @@ test("crawlers get the generic tags for an unknown calendar", async ({
   });
   expect(metaContent(await response.text(), "og:title")).toBe("bear-fit");
 
-  const image = await page.request.get("/og/does-not-exist.png");
+  const image = await page.request.get("/og.png?id=does-not-exist");
   expect(image.status()).toBe(404);
 });

@@ -1,7 +1,7 @@
 import { routePartykitRequest } from "partyserver";
 
 import { EditorPartyServer } from "./editor.partyserver";
-import { serveCardImage, serveIndex } from "./linkPreview";
+import { routeLinkPreview } from "./linkPreview";
 import { OccupancyPartyServer } from "./occupancy.partyserver";
 
 // routePartykitRequest needs an index-signature-compatible type, so not an interface.
@@ -25,13 +25,9 @@ const CORS = {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    // Only `/` runs the Worker first (`run_worker_first` in wrangler.toml).
-    if (url.pathname === "/") return serveIndex(request, env, url);
-    const cardImage = url.pathname.match(/^\/og\/([^/]+)\.png$/);
-    if (cardImage) {
-      return serveCardImage(env, url, decodeURIComponent(cardImage[1]));
-    }
+    // `/` runs the Worker before assets (`run_worker_first` in wrangler.toml).
+    const linkPreview = routeLinkPreview(request, env);
+    if (linkPreview) return linkPreview;
 
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS });
