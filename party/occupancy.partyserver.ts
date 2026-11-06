@@ -22,7 +22,7 @@ type DashboardState =
 type DashboardConnection = Connection<DashboardState>;
 
 export class OccupancyPartyServer extends Server<Env> {
-  private rooms: Rooms = {};
+  private rooms: Rooms = Object.create(null);
 
   async onStart(): Promise<void> {
     this.ctx.storage.sql.exec(
@@ -32,7 +32,8 @@ export class OccupancyPartyServer extends Server<Env> {
       )`,
     );
     const stored = await this.ctx.storage.get<string>("rooms");
-    if (stored) this.rooms = JSON.parse(stored);
+    if (stored)
+      this.rooms = Object.assign(Object.create(null), JSON.parse(stored));
   }
 
   async onConnect(connection: DashboardConnection): Promise<void> {

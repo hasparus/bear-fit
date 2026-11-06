@@ -82,7 +82,11 @@ function Dashboard() {
               <ul>
                 {Object.entries(admin.rooms).map(([roomId, count]) => (
                   <li key={roomId}>
-                    {roomId}: {count} connections
+                    {roomId}:{" "}
+                    {typeof count === "number" && Number.isFinite(count)
+                      ? count
+                      : 0}{" "}
+                    connections
                   </li>
                 ))}
               </ul>
@@ -96,19 +100,28 @@ function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {admin.calendars.map(({ id, createdAt }) => (
-                  <tr key={id}>
-                    <td>
-                      <a href={`/?id=${encodeURIComponent(id)}`}>{id}</a>
-                    </td>
-                    <td>
-                      {createdAt === null
-                        ? "unknown"
-                        : new Date(createdAt).toLocaleString()}
-                    </td>
-                    <td>{admin.rooms[id] ?? 0}</td>
-                  </tr>
-                ))}
+                {admin.calendars.map(({ id, createdAt }) => {
+                  const count = Object.hasOwn(admin.rooms, id)
+                    ? admin.rooms[id]
+                    : 0;
+                  return (
+                    <tr key={id}>
+                      <td>
+                        <a href={`/?id=${encodeURIComponent(id)}`}>{id}</a>
+                      </td>
+                      <td>
+                        {createdAt === null
+                          ? "unknown"
+                          : new Date(createdAt).toLocaleString()}
+                      </td>
+                      <td>
+                        {typeof count === "number" && Number.isFinite(count)
+                          ? count
+                          : 0}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </>

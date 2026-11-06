@@ -83,24 +83,28 @@ test("dashboard only shows per-room details after signing its challenge", async 
   const roomA = `room-a-${id}`;
   const roomB = `room-b-${id}`;
   const calendarId = `registered-${id}`;
+  const calendarIds = [calendarId, "__proto__", "constructor", "toString"];
 
-  const calendar = new Doc();
-  initializeCalendarMap(
-    calendar,
-    CalendarEvent.assert({
-      id: calendarId,
-      creator: "dashboard-spec",
-      endDate: "2030-01-12",
-      name: "Registered calendar",
-      startDate: "2030-01-06",
-    }),
-  );
-  const created = await retryDropped(() =>
-    page.request.post(`/parties/main/${calendarId}`, {
-      data: Buffer.from(encodeStateAsUpdate(calendar)),
-    }),
-  );
-  expect(created.ok()).toBe(true);
+  for (const id of calendarIds) {
+    const calendar = new Doc();
+    initializeCalendarMap(
+      calendar,
+      CalendarEvent.assert({
+        id,
+        creator: "dashboard-spec",
+        endDate: "2030-01-12",
+        name: "Registered calendar",
+        startDate: "2030-01-06",
+      }),
+    );
+    const created = await retryDropped(() =>
+      page.request.post(`/parties/main/${id}`, {
+        data: Buffer.from(encodeStateAsUpdate(calendar)),
+      }),
+    );
+    expect(created.ok()).toBe(true);
+    calendar.destroy();
+  }
 
   const challenge = await openDashboard(page);
   await connectToRoom(page, roomA);
@@ -117,6 +121,27 @@ test("dashboard only shows per-room details after signing its challenge", async 
       .getByRole("link", { name: calendarId }),
   ).toHaveAttribute("href", `/?id=${calendarId}`);
 
+  const table = page.getByRole("table", { name: "Calendars" });
+  const calendarRow = (id: string) =>
+    table
+      .getByRole("row")
+      .filter({ has: page.getByRole("link", { exact: true, name: id }) });
+  for (const id of calendarIds) {
+    await expect(calendarRow(id).getByRole("cell").last()).toHaveText(
+      id === calendarId ? "0" : /^\d+$/,
+    );
+  }
+
+  await connectToRoom(page, "__proto__");
+  await expect(calendarRow("__proto__").getByRole("cell").last()).toHaveText(
+    /^\d+$/,
+  );
+  await expect(
+    page
+      .getByRole("listitem")
+      .filter({ hasText: /^__proto__: \d+ connections$/ }),
+  ).toBeVisible();
+
   const roomList = page.locator(".bg-neutral-100 ul");
   await expect(
     roomList
@@ -129,6 +154,22 @@ test("dashboard only shows per-room details after signing its challenge", async 
       .filter({ hasText: `${roomB}: 1 connections` }),
   ).toBeVisible();
   await expect(page.locator(".bg-neutral-100 dl")).toHaveCount(0);
+
+  const nextChallenge = await openDashboard(page);
+  await authorize(page, sign(await nextChallenge.innerText()));
+  for (const id of calendarIds) {
+    await expect(calendarRow(id).getByRole("cell").last()).toHaveText(
+      id === calendarId ? "0" : /^\d+$/,
+    );
+  }
+  await connectToRoom(page, "__proto__");
+  await connectToRoom(page, calendarId);
+  await expect(calendarRow("__proto__").getByRole("cell").last()).toHaveText(
+    /^\d+$/,
+  );
+  await expect(calendarRow(calendarId).getByRole("cell").last()).toHaveText(
+    "1",
+  );
 });
 
 test("dashboard rejects replayed signatures", async ({ browser, page }) => {
