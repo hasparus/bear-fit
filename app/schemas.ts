@@ -1,10 +1,16 @@
 import { type } from "arktype";
 
+import {
+  DAY_MS,
+  isBoundedDateInterval,
+  isIsoDateString,
+  isRollingDays,
+} from "./calendarDateRange";
+
 export const IsoDate = type("string")
   .narrow((date, ctx): boolean => {
-    const parsed = new Date(date);
     return (
-      date === isoDate(parsed) || ctx.reject("an ISO date in YYYY-MM-DD format")
+      isIsoDateString(date) || ctx.reject("an ISO date in YYYY-MM-DD format")
     );
   })
   .brand("IsoDate");
@@ -45,31 +51,34 @@ export const addDays = (date: Date, days: number): Date =>
 export const resolveRollingWindow = (
   days: number,
   today: Date = startOfTodayUtc(),
-): { endDate: IsoDate; startDate: IsoDate } => ({
-  endDate: isoDate(addDays(today, days)),
-  startDate: isoDate(today),
-});
+): { endDate: IsoDate; startDate: IsoDate } | null => {
+  if (!isRollingDays(days) || !Number.isFinite(today.getTime())) return null;
+  const start = new Date(today);
+  start.setUTCHours(0, 0, 0, 0);
+  const end = new Date(start.getTime() + days * DAY_MS);
+  if (!isBoundedDateInterval(start, end)) return null;
+  const startDate = isoDate(start);
+  const endDate = isoDate(end);
+  if (!isIsoDateString(startDate) || !isIsoDateString(endDate)) return null;
+  return { endDate, startDate };
+};
 
 export const CalendarEvent = type({
   id: "string",
   creator: UserId,
   "endDate?": IsoDate,
   name: "string",
-  "rolling?": "number.integer > 0",
   "startDate?": IsoDate,
+  "rolling?": type("number.integer").narrow(
+    (days, ctx) =>
+      isRollingDays(days) || ctx.reject("a rolling window of 1–365 days"),
+  ),
 }).narrow((event, ctx): boolean => {
-  if (event.rolling) {
-    return (
-      (!event.startDate && !event.endDate) ||
-      ctx.reject({
-        expected: "no startDate or endDate on rolling events",
-      })
-    );
-  }
   return (
-    !!(event.startDate && event.endDate) ||
+    !!resolveCalendarDates(event) ||
     ctx.reject({
-      expected: "either both startDate and endDate, or a rolling window",
+      expected:
+        "an ordered range of at most 366 days, or a rolling window of 1–365 days without fixed dates",
     })
   );
 });
@@ -81,11 +90,28 @@ export type CalendarDatesPatch =
   | { rolling: number };
 
 export const resolveCalendarDates = (
-  event: Pick<Partial<CalendarEvent>, "endDate" | "rolling" | "startDate">,
+  event: { endDate?: unknown; rolling?: unknown; startDate?: unknown },
   today: Date = startOfTodayUtc(),
-): { endDate: IsoDate | undefined; startDate: IsoDate | undefined } => {
-  if (event.rolling) return resolveRollingWindow(event.rolling, today);
-  return { endDate: event.endDate, startDate: event.startDate };
+): { endDate: IsoDate; startDate: IsoDate } | null | undefined => {
+  if (event.rolling !== undefined) {
+    if (
+      !isRollingDays(event.rolling) ||
+      event.startDate !== undefined ||
+      event.endDate !== undefined
+    )
+      return null;
+    return resolveRollingWindow(event.rolling, today);
+  }
+  const { endDate, startDate } = event;
+  if (
+    (startDate !== undefined && !isIsoDateString(startDate)) ||
+    (endDate !== undefined && !isIsoDateString(endDate))
+  )
+    return null;
+  if (startDate === undefined || endDate === undefined) return undefined;
+  if (!isBoundedDateInterval(new Date(startDate), new Date(endDate)))
+    return null;
+  return { endDate: endDate as IsoDate, startDate: startDate as IsoDate };
 };
 
 export const AvailabilityDelta = type({

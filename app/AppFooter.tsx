@@ -36,7 +36,8 @@ export function AppFooter({
             <h3 className="font-sans mt-4">Your recent calendars</h3>
             <ul className="mt-2">
               {calendars.slice(0, 10).map((calendar) => {
-                const { endDate, startDate } = resolveCalendarDates(calendar);
+                const dates = resolveCalendarDates(calendar);
+                const { endDate, startDate } = dates ?? {};
                 return (
                   <li key={calendar.id}>
                     <a
@@ -60,9 +61,10 @@ export function AppFooter({
                           <time dateTime={endDate}>
                             {formatIsoDate(endDate)}
                           </time>
-                          {calendar.rolling && ", rolling"})
+                          {Boolean(calendar.rolling) && ", rolling"})
                         </span>
                       )}
+                      {dates === null && <span> (invalid calendar dates)</span>}
                       {calendar.id === currentCalendarId && (
                         <span> (current)</span>
                       )}

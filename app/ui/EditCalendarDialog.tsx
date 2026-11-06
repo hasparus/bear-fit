@@ -37,8 +37,7 @@ export function EditCalendarDialog() {
     dialogs.set("edit-event", false);
   };
 
-  const hasFixedDates = !!event.startDate && !!event.endDate;
-  if (!event.id || (!event.rolling && !hasFixedDates)) {
+  if (!event.id) {
     return null;
   }
 
@@ -59,10 +58,7 @@ export function EditCalendarDialog() {
               </Dialog.Description>
             </div>
             <div className="p-1 sm:p-2 flex min-h-0 flex-1 flex-col">
-              <EditCalendarForm
-                event={event as CalendarEvent}
-                onSubmit={handleSubmit}
-              />
+              <EditCalendarForm event={event} onSubmit={handleSubmit} />
             </div>
           </section>
         </Dialog.Popup>

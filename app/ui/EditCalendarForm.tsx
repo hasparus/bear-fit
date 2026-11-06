@@ -1,6 +1,7 @@
 import Clarity from "@microsoft/clarity";
 import { useState } from "react";
 
+import { INVALID_CALENDAR_DATES_MESSAGE } from "../calendarDateRange";
 import {
   type CalendarEvent,
   resolveCalendarDates,
@@ -18,12 +19,13 @@ import { handleCalendarArrowKeys } from "./DateRangePicker";
 import { eachDayOfInterval } from "./eachDayOfInterval";
 
 export interface EditCalendarFormProps {
-  event: CalendarEvent;
+  event: Partial<CalendarEvent>;
   onSubmit: (patch: CalendarDatesPatch) => Promise<void>;
 }
 
 export function EditCalendarForm({ event, onSubmit }: EditCalendarFormProps) {
-  const { endDate, startDate } = resolveCalendarDates(event);
+  const resolvedDates = resolveCalendarDates(event);
+  const { endDate, startDate } = resolvedDates ?? {};
   const seedStart = startDate ? new Date(startDate) : undefined;
   const seedEnd = endDate ? new Date(endDate) : undefined;
 
@@ -43,11 +45,15 @@ export function EditCalendarForm({ event, onSubmit }: EditCalendarFormProps) {
       onKeyDown={handleCalendarArrowKeys}
       onSubmit={(e) => {
         e.preventDefault();
+        if (!isCalendarDatesValueValid(dates)) return;
         onSubmit(calendarDatesValueToPatch(dates)).finally(() => {
           Clarity.event("event-dates-edited");
         });
       }}
     >
+      {resolvedDates === null && (
+        <p role="alert">{INVALID_CALENDAR_DATES_MESSAGE}</p>
+      )}
       <div className="min-h-0 flex-1 overflow-y-auto">
         <CalendarDatesPicker
           fixedRangeLabel="Choose new range"
@@ -60,7 +66,7 @@ export function EditCalendarForm({ event, onSubmit }: EditCalendarFormProps) {
             modifiers: {
               initial:
                 seedStart && seedEnd
-                  ? eachDayOfInterval(seedStart, seedEnd)
+                  ? (eachDayOfInterval(seedStart, seedEnd) ?? [])
                   : [],
             },
           }}

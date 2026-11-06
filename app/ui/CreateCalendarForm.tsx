@@ -35,6 +35,7 @@ export function CreateCalendarForm({
         onKeyDown={handleCalendarArrowKeys}
         onSubmit={(event) => {
           event.preventDefault();
+          if (!isCalendarDatesValueValid(dates)) return;
           const eventName = event.currentTarget.elements.namedItem(
             "eventName",
           ) as HTMLInputElement;

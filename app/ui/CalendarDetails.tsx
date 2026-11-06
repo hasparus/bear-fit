@@ -12,6 +12,7 @@ import React, {
 import { useY } from "react-yjs";
 import { type Doc } from "yjs";
 
+import { INVALID_CALENDAR_DATES_MESSAGE } from "../calendarDateRange";
 import { anonymousName, displayName } from "../displayName";
 import { getUserId } from "../getUserId";
 import {
@@ -49,7 +50,10 @@ import { EditIcon } from "./EditIcon";
 import { exportCalendarJson, ExportCalendarJson } from "./ExportCalendarJson";
 import { getPaddingDays } from "./getPaddingDays";
 import { getWeekDayNames } from "./getWeekDayNames";
-import { ImportCalendarJson, useImportCalendarJson } from "./ImportCalendarJson";
+import {
+  ImportCalendarJson,
+  useImportCalendarJson,
+} from "./ImportCalendarJson";
 import { MoreIcon } from "./MoreIcon";
 import { moveFocusWithArrowKeys } from "./moveFocusWithArrowKeys";
 import { overwriteYDocWithJson } from "./overwriteYDocWithJson";
@@ -74,7 +78,8 @@ export function CalendarDetails({
 
   const calendarMap = getCalendarMap(yDoc);
   const event = useY(calendarMap) as Partial<CalendarEvent>;
-  const { endDate, startDate } = resolveCalendarDates(event);
+  const resolvedDates = resolveCalendarDates(event);
+  const { endDate, startDate } = resolvedDates ?? {};
 
   useEffect(() => {
     if (event.id && event.name) {
@@ -128,10 +133,11 @@ export function CalendarDetails({
     {} as Record<UserId, IsoDate[]>,
   );
 
-  const groupedDays = eachDayOfInterval(
-    startDate ? new Date(startDate) : new Date(),
-    endDate ? new Date(endDate) : new Date(),
-  ).reduce(
+  const days =
+    startDate && endDate
+      ? eachDayOfInterval(new Date(startDate), new Date(endDate))
+      : null;
+  const groupedDays = (days ?? []).reduce(
     (acc, day) => {
       const monthKey = `${day.getUTCFullYear()}-${day.getUTCMonth()}`;
       if (!acc[monthKey]) {
@@ -275,7 +281,15 @@ export function CalendarDetails({
                 {event.name || <Skeleton className="h-[32px]" />}
               </h1>
               <p className="block font-mono text-sm">Dates</p>
-              <p aria-busy={!startDate} className="mb-4 leading-[1.3333]">
+              {resolvedDates === null && (
+                <p className="mb-4" role="alert">
+                  {INVALID_CALENDAR_DATES_MESSAGE}
+                </p>
+              )}
+              <p
+                aria-busy={resolvedDates === undefined}
+                className="mb-4 leading-[1.3333]"
+              >
                 {startDate && endDate ? (
                   <>
                     <time dateTime={startDate}>{formatIsoDate(startDate)}</time>
@@ -285,9 +299,9 @@ export function CalendarDetails({
                       <RollingWindowIndicator days={event.rolling} />
                     )}
                   </>
-                ) : (
+                ) : resolvedDates === undefined ? (
                   <Skeleton className="w-[206px]" />
-                )}
+                ) : null}
               </p>
               <div className="mb-4 leading-[1.3333]">
                 <label className="block" htmlFor="name">
@@ -337,7 +351,10 @@ export function CalendarDetails({
                   />
                 )}
               </div>
-              <CopyCalendarUrl calendarId={event.id} className="max-lg:hidden" />
+              <CopyCalendarUrl
+                calendarId={event.id}
+                className="max-lg:hidden"
+              />
             </div>
             <div className="w-px bg-neutral-200 max-lg:hidden" />
             <div
