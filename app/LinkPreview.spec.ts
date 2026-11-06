@@ -39,6 +39,9 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
     metaContent(html, "og:image")!.replaceAll("&amp;", "&"),
   );
   expect(imageUrl.searchParams.get("v")).toBeTruthy();
+  expect(metaContent(html, "og:url")).toBe(
+    new URL(`/?id=${id}`, imageUrl).href,
+  );
   const image = await page.request.get(imageUrl.href);
   expect(image.headers()["content-type"]).toBe("image/png");
   const png = await image.body();

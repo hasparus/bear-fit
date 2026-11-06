@@ -55,6 +55,8 @@ async function serveIndex(request: Request, env: Env, url: URL) {
 
   const dates = describeDates(event);
   const title = `bear-fit · ${event.name}`;
+  const canonical = new URL("/", url);
+  canonical.searchParams.set("id", id);
   const image = new URL("/og.png", url);
   image.searchParams.set("id", id);
   image.searchParams.set("v", cardVersion(event.name, dates));
@@ -78,7 +80,8 @@ async function serveIndex(request: Request, env: Env, url: URL) {
       element: (head) => {
         // A serialized URL has no quotes or angle brackets; `&` is escaped.
         head.append(
-          `<meta property="og:image" content="${image.href.replaceAll("&", "&amp;")}" />` +
+          `<meta property="og:url" content="${canonical.href}" />` +
+            `<meta property="og:image" content="${image.href.replaceAll("&", "&amp;")}" />` +
             `<meta property="og:image:width" content="1200" />` +
             `<meta property="og:image:height" content="630" />` +
             `<meta name="twitter:card" content="summary_large_image" />`,
