@@ -1,5 +1,6 @@
 import { type DateRange } from "@daypicker/react";
 
+import { isRollingDays, MAX_CALENDAR_DAYS } from "../calendarDateRange";
 import {
   addDays,
   type CalendarDatesPatch,
@@ -26,10 +27,16 @@ export const defaultCalendarDatesValue = (
   ...partial,
 });
 
-export const isCalendarDatesValueValid = (value: CalendarDatesValue): boolean => {
+export const isCalendarDatesValueValid = (
+  value: CalendarDatesValue,
+): boolean => {
   if (value.isRolling) {
     const today = startOfTodayUtc();
-    return isValidDateRange({ from: today, to: value.range.to });
+    return !!(
+      value.range.to &&
+      isRollingDays(diffDays(value.range.to, today)) &&
+      isValidDateRange({ from: today, to: value.range.to })
+    );
   }
   return isValidDateRange(value.range);
 };
@@ -37,6 +44,9 @@ export const isCalendarDatesValueValid = (value: CalendarDatesValue): boolean =>
 export const calendarDatesValueToPatch = (
   value: CalendarDatesValue,
 ): CalendarDatesPatch => {
+  if (!isCalendarDatesValueValid(value)) {
+    throw new Error("Choose a valid calendar date range before saving");
+  }
   if (value.isRolling) {
     const today = startOfTodayUtc();
     const { to } = requireValidDateRange({ from: today, to: value.range.to });
@@ -74,7 +84,8 @@ export function CalendarDatesPicker({
       const picked = range?.to ?? range?.from;
       if (!picked) return;
       const nextRange = { from: today, to: picked };
-      if (!isValidDateRange(nextRange)) return;
+      if (!isCalendarDatesValueValid({ isRolling: true, range: nextRange }))
+        return;
       onChange({ ...value, range: nextRange });
       return;
     }
@@ -90,13 +101,19 @@ export function CalendarDatesPicker({
       return;
     }
     const dayCount =
-      value.range.from && value.range.to
+      isValidDateRange(value.range) && value.range.from && value.range.to
         ? diffDays(value.range.to, value.range.from)
         : DEFAULT_ROLLING_DAYS;
     onChange({
       ...value,
       isRolling: true,
-      range: { from: today, to: addDays(today, dayCount) },
+      range: {
+        from: today,
+        to: addDays(
+          today,
+          isRollingDays(dayCount) ? dayCount : DEFAULT_ROLLING_DAYS,
+        ),
+      },
     });
   };
 
@@ -110,7 +127,8 @@ export function CalendarDatesPicker({
       <label className="mb-2 block">
         <span>{fixedRangeLabel}</span>
         <small className="block text-neutral-500">
-          what times should the guests consider?
+          what times should the guests consider? Up to {MAX_CALENDAR_DAYS} days,
+          including both dates.
         </small>
       </label>
       <DateRangePicker
