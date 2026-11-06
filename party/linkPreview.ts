@@ -117,7 +117,7 @@ async function serveCardImage(env: Env, url: URL, id: string) {
 }
 
 /** Bump when the card's design changes, so crawlers refetch the image. */
-const CARD_DESIGN = 1;
+const CARD_DESIGN = 2;
 
 /** FNV-1a over what the card shows. */
 function cardVersion(name: string, dates: string) {

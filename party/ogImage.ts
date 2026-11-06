@@ -189,7 +189,16 @@ function chunk(type: string, data: Uint8Array) {
   return bytes;
 }
 
-/** An 8-bit grayscale PNG, compressed by the runtime's zlib. */
+/** Each gray level as an RGB palette entry, so pixel values are indices. */
+const GRAY_PALETTE = Uint8Array.from({ length: 256 * 3 }, (_, i) =>
+  Math.floor(i / 3),
+);
+
+/**
+ * An 8-bit indexed PNG with a gray palette, compressed by the runtime's zlib.
+ * The pixel bytes are the same as grayscale's, in a more widely supported
+ * format: Messenger showed the grayscale card as a blank white box.
+ */
 async function encodePng(pixels: Uint8Array, width: number, height: number) {
   const rows = new Uint8Array((width + 1) * height); // filter byte 0 per row
   for (let y = 0; y < height; y++) {
@@ -204,11 +213,12 @@ async function encodePng(pixels: Uint8Array, width: number, height: number) {
   const view = new DataView(header.buffer);
   view.setUint32(0, width);
   view.setUint32(4, height);
-  header.set([8, 0, 0, 0, 0], 8); // 8-bit grayscale, no interlace
+  header.set([8, 3, 0, 0, 0], 8); // 8-bit indexed, no interlace
   return new Uint8Array(
     await new Blob([
       new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       chunk("IHDR", header),
+      chunk("PLTE", GRAY_PALETTE),
       chunk("IDAT", idat),
       chunk("IEND", new Uint8Array()),
     ]).arrayBuffer(),
