@@ -1,11 +1,13 @@
 import { routePartykitRequest } from "partyserver";
 
 import { EditorPartyServer } from "./editor.partyserver";
+import { serveIndex } from "./linkPreview";
 import { OccupancyPartyServer } from "./occupancy.partyserver";
 
 // routePartykitRequest needs an index-signature-compatible type, so not an interface.
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type Env = {
+  ASSETS: Fetcher;
   main: DurableObjectNamespace<EditorPartyServer>;
   PUBLIC_KEY_B64: string;
   rooms: DurableObjectNamespace<OccupancyPartyServer>;
@@ -23,6 +25,10 @@ const CORS = {
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    // Only `/` runs the Worker first (`run_worker_first` in wrangler.toml).
+    if (url.pathname === "/") return serveIndex(request, env, url);
+
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: CORS });
     }

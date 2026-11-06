@@ -136,6 +136,11 @@ export class EditorPartyServer extends YServer<Env> {
     return Response.json({ message: "not found" }, { status: 404 });
   }
 
+  /** The calendar's name and dates, for link previews. */
+  getEvent(): unknown {
+    return getCalendarMap(this.document).toJSON();
+  }
+
   /**
    * Records the calendar in the occupancy server's registry once this instance
    * sees an event: loaded from storage on start (creation time unknown, so
