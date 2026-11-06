@@ -140,6 +140,86 @@ test("invalid live and persisted dates stay bounded and recover, including histo
   doc.destroy();
 });
 
+for (const source of ["live", "persisted"]) {
+  test(`a creator can repair a ${source} zero-day rolling calendar with fixed dates`, async ({
+    page,
+    request,
+  }) => {
+    const { id, nextMonthName } = await createCalendar(page, {
+      name: `zero rolling ${source} ${Date.now()}`,
+    });
+    await expect
+      .poll(async () => (await serverDoc(request, id)).event)
+      .toHaveProperty("endDate");
+    await page.reload();
+
+    const history = await retryDropped(() =>
+      request.get(`/parties/main/${id}/history`),
+    );
+    expect(history.ok()).toBe(true);
+    const doc = new Y.Doc();
+    for (const { value } of decodeHistoryUpdates(await history.body())) {
+      Y.applyUpdate(doc, value);
+    }
+    const event = doc.getMap("event");
+    const startDate = String(event.get("startDate"));
+    const endDate = String(event.get("endDate"));
+    const before = Y.encodeStateVector(doc);
+    doc.transact(() => {
+      event.delete("startDate");
+      event.delete("endDate");
+      event.set("rolling", 0);
+    });
+    await sendUpdate(page, id, Y.encodeStateAsUpdate(doc, before));
+    doc.destroy();
+
+    await expect
+      .poll(async () => (await serverDoc(request, id)).event)
+      .toHaveProperty("rolling", 0);
+    const remembered = () =>
+      page.evaluate(
+        () => JSON.parse(localStorage.getItem("🐻👤state")!).events[0],
+      );
+    await expect.poll(remembered).toMatchObject({ id, rolling: 0 });
+    if (source === "persisted") await page.reload();
+
+    await expect(page.getByRole("alert")).toContainText(
+      "Invalid calendar dates",
+    );
+    await expect(page.getByRole("grid").getByRole("button")).toHaveCount(0);
+    await page.getByText("Dates", { exact: true }).click({ button: "right" });
+    await page
+      .getByRole("menuitem", { exact: true, name: "Edit dates" })
+      .click();
+    const dialog = page.getByRole("dialog", { name: "Edit Calendar" });
+    await expect(dialog).toBeVisible();
+    const save = dialog.getByRole("button", { name: "Save Changes" });
+    await expect(save).toBeDisabled();
+    await expect(dialog.getByLabel("Rolling window")).not.toBeChecked();
+    await dialog.getByRole("button", { name: "next month" }).click();
+    await dialog.getByRole("button", { name: `${nextMonthName} 6th` }).click();
+    await dialog.getByRole("button", { name: `${nextMonthName} 12th` }).click();
+    await save.click();
+
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("grid").getByRole("button")).toHaveCount(7);
+    await expect
+      .poll(async () => {
+        const { endDate, rolling, startDate } = (await serverDoc(request, id))
+          .event;
+        return { endDate, rolling, startDate };
+      })
+      .toEqual({ endDate, rolling: undefined, startDate });
+    await expect.poll(remembered).toMatchObject({ id, endDate, startDate });
+    await expect.poll(remembered).not.toHaveProperty("rolling");
+
+    await page.reload();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(page.getByRole("grid").getByRole("button")).toHaveCount(7);
+  });
+}
+
 test("the form rejects an oversized range and accepts a new bounded selection", async ({
   page,
 }) => {

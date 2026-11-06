@@ -19,7 +19,7 @@ import { handleCalendarArrowKeys } from "./DateRangePicker";
 import { eachDayOfInterval } from "./eachDayOfInterval";
 
 export interface EditCalendarFormProps {
-  event: CalendarEvent;
+  event: Partial<CalendarEvent>;
   onSubmit: (patch: CalendarDatesPatch) => Promise<void>;
 }
 

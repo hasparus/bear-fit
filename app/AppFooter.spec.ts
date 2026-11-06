@@ -218,6 +218,58 @@ test("footer paints stored calendars on the first render and doesn't rewrite the
   expect(writes).toEqual([{ events: [stored], nerdMode: true }]);
 });
 
+test("legacy oversized calendars keep recent links and preferences across writes and reloads", async ({
+  page,
+}) => {
+  const events = [
+    {
+      id: "legacy-large",
+      creator: "someone",
+      endDate: "2025-01-01",
+      name: "Legacy 367 days",
+      startDate: "2024-01-01",
+    },
+    {
+      id: "legacy-week",
+      creator: "someone",
+      endDate: "2024-01-07",
+      name: "Legacy valid week",
+      startDate: "2024-01-01",
+    },
+  ];
+  await page.goto("/");
+  await page.evaluate((events) => {
+    localStorage.setItem(
+      "🐻👤state",
+      JSON.stringify({ events, nerdMode: true }),
+    );
+  }, events);
+  await page.reload();
+
+  const footer = page.getByRole("contentinfo");
+  const oversized = footer.getByRole("link", { name: /Legacy 367 days/ });
+  const valid = footer.getByRole("link", { name: /Legacy valid week/ });
+  const nerdMode = page.getByLabel("Nerd Mode");
+  await expect(oversized).toHaveAttribute("href", "?id=legacy-large");
+  await expect(oversized).toContainText("invalid calendar dates");
+  await expect(valid).toHaveAttribute("href", "?id=legacy-week");
+  await expect(valid).not.toContainText("invalid calendar dates");
+  await expect(nerdMode).toBeChecked();
+  await expect(footer.getByText(/Application version:/)).toBeVisible();
+
+  await page.getByText("Nerd Mode", { exact: true }).click();
+  await expect(nerdMode).not.toBeChecked();
+  const storedState = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem("🐻👤state")!));
+  await expect.poll(storedState).toEqual({ events, nerdMode: false });
+
+  await page.reload();
+  await expect(oversized).toBeVisible();
+  await expect(valid).toBeVisible();
+  await expect(nerdMode).not.toBeChecked();
+  expect(await storedState()).toEqual({ events, nerdMode: false });
+});
+
 const PUBLIC_STATS = { activeConnections: 0, rooms: 0 };
 
 test("footer stats retry a failed request and show the calendar count", async ({

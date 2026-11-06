@@ -61,7 +61,7 @@ export function AppFooter({
                           <time dateTime={endDate}>
                             {formatIsoDate(endDate)}
                           </time>
-                          {calendar.rolling && ", rolling"})
+                          {Boolean(calendar.rolling) && ", rolling"})
                         </span>
                       )}
                       {dates === null && <span> (invalid calendar dates)</span>}

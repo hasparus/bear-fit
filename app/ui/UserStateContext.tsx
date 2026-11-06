@@ -8,10 +8,19 @@ import {
   useRef,
 } from "react";
 
-import { CalendarEvent } from "../schemas";
 import { UnreachableCaseError } from "./UnreachableCaseError";
 
 const LOCAL_STORAGE_KEY = "🐻👤state";
+
+const RememberedCalendar = type({
+  id: "string",
+  creator: "string",
+  "endDate?": "unknown",
+  name: "string",
+  "rolling?": "unknown",
+  "startDate?": "unknown",
+});
+type RememberedCalendar = typeof RememberedCalendar.infer;
 
 interface UserStateContextValue {
   /**
@@ -21,11 +30,11 @@ interface UserStateContextValue {
   /**
    * Calendars the user interacted with.
    */
-  calendars: CalendarEvent[];
+  calendars: RememberedCalendar[];
 }
 
 const UserStateContextValue = type({
-  events: CalendarEvent.array(),
+  events: RememberedCalendar.array(),
   nerdMode: "boolean",
 });
 
@@ -65,7 +74,7 @@ export type UserStateAction =
     }
   | {
       type: "remember-calendar";
-      payload: CalendarEvent;
+      payload: RememberedCalendar;
     }
   | {
       type: "set-nerd-mode";
