@@ -13,8 +13,6 @@ import { loadCard, renderCard } from "./ogImage";
 const CRAWLER =
   /bot|facebookexternalhit|whatsapp|preview|embedly|mastodon|cardyb|crawler|spider/i;
 
-const TAGLINE = "find a time that works for everybody";
-
 /** Just what the preview shows; older calendars may lack other fields. */
 const PreviewEvent = type({
   "endDate?": IsoDate,
@@ -56,24 +54,24 @@ async function serveIndex(request: Request, env: Env, url: URL) {
   if (!event) return response;
 
   const dates = describeDates(event);
-  const description = [dates, TAGLINE].filter(Boolean).join(" · ");
+  const title = `bear-fit · ${event.name}`;
   const image = new URL("/og.png", url);
   image.searchParams.set("id", id);
   image.searchParams.set("v", cardVersion(event.name, dates));
   const page = new HTMLRewriter()
     .on("title", {
       element: (element) => {
-        element.setInnerContent(`${event.name} · bear-fit`);
+        element.setInnerContent(title);
       },
     })
     .on('meta[name="description"], meta[property="og:description"]', {
       element: (element) => {
-        element.setAttribute("content", description);
+        element.setAttribute("content", callToAction(event));
       },
     })
     .on('meta[property="og:title"]', {
       element: (element) => {
-        element.setAttribute("content", event.name);
+        element.setAttribute("content", title);
       },
     })
     .on("head", {
@@ -147,7 +145,7 @@ const dateRange = new Intl.DateTimeFormat("en-US", {
 
 /**
  * "Nov 6 – Dec 10, 2026", "Next 14 days" for a rolling calendar, or "" when
- * the calendar has no dates.
+ * the calendar has no dates. The card shows this.
  */
 function describeDates(event: PreviewEvent): string {
   if (event.rolling) return `Next ${event.rolling} days`;
@@ -156,4 +154,18 @@ function describeDates(event: PreviewEvent): string {
     new Date(event.startDate),
     new Date(event.endDate),
   );
+}
+
+/**
+ * "Pick dates between Nov 6 and Dec 10, 2026", or "Pick dates in the next 14
+ * days" for a rolling calendar. The description shows this.
+ */
+function callToAction(event: PreviewEvent): string {
+  if (event.rolling) return `Pick dates in the next ${event.rolling} days`;
+  if (!event.startDate || !event.endDate) return "Pick your dates";
+  const range = dateRange
+    .formatRangeToParts(new Date(event.startDate), new Date(event.endDate))
+    .map((part) => (part.value.includes("–") ? " and " : part.value))
+    .join("");
+  return `Pick dates between ${range}`;
 }

@@ -21,7 +21,7 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
       });
       return metaContent(await response.text(), "og:title");
     })
-    .toBe(name.replaceAll('"', "&quot;"));
+    .toBe(`bear-fit · ${name.replaceAll('"', "&quot;")}`);
 
   const html = await (
     await page.request.get(`/?id=${id}`, {
@@ -29,10 +29,10 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
     })
   ).text();
   expect(html).toContain(
-    `<title>${name.replace("<", "&lt;").replace(">", "&gt;")} · bear-fit</title>`,
+    `<title>bear-fit · ${name.replace("<", "&lt;").replace(">", "&gt;")}</title>`,
   );
   expect(metaContent(html, "og:description")).toMatch(
-    /^[A-Z][a-z]{2} 6 – 12, \d{4} · find a time that works for everybody$/,
+    /^Pick dates between [A-Z][a-z]{2} 6 and 12, \d{4}$/,
   );
 
   const imageUrl = new URL(
@@ -53,7 +53,7 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
   expect(revalidated.status()).toBe(200);
   expect(revalidated.headers()["etag"]).toBeUndefined();
   expect(metaContent(await revalidated.text(), "og:title")).toBe(
-    name.replaceAll('"', "&quot;"),
+    `bear-fit · ${name.replaceAll('"', "&quot;")}`,
   );
 });
 
