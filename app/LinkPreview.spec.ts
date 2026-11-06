@@ -35,11 +35,26 @@ test("crawlers get the calendar's name and dates in the meta tags", async ({
     /^[A-Z][a-z]{2} 6 – 12, \d{4} · find a time that works for everybody$/,
   );
 
-  const image = await page.request.get(metaContent(html, "og:image")!);
+  const imageUrl = new URL(
+    metaContent(html, "og:image")!.replaceAll("&amp;", "&"),
+  );
+  expect(imageUrl.searchParams.get("v")).toBeTruthy();
+  const image = await page.request.get(imageUrl.href);
   expect(image.headers()["content-type"]).toBe("image/png");
   const png = await image.body();
   expect(png.subarray(1, 4).toString()).toBe("PNG");
   expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+
+  // A crawler revalidating with the static file's ETag still gets the tags.
+  const etag = (await page.request.get("/")).headers()["etag"];
+  const revalidated = await page.request.get(`/?id=${id}`, {
+    headers: { "If-None-Match": etag, "User-Agent": SLACKBOT },
+  });
+  expect(revalidated.status()).toBe(200);
+  expect(revalidated.headers()["etag"]).toBeUndefined();
+  expect(metaContent(await revalidated.text(), "og:title")).toBe(
+    name.replaceAll('"', "&quot;"),
+  );
 });
 
 test("people get the static index.html untouched", async ({ page }) => {

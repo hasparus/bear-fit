@@ -49,7 +49,8 @@ async function serveIndex(request: Request, env: Env, url: URL) {
   if (!id || !CRAWLER.test(userAgent)) return env.ASSETS.fetch(request);
 
   const [response, event] = await Promise.all([
-    env.ASSETS.fetch(request),
+    // Unconditional, so a crawler's If-None-Match can't skip the rewrite.
+    env.ASSETS.fetch(url),
     getCalendarEvent(env, id),
   ]);
   if (!event) return response;
@@ -59,7 +60,7 @@ async function serveIndex(request: Request, env: Env, url: URL) {
   const image = new URL("/og.png", url);
   image.searchParams.set("id", id);
   image.searchParams.set("v", cardVersion(event.name, dates));
-  return new HTMLRewriter()
+  const page = new HTMLRewriter()
     .on("title", {
       element: (element) => {
         element.setInnerContent(`${event.name} · bear-fit`);
@@ -88,6 +89,10 @@ async function serveIndex(request: Request, env: Env, url: URL) {
       },
     })
     .transform(response);
+  // The static file's validators don't describe the rewritten page.
+  page.headers.delete("ETag");
+  page.headers.delete("Last-Modified");
+  return page;
 }
 
 /**
