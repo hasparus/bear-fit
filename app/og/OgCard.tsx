@@ -70,7 +70,7 @@ function Details({
 }: Pick<OgCardProps, "dates" | "days" | "name">) {
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-center">
-      <p className="text-[33px]">Calendar</p>
+      <p className="text-[33px] opacity-60">Calendar</p>
       <h1
         className={cn(
           "mb-[36px] leading-[1.15]",
@@ -79,7 +79,7 @@ function Details({
       >
         {name}
       </h1>
-      <p className="text-[33px]">Dates</p>
+      <p className="text-[33px] opacity-60">Dates</p>
       <p
         className={cn("leading-[1.3333]", days ? "text-[45px]" : "text-[54px]")}
       >
