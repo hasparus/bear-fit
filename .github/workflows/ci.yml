@@ -95,12 +95,10 @@ jobs:
 
   deploy:
     needs: [check, e2e]
-    # Fork PRs get no secrets, so they can't deploy. deploy.sh ships to
-    # production when BRANCH_NAME is main, so a PR from main mustn't deploy.
+    # Fork PRs get no secrets, so they can't deploy.
     if:
       github.event_name == 'push' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref != 'main')
+      github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       deployments: write
