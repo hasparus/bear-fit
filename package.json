@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
-    "test": "vitest run && pnpm build && playwright test",
+    "test": "vitest run && pnpm test:e2e",
+    "test:e2e": "pnpm build && playwright test",
     "test:ui": "pnpm build && VERBOSE=true playwright test --ui",
     "test:coverage-report": "nyc report --reporter=html --reporter=lcov --report-dir=test/coverage/html --temp-dir=test/coverage",
     "preinstall": "pnpx only-allow pnpm"
